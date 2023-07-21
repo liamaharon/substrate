@@ -1292,7 +1292,7 @@
 		<span class="self">self</span>.requests
 			.insert(new_id, HttpApiRequest::NotDispatched(request, body_sender));
 
-		<span class="macro">tracing::error!</span>(
+		<span class="macro">tracing::trace!</span>(
 			target: LOG_TARGET,
 			id = %new_id.<span class="number">0</span>,
 			%method,
