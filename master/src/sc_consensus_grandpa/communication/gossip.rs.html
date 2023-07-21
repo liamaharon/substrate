@@ -2650,13 +2650,6 @@
 <a href="#2650" id="2650">2650</a>
 <a href="#2651" id="2651">2651</a>
 <a href="#2652" id="2652">2652</a>
-<a href="#2653" id="2653">2653</a>
-<a href="#2654" id="2654">2654</a>
-<a href="#2655" id="2655">2655</a>
-<a href="#2656" id="2656">2656</a>
-<a href="#2657" id="2657">2657</a>
-<a href="#2658" id="2658">2658</a>
-<a href="#2659" id="2659">2659</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2746,7 +2739,7 @@
 
 </span><span class="kw">use </span>ahash::{AHashMap, AHashSet};
 <span class="kw">use </span>log::{debug, trace};
-<span class="kw">use </span>parity_scale_codec::{Decode, Encode};
+<span class="kw">use </span>parity_scale_codec::{Decode, DecodeAll, Encode};
 <span class="kw">use </span>prometheus_endpoint::{register, CounterVec, Opts, PrometheusError, Registry, U64};
 <span class="kw">use </span>rand::seq::SliceRandom;
 <span class="kw">use </span>sc_network::{PeerId, ReputationChange};
@@ -3205,9 +3198,8 @@
 		who: <span class="kw-2">&amp;</span>PeerId,
 		update: NeighborPacket&lt;N&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>View&lt;N&gt;&gt;, Misbehavior&gt; {
-		<span class="kw">let </span>peer = <span class="kw">match </span><span class="self">self</span>.inner.get_mut(who) {
-			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-			<span class="prelude-val">Some</span>(p) =&gt; p,
+		<span class="kw">let </span><span class="prelude-val">Some</span>(peer) = <span class="self">self</span>.inner.get_mut(who) <span class="kw">else </span>{
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 		};
 
 		<span class="kw">let </span>invalid_change = peer.view.set_id &gt; update.set_id ||
@@ -3699,9 +3691,8 @@
 		request: CatchUpRequestMessage,
 		set_state: <span class="kw-2">&amp;</span>environment::SharedVoterSetState&lt;Block&gt;,
 	) -&gt; (<span class="prelude-ty">Option</span>&lt;GossipMessage&lt;Block&gt;&gt;, Action&lt;Block::Hash&gt;) {
-		<span class="kw">let </span>local_view = <span class="kw">match </span><span class="self">self</span>.local_view {
-			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span>(<span class="prelude-val">None</span>, Action::Discard(Misbehavior::OutOfScopeMessage.cost())),
-			<span class="prelude-val">Some</span>(<span class="kw-2">ref </span>view) =&gt; view,
+		<span class="kw">let </span><span class="prelude-val">Some</span>(local_view) = <span class="kw-2">&amp;</span><span class="self">self</span>.local_view <span class="kw">else </span>{
+			<span class="kw">return </span>(<span class="prelude-val">None</span>, Action::Discard(Misbehavior::OutOfScopeMessage.cost()))
 		};
 
 		<span class="kw">if </span>request.set_id != local_view.set_id {
@@ -3834,10 +3825,8 @@
 			<span class="prelude-val">Err</span>(misbehavior) =&gt; (misbehavior.cost(), <span class="prelude-val">None</span>),
 		};
 
-		<span class="kw">let </span>(catch_up, report) = <span class="kw">match </span>update_res {
-			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="self">self</span>.try_catch_up(who),
-			<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
-		};
+		<span class="kw">let </span>(catch_up, report) =
+			<span class="kw">if </span>update_res.is_ok() { <span class="self">self</span>.try_catch_up(who) } <span class="kw">else </span>{ (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) };
 
 		<span class="kw">let </span>neighbor_topics = topics.unwrap_or_default();
 
@@ -4094,7 +4083,7 @@
 		</span><span class="kw">let </span>message_name;
 
 		<span class="kw">let </span>action = {
-			<span class="kw">match </span>GossipMessage::&lt;Block&gt;::decode(<span class="kw-2">&amp;mut </span>data) {
+			<span class="kw">match </span>GossipMessage::&lt;Block&gt;::decode_all(<span class="kw-2">&amp;mut </span>data) {
 				<span class="prelude-val">Ok</span>(GossipMessage::Vote(<span class="kw-2">ref </span>message)) =&gt; {
 					message_name = <span class="prelude-val">Some</span>(<span class="string">&quot;vote&quot;</span>);
 					<span class="self">self</span>.inner.write().validate_round_message(who, message)
@@ -4258,10 +4247,9 @@
 
 			<span class="comment">// if the topic is not something we&#39;re keeping at the moment,
 			// do not send.
-			</span><span class="kw">let </span>(maybe_round, set_id) = <span class="kw">match </span>inner.live_topics.topic_info(topic) {
-				<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="bool-val">false</span>,
-				<span class="prelude-val">Some</span>(x) =&gt; x,
-			};
+			</span><span class="kw">let </span><span class="prelude-val">Some</span>((maybe_round, set_id)) = inner.live_topics.topic_info(topic) <span class="kw">else </span>{
+				<span class="kw">return </span><span class="bool-val">false
+			</span>};
 
 			<span class="kw">if let </span>MessageIntent::Broadcast = intent {
 				<span class="kw">if </span>maybe_round.is_some() {
@@ -4281,12 +4269,11 @@
 			}
 
 			<span class="comment">// global message.
-			</span><span class="kw">let </span>local_view = <span class="kw">match </span>inner.local_view {
-				<span class="prelude-val">Some</span>(<span class="kw-2">ref </span>v) =&gt; v,
-				<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="bool-val">false</span>, <span class="comment">// cannot evaluate until we have a local view.
+			</span><span class="kw">let </span><span class="prelude-val">Some</span>(local_view) = <span class="kw-2">&amp;</span>inner.local_view <span class="kw">else </span>{
+				<span class="kw">return </span><span class="bool-val">false </span><span class="comment">// cannot evaluate until we have a local view.
 			</span>};
 
-			<span class="kw">match </span>GossipMessage::&lt;Block&gt;::decode(<span class="kw-2">&amp;mut </span>data) {
+			<span class="kw">match </span>GossipMessage::&lt;Block&gt;::decode_all(<span class="kw-2">&amp;mut </span>data) {
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
 				<span class="prelude-val">Ok</span>(GossipMessage::Commit(full)) =&gt; {
 					<span class="comment">// we only broadcast commit messages if they&#39;re for the same
@@ -4317,13 +4304,12 @@
 				<span class="prelude-val">Some</span>((<span class="prelude-val">None</span>, <span class="kw">_</span>)) =&gt; {},
 			};
 
-			<span class="kw">let </span>local_view = <span class="kw">match </span>inner.local_view {
-				<span class="prelude-val">Some</span>(<span class="kw-2">ref </span>v) =&gt; v,
-				<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="bool-val">true</span>, <span class="comment">// no local view means we can&#39;t evaluate or hold any topic.
+			<span class="kw">let </span><span class="prelude-val">Some</span>(local_view) = <span class="kw-2">&amp;</span>inner.local_view <span class="kw">else </span>{
+				<span class="kw">return </span><span class="bool-val">true </span><span class="comment">// no local view means we can&#39;t evaluate or hold any topic.
 			</span>};
 
 			<span class="comment">// global messages -- only keep the best commit.
-			</span><span class="kw">match </span>GossipMessage::&lt;Block&gt;::decode(<span class="kw-2">&amp;mut </span>data) {
+			</span><span class="kw">match </span>GossipMessage::&lt;Block&gt;::decode_all(<span class="kw-2">&amp;mut </span>data) {
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">true</span>,
 				<span class="prelude-val">Ok</span>(GossipMessage::Commit(full)) =&gt; <span class="kw">match </span>local_view.last_commit {
 					<span class="prelude-val">Some</span>((number, round, set_id)) =&gt;

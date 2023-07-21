@@ -217,7 +217,7 @@
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
 </span><span class="kw">use </span><span class="kw">crate</span>::keystore::BeefyKeystore;
-<span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>codec::{DecodeAll, Encode};
 <span class="kw">use </span>sp_consensus::Error <span class="kw">as </span>ConsensusError;
 <span class="kw">use </span>sp_consensus_beefy::{
 	crypto::{AuthorityId, Signature},
@@ -243,7 +243,7 @@
 	target_number: NumberFor&lt;Block&gt;,
 	validator_set: <span class="kw-2">&amp;</span>ValidatorSet&lt;AuthorityId&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;BeefyVersionedFinalityProof&lt;Block&gt;, (ConsensusError, u32)&gt; {
-	<span class="kw">let </span>proof = &lt;BeefyVersionedFinalityProof&lt;Block&gt;&gt;::decode(<span class="kw-2">&amp;mut &amp;*</span>encoded)
+	<span class="kw">let </span>proof = &lt;BeefyVersionedFinalityProof&lt;Block&gt;&gt;::decode_all(<span class="kw-2">&amp;mut &amp;*</span>encoded)
 		.map_err(|<span class="kw">_</span>| (ConsensusError::InvalidJustification, <span class="number">0</span>))<span class="question-mark">?</span>;
 	verify_with_validator_set::&lt;Block&gt;(target_number, validator_set, <span class="kw-2">&amp;</span>proof).map(|<span class="kw">_</span>| proof)
 }

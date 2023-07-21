@@ -1149,7 +1149,7 @@
 	voter_set::VoterSet,
 	Message::{Precommit, Prevote, PrimaryPropose},
 };
-<span class="kw">use </span>parity_scale_codec::{Decode, Encode};
+<span class="kw">use </span>parity_scale_codec::{Decode, DecodeAll, Encode};
 <span class="kw">use </span>sc_network::{NetworkBlock, NetworkSyncForkRequest, ReputationChange};
 <span class="kw">use </span>sc_network_gossip::{GossipEngine, Network <span class="kw">as </span>GossipNetwork};
 <span class="kw">use </span>sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_DEBUG, CONSENSUS_INFO};
@@ -1456,7 +1456,7 @@
 		<span class="kw">let </span>telemetry = <span class="self">self</span>.telemetry.clone();
 		<span class="kw">let </span>incoming =
 			<span class="self">self</span>.gossip_engine.lock().messages_for(topic).filter_map(<span class="kw">move </span>|notification| {
-				<span class="kw">let </span>decoded = GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>notification.message[..]);
+				<span class="kw">let </span>decoded = GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut &amp;</span>notification.message[..]);
 
 				<span class="kw">match </span>decoded {
 					<span class="prelude-val">Err</span>(<span class="kw-2">ref </span>e) =&gt; {
@@ -1755,7 +1755,7 @@
 		.messages_for(topic)
 		.filter_map(|notification| {
 			<span class="comment">// this could be optimized by decoding piecewise.
-			</span><span class="kw">let </span>decoded = GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>notification.message[..]);
+			</span><span class="kw">let </span>decoded = GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut &amp;</span>notification.message[..]);
 			<span class="kw">if let </span><span class="prelude-val">Err</span>(<span class="kw-2">ref </span>e) = decoded {
 				<span class="macro">trace!</span>(
 					target: LOG_TARGET,

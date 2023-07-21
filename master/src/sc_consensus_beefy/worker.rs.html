@@ -1690,7 +1690,7 @@
 	round::{Rounds, VoteImportResult},
 	BeefyVoterLinks, LOG_TARGET,
 };
-<span class="kw">use </span>codec::{Codec, Decode, Encode};
+<span class="kw">use </span>codec::{Codec, Decode, DecodeAll, Encode};
 <span class="kw">use </span>futures::{stream::Fuse, FutureExt, StreamExt};
 <span class="kw">use </span>log::{debug, error, info, log_enabled, trace, warn};
 <span class="kw">use </span>sc_client_api::{Backend, FinalityNotification, FinalityNotifications, HeaderBackend};
@@ -2470,7 +2470,7 @@
 			<span class="self">self</span>.gossip_engine
 				.messages_for(votes_topic::&lt;B&gt;())
 				.filter_map(|notification| <span class="kw">async move </span>{
-					<span class="kw">let </span>vote = GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>notification.message[..])
+					<span class="kw">let </span>vote = GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut &amp;</span>notification.message[..])
 						.ok()
 						.and_then(|message| message.unwrap_vote());
 					<span class="macro">trace!</span>(target: LOG_TARGET, <span class="string">&quot;🥩 Got vote message: {:?}&quot;</span>, vote);
@@ -2482,7 +2482,7 @@
 			<span class="self">self</span>.gossip_engine
 				.messages_for(proofs_topic::&lt;B&gt;())
 				.filter_map(|notification| <span class="kw">async move </span>{
-					<span class="kw">let </span>proof = GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>notification.message[..])
+					<span class="kw">let </span>proof = GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut &amp;</span>notification.message[..])
 						.ok()
 						.and_then(|message| message.unwrap_finality_proof());
 					<span class="macro">trace!</span>(target: LOG_TARGET, <span class="string">&quot;🥩 Got gossip proof message: {:?}&quot;</span>, proof);

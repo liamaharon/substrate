@@ -442,6 +442,7 @@
 <a href="#442" id="442">442</a>
 <a href="#443" id="443">443</a>
 <a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright Parity Technologies (UK) Ltd.
 // This file is part of Substrate.
 
@@ -460,7 +461,7 @@
 
 </span><span class="doccomment">//! Utilities for generating and verifying GRANDPA warp sync proofs.
 
-</span><span class="kw">use </span>sp_runtime::codec::{<span class="self">self</span>, Decode, Encode};
+</span><span class="kw">use </span>parity_scale_codec::{Decode, DecodeAll, Encode};
 
 <span class="kw">use crate</span>::{
 	best_justification, find_scheduled_change, AuthoritySetChanges, AuthoritySetHardFork,
@@ -482,7 +483,7 @@
 </span><span class="kw">pub enum </span>Error {
 	<span class="doccomment">/// Decoding error.
 	</span><span class="attr">#[error(<span class="string">&quot;Failed to decode block hash: {0}.&quot;</span>)]
-	</span>DecodeScale(<span class="attr">#[from] </span>codec::Error),
+	</span>DecodeScale(<span class="attr">#[from] </span>parity_scale_codec::Error),
 	<span class="doccomment">/// Client backend error.
 	</span><span class="attr">#[error(<span class="string">&quot;{0}&quot;</span>)]
 	</span>Client(<span class="attr">#[from] </span>sp_blockchain::Error),
@@ -581,7 +582,7 @@
 				</span>.and_then(|just| just.into_justification(GRANDPA_ENGINE_ID))
 				.ok_or_else(|| Error::MissingData)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>justification = GrandpaJustification::&lt;Block&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>justification[..])<span class="question-mark">?</span>;
+			<span class="kw">let </span>justification = GrandpaJustification::&lt;Block&gt;::decode_all(<span class="kw-2">&amp;mut &amp;</span>justification[..])<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>proof = WarpSyncFragment { header: header.clone(), justification };
 			<span class="kw">let </span>proof_size = proof.encoded_size();
@@ -735,7 +736,7 @@
 		authorities: AuthorityList,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;VerificationResult&lt;Block&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt; {
 		<span class="kw">let </span>EncodedProof(proof) = proof;
-		<span class="kw">let </span>proof = WarpSyncProof::&lt;Block&gt;::decode(<span class="kw-2">&amp;mut </span>proof.as_slice())
+		<span class="kw">let </span>proof = WarpSyncProof::&lt;Block&gt;::decode_all(<span class="kw-2">&amp;mut </span>proof.as_slice())
 			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Proof decoding error: {:?}&quot;</span>, e))<span class="question-mark">?</span>;
 		<span class="kw">let </span>last_header = proof
 			.proofs
@@ -762,8 +763,9 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use super</span>::{codec::Encode, WarpSyncProof};
+	<span class="kw">use </span><span class="kw">super</span>::WarpSyncProof;
 	<span class="kw">use crate</span>::{AuthoritySetChanges, GrandpaJustification};
+	<span class="kw">use </span>parity_scale_codec::Encode;
 	<span class="kw">use </span>rand::prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;

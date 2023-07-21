@@ -227,7 +227,7 @@
 		//
 		// Note: In case poll_unpin is called after the resetted delay fires again, this
 		// will drop one tick. Deemed as very unlikely and also not critical.
-		</span><span class="kw">while let </span>Poll::Ready(()) = this.delay.poll_unpin(cx) {}
+		</span><span class="kw">while </span>this.delay.poll_unpin(cx).is_ready() {}
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw-2">ref </span>to, <span class="kw-2">ref </span>packet)) = this.last {
 			<span class="kw">return </span>Poll::Ready(<span class="prelude-val">Some</span>((to.clone(), GossipMessage::&lt;B&gt;::from(packet.clone()))))

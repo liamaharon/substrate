@@ -833,7 +833,7 @@
 <span class="kw">use </span>sp_core::hashing::twox_64;
 <span class="kw">use </span>sp_runtime::traits::{Block, Hash, Header, NumberFor};
 
-<span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>codec::{Decode, DecodeAll, Encode};
 <span class="kw">use </span>log::{debug, trace};
 <span class="kw">use </span>parking_lot::{Mutex, RwLock};
 <span class="kw">use </span>sc_utils::mpsc::{tracing_unbounded, TracingUnboundedReceiver, TracingUnboundedSender};
@@ -1184,7 +1184,7 @@
 		<span class="kw-2">mut </span>data: <span class="kw-2">&amp;</span>[u8],
 	) -&gt; ValidationResult&lt;B::Hash&gt; {
 		<span class="kw">let </span>raw = data;
-		<span class="kw">let </span>action = <span class="kw">match </span>GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut </span>data) {
+		<span class="kw">let </span>action = <span class="kw">match </span>GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut </span>data) {
 			<span class="prelude-val">Ok</span>(GossipMessage::Vote(msg)) =&gt; <span class="self">self</span>.validate_vote(msg, sender, raw),
 			<span class="prelude-val">Ok</span>(GossipMessage::FinalityProof(proof)) =&gt; <span class="self">self</span>.validate_finality_proof(proof, sender),
 			<span class="prelude-val">Err</span>(e) =&gt; {
@@ -1212,7 +1212,7 @@
 
 	<span class="kw">fn </span>message_expired&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="self">self</span>) -&gt; Box&lt;<span class="kw">dyn </span>FnMut(B::Hash, <span class="kw-2">&amp;</span>[u8]) -&gt; bool + <span class="lifetime">&#39;a</span>&gt; {
 		<span class="kw">let </span>filter = <span class="self">self</span>.gossip_filter.read();
-		Box::new(<span class="kw">move </span>|_topic, <span class="kw-2">mut </span>data| <span class="kw">match </span>GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut </span>data) {
+		Box::new(<span class="kw">move </span>|_topic, <span class="kw-2">mut </span>data| <span class="kw">match </span>GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut </span>data) {
 			<span class="prelude-val">Ok</span>(GossipMessage::Vote(msg)) =&gt; {
 				<span class="kw">let </span>round = msg.commitment.block_number;
 				<span class="kw">let </span>set_id = msg.commitment.validator_set_id;
@@ -1256,7 +1256,7 @@
 				<span class="kw">return </span>do_rebroadcast
 			}
 
-			<span class="kw">match </span>GossipMessage::&lt;B&gt;::decode(<span class="kw-2">&amp;mut </span>data) {
+			<span class="kw">match </span>GossipMessage::&lt;B&gt;::decode_all(<span class="kw-2">&amp;mut </span>data) {
 				<span class="prelude-val">Ok</span>(GossipMessage::Vote(msg)) =&gt; {
 					<span class="kw">let </span>round = msg.commitment.block_number;
 					<span class="kw">let </span>set_id = msg.commitment.validator_set_id;
