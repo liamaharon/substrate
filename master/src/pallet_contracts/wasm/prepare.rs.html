@@ -806,6 +806,22 @@
 <a href="#806" id="806">806</a>
 <a href="#807" id="807">807</a>
 <a href="#808" id="808">808</a>
+<a href="#809" id="809">809</a>
+<a href="#810" id="810">810</a>
+<a href="#811" id="811">811</a>
+<a href="#812" id="812">812</a>
+<a href="#813" id="813">813</a>
+<a href="#814" id="814">814</a>
+<a href="#815" id="815">815</a>
+<a href="#816" id="816">816</a>
+<a href="#817" id="817">817</a>
+<a href="#818" id="818">818</a>
+<a href="#819" id="819">819</a>
+<a href="#820" id="820">820</a>
+<a href="#821" id="821">821</a>
+<a href="#822" id="822">822</a>
+<a href="#823" id="823">823</a>
+<a href="#824" id="824">824</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -872,7 +888,7 @@
 		config
 			.wasm_multi_value(<span class="bool-val">false</span>)
 			.wasm_mutable_global(<span class="bool-val">false</span>)
-			.wasm_sign_extension(<span class="bool-val">false</span>)
+			.wasm_sign_extension(<span class="bool-val">true</span>)
 			.wasm_bulk_memory(<span class="bool-val">false</span>)
 			.wasm_reference_types(<span class="bool-val">false</span>)
 			.wasm_tail_call(<span class="bool-val">false</span>)
@@ -1477,6 +1493,22 @@
 				(import &quot;env&quot; &quot;memory&quot; (memory 1 1))
 				(func (export &quot;call&quot;))
 				(func (export &quot;deploy&quot;))
+			)
+			&quot;#</span>,
+			<span class="prelude-val">Ok</span>(<span class="kw">_</span>)
+		);
+
+		<span class="macro">prepare_test!</span>(
+			signed_extension_works,
+			<span class="string">r#&quot;
+			(module
+				(import &quot;env&quot; &quot;memory&quot; (memory 1 1))
+				(func (export &quot;deploy&quot;))
+				(func (export &quot;call&quot;))
+				(func (param i32) (result i32)
+					local.get 0
+					i32.extend8_s
+				)
 			)
 			&quot;#</span>,
 			<span class="prelude-val">Ok</span>(<span class="kw">_</span>)
