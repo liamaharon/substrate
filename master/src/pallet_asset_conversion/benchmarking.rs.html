@@ -327,6 +327,15 @@
 <a href="#327" id="327">327</a>
 <a href="#328" id="328">328</a>
 <a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -384,7 +393,9 @@
 {
 	<span class="kw">let </span>caller: T::AccountId = whitelisted_caller();
 	<span class="kw">let </span>caller_lookup = T::Lookup::unlookup(caller.clone());
-	<span class="kw">if let </span><span class="prelude-val">Ok</span>(asset_id) = T::MultiAssetIdConverter::try_convert(asset) {
+	<span class="kw">if let </span>MultiAssetIdConversionResult::Converted(asset_id) =
+		T::MultiAssetIdConverter::try_convert(asset)
+	{
 		T::Currency::set_balance(<span class="kw-2">&amp;</span>caller, BalanceOf::&lt;T&gt;::max_value().div(<span class="number">1000u32</span>.into()));
 		<span class="macro">assert_ok!</span>(T::Assets::create(asset_id.clone(), caller.clone(), <span class="bool-val">true</span>, <span class="number">1</span>.into()));
 		<span class="macro">assert_ok!</span>(T::Assets::mint_into(asset_id, <span class="kw-2">&amp;</span>caller, INITIAL_ASSET_BALANCE.into()));
@@ -435,18 +446,23 @@
 
 	create_pool {
 		<span class="kw">let </span>asset1 = T::MultiAssetIdConverter::get_native();
-		<span class="kw">let </span>asset2 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">0_u32</span>));
+		<span class="kw">let </span>asset2 = T::BenchmarkHelper::multiasset_id(<span class="number">0</span>);
 		<span class="kw">let </span>(caller, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset2);
 	}: <span class="kw">_</span>(SystemOrigin::Signed(caller.clone()), asset1.clone(), asset2.clone())
 	verify {
 		<span class="kw">let </span>lp_token = get_lp_token_id::&lt;T&gt;();
 		<span class="kw">let </span>pool_id = (asset1.clone(), asset2.clone());
-		assert_last_event::&lt;T&gt;(Event::PoolCreated { creator: caller.clone(), pool_id, lp_token }.into());
+		assert_last_event::&lt;T&gt;(Event::PoolCreated {
+			creator: caller.clone(),
+			pool_account: AssetConversion::&lt;T&gt;::get_pool_account(<span class="kw-2">&amp;</span>pool_id),
+			pool_id,
+			lp_token,
+		}.into());
 	}
 
 	add_liquidity {
 		<span class="kw">let </span>asset1 = T::MultiAssetIdConverter::get_native();
-		<span class="kw">let </span>asset2 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">0</span>));
+		<span class="kw">let </span>asset2 = T::BenchmarkHelper::multiasset_id(<span class="number">0</span>);
 		<span class="kw">let </span>(lp_token, caller, <span class="kw">_</span>) = create_asset_and_pool::&lt;T&gt;(<span class="kw-2">&amp;</span>asset1, <span class="kw-2">&amp;</span>asset2);
 		<span class="kw">let </span>ed: u128 = T::Currency::minimum_balance().into();
 		<span class="kw">let </span>add_amount = <span class="number">1000 </span>+ ed;
@@ -470,7 +486,7 @@
 
 	remove_liquidity {
 		<span class="kw">let </span>asset1 = T::MultiAssetIdConverter::get_native();
-		<span class="kw">let </span>asset2 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">0</span>));
+		<span class="kw">let </span>asset2 = T::BenchmarkHelper::multiasset_id(<span class="number">0</span>);
 		<span class="kw">let </span>(lp_token, caller, <span class="kw">_</span>) = create_asset_and_pool::&lt;T&gt;(<span class="kw-2">&amp;</span>asset1, <span class="kw-2">&amp;</span>asset2);
 		<span class="kw">let </span>ed: u128 = T::Currency::minimum_balance().into();
 		<span class="kw">let </span>add_amount = <span class="number">100 </span>* ed;
@@ -499,8 +515,8 @@
 
 	swap_exact_tokens_for_tokens {
 		<span class="kw">let </span>native = T::MultiAssetIdConverter::get_native();
-		<span class="kw">let </span>asset1 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">1</span>));
-		<span class="kw">let </span>asset2 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">2</span>));
+		<span class="kw">let </span>asset1 = T::BenchmarkHelper::multiasset_id(<span class="number">1</span>);
+		<span class="kw">let </span>asset2 = T::BenchmarkHelper::multiasset_id(<span class="number">2</span>);
 		<span class="kw">let </span>(<span class="kw">_</span>, caller, <span class="kw">_</span>) = create_asset_and_pool::&lt;T&gt;(<span class="kw-2">&amp;</span>native, <span class="kw-2">&amp;</span>asset1);
 		<span class="kw">let </span>(<span class="kw">_</span>, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset2);
 		<span class="kw">let </span>ed: u128 = T::Currency::minimum_balance().into();
@@ -511,6 +527,87 @@
 			asset1.clone(),
 			(<span class="number">100 </span>* ed).into(),
 			<span class="number">200</span>.into(),
+			<span class="number">0</span>.into(),
+			<span class="number">0</span>.into(),
+			caller.clone(),
+		)<span class="question-mark">?</span>;
+
+		<span class="kw">let </span>path;
+		<span class="kw">let </span>swap_amount;
+		<span class="comment">// if we only allow the native-asset pools, then the worst case scenario would be to swap
+		// asset1-native-asset2
+		</span><span class="kw">if </span>!T::AllowMultiAssetPools::get() {
+			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), native.clone(), asset2.clone())<span class="question-mark">?</span>;
+			AssetConversion::&lt;T&gt;::add_liquidity(
+				SystemOrigin::Signed(caller.clone()).into(),
+				native.clone(),
+				asset2.clone(),
+				(<span class="number">500 </span>* ed).into(),
+				<span class="number">1000</span>.into(),
+				<span class="number">0</span>.into(),
+				<span class="number">0</span>.into(),
+				caller.clone(),
+			)<span class="question-mark">?</span>;
+			path = <span class="macro">vec!</span>[asset1.clone(), native.clone(), asset2.clone()];
+			swap_amount = <span class="number">100</span>.into();
+		} <span class="kw">else </span>{
+			<span class="kw">let </span>asset3 = T::BenchmarkHelper::multiasset_id(<span class="number">3</span>);
+			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), asset1.clone(), asset2.clone())<span class="question-mark">?</span>;
+			<span class="kw">let </span>(<span class="kw">_</span>, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset3);
+			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), asset2.clone(), asset3.clone())<span class="question-mark">?</span>;
+
+			AssetConversion::&lt;T&gt;::add_liquidity(
+				SystemOrigin::Signed(caller.clone()).into(),
+				asset1.clone(),
+				asset2.clone(),
+				<span class="number">200</span>.into(),
+				<span class="number">2000</span>.into(),
+				<span class="number">0</span>.into(),
+				<span class="number">0</span>.into(),
+				caller.clone(),
+			)<span class="question-mark">?</span>;
+			AssetConversion::&lt;T&gt;::add_liquidity(
+				SystemOrigin::Signed(caller.clone()).into(),
+				asset2.clone(),
+				asset3.clone(),
+				<span class="number">2000</span>.into(),
+				<span class="number">2000</span>.into(),
+				<span class="number">0</span>.into(),
+				<span class="number">0</span>.into(),
+				caller.clone(),
+			)<span class="question-mark">?</span>;
+			path = <span class="macro">vec!</span>[native.clone(), asset1.clone(), asset2.clone(), asset3.clone()];
+			swap_amount = ed.into();
+		}
+
+		<span class="kw">let </span>path: BoundedVec&lt;<span class="kw">_</span>, T::MaxSwapPathLength&gt; = BoundedVec::try_from(path).unwrap();
+		<span class="kw">let </span>native_balance = T::Currency::balance(<span class="kw-2">&amp;</span>caller);
+		<span class="kw">let </span>asset1_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">1</span>), <span class="kw-2">&amp;</span>caller);
+	}: <span class="kw">_</span>(SystemOrigin::Signed(caller.clone()), path, swap_amount, <span class="number">1</span>.into(), caller.clone(), <span class="bool-val">false</span>)
+	verify {
+		<span class="kw">if </span>!T::AllowMultiAssetPools::get() {
+			<span class="kw">let </span>new_asset1_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">1</span>), <span class="kw-2">&amp;</span>caller);
+			<span class="macro">assert_eq!</span>(new_asset1_balance, asset1_balance - <span class="number">100</span>.into());
+		} <span class="kw">else </span>{
+			<span class="kw">let </span>new_native_balance = T::Currency::balance(<span class="kw-2">&amp;</span>caller);
+			<span class="macro">assert_eq!</span>(new_native_balance, native_balance - ed.into());
+		}
+	}
+
+	swap_tokens_for_exact_tokens {
+		<span class="kw">let </span>native = T::MultiAssetIdConverter::get_native();
+		<span class="kw">let </span>asset1 = T::BenchmarkHelper::multiasset_id(<span class="number">1</span>);
+		<span class="kw">let </span>asset2 = T::BenchmarkHelper::multiasset_id(<span class="number">2</span>);
+		<span class="kw">let </span>(<span class="kw">_</span>, caller, <span class="kw">_</span>) = create_asset_and_pool::&lt;T&gt;(<span class="kw-2">&amp;</span>native, <span class="kw-2">&amp;</span>asset1);
+		<span class="kw">let </span>(<span class="kw">_</span>, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset2);
+		<span class="kw">let </span>ed: u128 = T::Currency::minimum_balance().into();
+
+		AssetConversion::&lt;T&gt;::add_liquidity(
+			SystemOrigin::Signed(caller.clone()).into(),
+			native.clone(),
+			asset1.clone(),
+			(<span class="number">1000 </span>* ed).into(),
+			<span class="number">500</span>.into(),
 			<span class="number">0</span>.into(),
 			<span class="number">0</span>.into(),
 			caller.clone(),
@@ -533,8 +630,8 @@
 			)<span class="question-mark">?</span>;
 			path = <span class="macro">vec!</span>[asset1.clone(), native.clone(), asset2.clone()];
 		} <span class="kw">else </span>{
-			<span class="kw">let </span>asset3 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">3</span>));
 			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), asset1.clone(), asset2.clone())<span class="question-mark">?</span>;
+			<span class="kw">let </span>asset3 = T::BenchmarkHelper::multiasset_id(<span class="number">3</span>);
 			<span class="kw">let </span>(<span class="kw">_</span>, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset3);
 			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), asset2.clone(), asset3.clone())<span class="question-mark">?</span>;
 
@@ -542,86 +639,7 @@
 				SystemOrigin::Signed(caller.clone()).into(),
 				asset1.clone(),
 				asset2.clone(),
-				<span class="number">200</span>.into(),
 				<span class="number">2000</span>.into(),
-				<span class="number">0</span>.into(),
-				<span class="number">0</span>.into(),
-				caller.clone(),
-			)<span class="question-mark">?</span>;
-			AssetConversion::&lt;T&gt;::add_liquidity(
-				SystemOrigin::Signed(caller.clone()).into(),
-				asset2.clone(),
-				asset3.clone(),
-				<span class="number">2000</span>.into(),
-				<span class="number">2000</span>.into(),
-				<span class="number">0</span>.into(),
-				<span class="number">0</span>.into(),
-				caller.clone(),
-			)<span class="question-mark">?</span>;
-			path = <span class="macro">vec!</span>[native.clone(), asset1.clone(), asset2.clone(), asset3.clone()];
-		}
-
-		<span class="kw">let </span>path: BoundedVec&lt;<span class="kw">_</span>, T::MaxSwapPathLength&gt; = BoundedVec::try_from(path).unwrap();
-		<span class="kw">let </span>native_balance = T::Currency::balance(<span class="kw-2">&amp;</span>caller);
-		<span class="kw">let </span>asset1_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">1</span>), <span class="kw-2">&amp;</span>caller);
-	}: <span class="kw">_</span>(SystemOrigin::Signed(caller.clone()), path, ed.into(), <span class="number">1</span>.into(), caller.clone(), <span class="bool-val">false</span>)
-	verify {
-		<span class="kw">if </span>!T::AllowMultiAssetPools::get() {
-			<span class="kw">let </span>new_asset1_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">1</span>), <span class="kw-2">&amp;</span>caller);
-			<span class="macro">assert_eq!</span>(new_asset1_balance, asset1_balance - <span class="number">100</span>.into());
-		} <span class="kw">else </span>{
-			<span class="kw">let </span>new_native_balance = T::Currency::balance(<span class="kw-2">&amp;</span>caller);
-			<span class="macro">assert_eq!</span>(new_native_balance, native_balance - ed.into());
-		}
-	}
-
-	swap_tokens_for_exact_tokens {
-		<span class="kw">let </span>native = T::MultiAssetIdConverter::get_native();
-		<span class="kw">let </span>asset1 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">1</span>));
-		<span class="kw">let </span>asset2 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">2</span>));
-		<span class="kw">let </span>(<span class="kw">_</span>, caller, <span class="kw">_</span>) = create_asset_and_pool::&lt;T&gt;(<span class="kw-2">&amp;</span>native, <span class="kw-2">&amp;</span>asset1);
-		<span class="kw">let </span>(<span class="kw">_</span>, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset2);
-		<span class="kw">let </span>ed: u128 = T::Currency::minimum_balance().into();
-		<span class="kw">let </span>add_native = <span class="number">1000 </span>+ ed;
-
-		AssetConversion::&lt;T&gt;::add_liquidity(
-			SystemOrigin::Signed(caller.clone()).into(),
-			native.clone(),
-			asset1.clone(),
-			add_native.into(),
-			<span class="number">200</span>.into(),
-			<span class="number">0</span>.into(),
-			<span class="number">0</span>.into(),
-			caller.clone(),
-		)<span class="question-mark">?</span>;
-
-		<span class="kw">let </span>path;
-		<span class="comment">// if we only allow the native-asset pools, then the worst case scenario would be to swap
-		// asset1-native-asset2
-		</span><span class="kw">if </span>!T::AllowMultiAssetPools::get() {
-			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), native.clone(), asset2.clone())<span class="question-mark">?</span>;
-			AssetConversion::&lt;T&gt;::add_liquidity(
-				SystemOrigin::Signed(caller.clone()).into(),
-				native.clone(),
-				asset2.clone(),
-				(<span class="number">500 </span>+ ed).into(),
-				<span class="number">1000</span>.into(),
-				<span class="number">0</span>.into(),
-				<span class="number">0</span>.into(),
-				caller.clone(),
-			)<span class="question-mark">?</span>;
-			path = <span class="macro">vec!</span>[asset1.clone(), native.clone(), asset2.clone()];
-		} <span class="kw">else </span>{
-			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), asset1.clone(), asset2.clone())<span class="question-mark">?</span>;
-			<span class="kw">let </span>asset3 = T::MultiAssetIdConverter::into_multiasset_id(<span class="kw-2">&amp;</span>T::BenchmarkHelper::asset_id(<span class="number">3</span>));
-			<span class="kw">let </span>(<span class="kw">_</span>, <span class="kw">_</span>) = create_asset::&lt;T&gt;(<span class="kw-2">&amp;</span>asset3);
-			AssetConversion::&lt;T&gt;::create_pool(SystemOrigin::Signed(caller.clone()).into(), asset2.clone(), asset3.clone())<span class="question-mark">?</span>;
-
-			AssetConversion::&lt;T&gt;::add_liquidity(
-				SystemOrigin::Signed(caller.clone()).into(),
-				asset1.clone(),
-				asset2.clone(),
-				<span class="number">200</span>.into(),
 				<span class="number">2000</span>.into(),
 				<span class="number">0</span>.into(),
 				<span class="number">0</span>.into(),
@@ -643,7 +661,7 @@
 		<span class="kw">let </span>path: BoundedVec&lt;<span class="kw">_</span>, T::MaxSwapPathLength&gt; = BoundedVec::try_from(path).unwrap();
 		<span class="kw">let </span>asset2_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">2</span>), <span class="kw-2">&amp;</span>caller);
 		<span class="kw">let </span>asset3_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">3</span>), <span class="kw-2">&amp;</span>caller);
-	}: <span class="kw">_</span>(SystemOrigin::Signed(caller.clone()), path.clone(), <span class="number">100</span>.into(), add_native.into(), caller.clone(), <span class="bool-val">false</span>)
+	}: <span class="kw">_</span>(SystemOrigin::Signed(caller.clone()), path.clone(), <span class="number">100</span>.into(), (<span class="number">1000 </span>* ed).into(), caller.clone(), <span class="bool-val">false</span>)
 	verify {
 		<span class="kw">if </span>!T::AllowMultiAssetPools::get() {
 			<span class="kw">let </span>new_asset2_balance = T::Assets::balance(T::BenchmarkHelper::asset_id(<span class="number">2</span>), <span class="kw-2">&amp;</span>caller);

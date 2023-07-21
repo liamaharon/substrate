@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["NativeOrAssetId"],"macro":["_runtime_benchmarks_enabled"],"mod":["pallet","weights"],"struct":["NativeOrAssetIdConverter","PoolInfo"],"trait":["AssetConversionApi","BenchmarkHelper","MultiAssetIdConverter","Swap"]};
+window.SIDEBAR_ITEMS = {"enum":["MultiAssetIdConversionResult","NativeOrAssetId"],"macro":["_runtime_benchmarks_enabled"],"mod":["pallet","weights"],"struct":["NativeOrAssetIdConverter","PoolInfo"],"trait":["AssetConversionApi","BenchmarkHelper","MultiAssetIdConverter","Swap"]};

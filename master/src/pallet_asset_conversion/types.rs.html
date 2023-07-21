@@ -169,6 +169,19 @@
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2022 Parity Technologies (UK) Ltd.
@@ -187,11 +200,10 @@
 // limitations under the License.
 
 </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
-<span class="kw">use </span>core::marker::PhantomData;
-<span class="kw">use </span>sp_std::cmp::Ordering;
 
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_std::{cmp::Ordering, marker::PhantomData};
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PoolIdOf&lt;T&gt; = (&lt;T <span class="kw">as </span>Config&gt;::MultiAssetId, &lt;T <span class="kw">as </span>Config&gt;::MultiAssetId);
 
@@ -211,96 +223,43 @@
 	</span><span class="kw">fn </span>is_native(asset: <span class="kw-2">&amp;</span>MultiAssetId) -&gt; bool;
 
 	<span class="doccomment">/// If it&#39;s not native, returns the AssetId for the given MultiAssetId.
-	</span><span class="kw">fn </span>try_convert(asset: <span class="kw-2">&amp;</span>MultiAssetId) -&gt; <span class="prelude-ty">Result</span>&lt;AssetId, ()&gt;;
+	</span><span class="kw">fn </span>try_convert(asset: <span class="kw-2">&amp;</span>MultiAssetId) -&gt; MultiAssetIdConversionResult&lt;MultiAssetId, AssetId&gt;;
+}
 
-	<span class="doccomment">/// Wraps an AssetId as a MultiAssetId.
-	</span><span class="kw">fn </span>into_multiasset_id(asset: <span class="kw-2">&amp;</span>AssetId) -&gt; MultiAssetId;
+<span class="doccomment">/// Result of `MultiAssetIdConverter::try_convert`.
+</span><span class="attr">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(PartialEq, Debug))]
+</span><span class="kw">pub enum </span>MultiAssetIdConversionResult&lt;MultiAssetId, AssetId&gt; {
+	<span class="doccomment">/// Input asset is successfully converted. Means that converted asset is supported.
+	</span>Converted(AssetId),
+	<span class="doccomment">/// Means that input asset is the chain&#39;s native asset, if it has one, so no conversion (see
+	/// `MultiAssetIdConverter::get_native`).
+	</span>Native,
+	<span class="doccomment">/// Means input asset is not supported for pool.
+	</span>Unsupported(MultiAssetId),
 }
 
 <span class="doccomment">/// Benchmark Helper
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-</span><span class="kw">pub trait </span>BenchmarkHelper&lt;AssetId&gt; {
-	<span class="doccomment">/// Returns an asset id from a given integer.
+</span><span class="kw">pub trait </span>BenchmarkHelper&lt;AssetId, MultiAssetId&gt; {
+	<span class="doccomment">/// Returns an `AssetId` from a given integer.
 	</span><span class="kw">fn </span>asset_id(asset_id: u32) -&gt; AssetId;
+
+	<span class="doccomment">/// Returns a `MultiAssetId` from a given integer.
+	</span><span class="kw">fn </span>multiasset_id(asset_id: u32) -&gt; MultiAssetId;
 }
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-</span><span class="kw">impl</span>&lt;AssetId&gt; BenchmarkHelper&lt;AssetId&gt; <span class="kw">for </span>()
+</span><span class="kw">impl</span>&lt;AssetId, MultiAssetId&gt; BenchmarkHelper&lt;AssetId, MultiAssetId&gt; <span class="kw">for </span>()
 <span class="kw">where
 	</span>AssetId: From&lt;u32&gt;,
+	MultiAssetId: From&lt;u32&gt;,
 {
 	<span class="kw">fn </span>asset_id(asset_id: u32) -&gt; AssetId {
 		asset_id.into()
 	}
-}
 
-<span class="doccomment">/// An implementation of MultiAssetId that can be either Native or an asset.
-</span><span class="attr">#[derive(Decode, Encode, Default, MaxEncodedLen, TypeInfo, Clone, Copy, Debug)]
-</span><span class="kw">pub enum </span>NativeOrAssetId&lt;AssetId&gt;
-<span class="kw">where
-	</span>AssetId: Ord,
-{
-	<span class="doccomment">/// Native asset. For example, on statemint this would be dot.
-	</span><span class="attr">#[default]
-	</span>Native,
-	<span class="doccomment">/// A non-native asset id.
-	</span>Asset(AssetId),
-}
-
-<span class="kw">impl</span>&lt;AssetId: Ord&gt; From&lt;AssetId&gt; <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
-	<span class="kw">fn </span>from(asset: AssetId) -&gt; <span class="self">Self </span>{
-		<span class="self">Self</span>::Asset(asset)
-	}
-}
-
-<span class="kw">impl</span>&lt;AssetId: Ord&gt; Ord <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
-	<span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Ordering {
-		<span class="kw">match </span>(<span class="self">self</span>, other) {
-			(<span class="self">Self</span>::Native, <span class="self">Self</span>::Native) =&gt; Ordering::Equal,
-			(<span class="self">Self</span>::Native, <span class="self">Self</span>::Asset(<span class="kw">_</span>)) =&gt; Ordering::Less,
-			(<span class="self">Self</span>::Asset(<span class="kw">_</span>), <span class="self">Self</span>::Native) =&gt; Ordering::Greater,
-			(<span class="self">Self</span>::Asset(id1), <span class="self">Self</span>::Asset(id2)) =&gt; &lt;AssetId <span class="kw">as </span>Ord&gt;::cmp(id1, id2),
-		}
-	}
-}
-<span class="kw">impl</span>&lt;AssetId: Ord&gt; PartialOrd <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
-	<span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Ordering&gt; {
-		<span class="prelude-val">Some</span>(&lt;<span class="self">Self </span><span class="kw">as </span>Ord&gt;::cmp(<span class="self">self</span>, other))
-	}
-}
-<span class="kw">impl</span>&lt;AssetId: Ord&gt; PartialEq <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
-	<span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
-		<span class="self">self</span>.cmp(other) == Ordering::Equal
-	}
-}
-<span class="kw">impl</span>&lt;AssetId: Ord&gt; Eq <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {}
-
-<span class="doccomment">/// Converts between a MultiAssetId and an AssetId
-/// (or the native currency).
-</span><span class="kw">pub struct </span>NativeOrAssetIdConverter&lt;AssetId&gt; {
-	_phantom: PhantomData&lt;AssetId&gt;,
-}
-
-<span class="kw">impl</span>&lt;AssetId: Ord + Clone&gt; MultiAssetIdConverter&lt;NativeOrAssetId&lt;AssetId&gt;, AssetId&gt;
-	<span class="kw">for </span>NativeOrAssetIdConverter&lt;AssetId&gt;
-{
-	<span class="kw">fn </span>get_native() -&gt; NativeOrAssetId&lt;AssetId&gt; {
-		NativeOrAssetId::Native
-	}
-
-	<span class="kw">fn </span>is_native(asset: <span class="kw-2">&amp;</span>NativeOrAssetId&lt;AssetId&gt;) -&gt; bool {
-		<span class="kw-2">*</span>asset == <span class="self">Self</span>::get_native()
-	}
-
-	<span class="kw">fn </span>try_convert(asset: <span class="kw-2">&amp;</span>NativeOrAssetId&lt;AssetId&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;AssetId, ()&gt; {
-		<span class="kw">match </span>asset {
-			NativeOrAssetId::Asset(asset) =&gt; <span class="prelude-val">Ok</span>(asset.clone()),
-			NativeOrAssetId::Native =&gt; <span class="prelude-val">Err</span>(()),
-		}
-	}
-
-	<span class="kw">fn </span>into_multiasset_id(asset: <span class="kw-2">&amp;</span>AssetId) -&gt; NativeOrAssetId&lt;AssetId&gt; {
-		NativeOrAssetId::Asset((<span class="kw-2">*</span>asset).clone())
+	<span class="kw">fn </span>multiasset_id(asset_id: u32) -&gt; MultiAssetId {
+		asset_id.into()
 	}
 }
 
@@ -339,5 +298,72 @@
 		send_to: AccountId,
 		keep_alive: bool,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Balance, DispatchError&gt;;
+}
+
+<span class="doccomment">/// An implementation of MultiAssetId that can be either Native or an asset.
+</span><span class="attr">#[derive(Decode, Encode, Default, MaxEncodedLen, TypeInfo, Clone, Copy, Debug)]
+</span><span class="kw">pub enum </span>NativeOrAssetId&lt;AssetId&gt;
+<span class="kw">where
+	</span>AssetId: Ord,
+{
+	<span class="doccomment">/// Native asset. For example, on the Polkadot Asset Hub this would be DOT.
+	</span><span class="attr">#[default]
+	</span>Native,
+	<span class="doccomment">/// A non-native asset id.
+	</span>Asset(AssetId),
+}
+
+<span class="kw">impl</span>&lt;AssetId: Ord&gt; From&lt;AssetId&gt; <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
+	<span class="kw">fn </span>from(asset: AssetId) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>::Asset(asset)
+	}
+}
+
+<span class="kw">impl</span>&lt;AssetId: Ord&gt; Ord <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
+	<span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Ordering {
+		<span class="kw">match </span>(<span class="self">self</span>, other) {
+			(<span class="self">Self</span>::Native, <span class="self">Self</span>::Native) =&gt; Ordering::Equal,
+			(<span class="self">Self</span>::Native, <span class="self">Self</span>::Asset(<span class="kw">_</span>)) =&gt; Ordering::Less,
+			(<span class="self">Self</span>::Asset(<span class="kw">_</span>), <span class="self">Self</span>::Native) =&gt; Ordering::Greater,
+			(<span class="self">Self</span>::Asset(id1), <span class="self">Self</span>::Asset(id2)) =&gt; &lt;AssetId <span class="kw">as </span>Ord&gt;::cmp(id1, id2),
+		}
+	}
+}
+<span class="kw">impl</span>&lt;AssetId: Ord&gt; PartialOrd <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
+	<span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Ordering&gt; {
+		<span class="prelude-val">Some</span>(&lt;<span class="self">Self </span><span class="kw">as </span>Ord&gt;::cmp(<span class="self">self</span>, other))
+	}
+}
+<span class="kw">impl</span>&lt;AssetId: Ord&gt; PartialEq <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {
+	<span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+		<span class="self">self</span>.cmp(other) == Ordering::Equal
+	}
+}
+<span class="kw">impl</span>&lt;AssetId: Ord&gt; Eq <span class="kw">for </span>NativeOrAssetId&lt;AssetId&gt; {}
+
+<span class="doccomment">/// Converts between a MultiAssetId and an AssetId (or the native currency).
+</span><span class="kw">pub struct </span>NativeOrAssetIdConverter&lt;AssetId&gt; {
+	_phantom: PhantomData&lt;AssetId&gt;,
+}
+
+<span class="kw">impl</span>&lt;AssetId: Ord + Clone&gt; MultiAssetIdConverter&lt;NativeOrAssetId&lt;AssetId&gt;, AssetId&gt;
+	<span class="kw">for </span>NativeOrAssetIdConverter&lt;AssetId&gt;
+{
+	<span class="kw">fn </span>get_native() -&gt; NativeOrAssetId&lt;AssetId&gt; {
+		NativeOrAssetId::Native
+	}
+
+	<span class="kw">fn </span>is_native(asset: <span class="kw-2">&amp;</span>NativeOrAssetId&lt;AssetId&gt;) -&gt; bool {
+		<span class="kw-2">*</span>asset == <span class="self">Self</span>::get_native()
+	}
+
+	<span class="kw">fn </span>try_convert(
+		asset: <span class="kw-2">&amp;</span>NativeOrAssetId&lt;AssetId&gt;,
+	) -&gt; MultiAssetIdConversionResult&lt;NativeOrAssetId&lt;AssetId&gt;, AssetId&gt; {
+		<span class="kw">match </span>asset {
+			NativeOrAssetId::Asset(asset) =&gt; MultiAssetIdConversionResult::Converted(asset.clone()),
+			NativeOrAssetId::Native =&gt; MultiAssetIdConversionResult::Native,
+		}
+	}
 }
 </code></pre></div></section></main></body></html>

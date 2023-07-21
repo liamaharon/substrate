@@ -567,7 +567,8 @@
 <span class="kw">impl</span>&lt;T: Config&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; fungibles::approvals::Mutate&lt;&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId&gt;
 	<span class="kw">for </span>Pallet&lt;T, I&gt;
 {
-	<span class="kw">fn </span>approve(
+	<span class="comment">// Approve spending tokens from a given account
+	</span><span class="kw">fn </span>approve(
 		asset: T::AssetId,
 		owner: <span class="kw-2">&amp;</span>&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,
 		delegate: <span class="kw-2">&amp;</span>&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,
@@ -576,8 +577,7 @@
 		<span class="self">Self</span>::do_approve_transfer(asset, owner, delegate, amount)
 	}
 
-	<span class="comment">// Aprove spending tokens from a given account
-	</span><span class="kw">fn </span>transfer_from(
+	<span class="kw">fn </span>transfer_from(
 		asset: T::AssetId,
 		owner: <span class="kw-2">&amp;</span>&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,
 		delegate: <span class="kw-2">&amp;</span>&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,

@@ -1266,6 +1266,38 @@
 <a href="#1266" id="1266">1266</a>
 <a href="#1267" id="1267">1267</a>
 <a href="#1268" id="1268">1268</a>
+<a href="#1269" id="1269">1269</a>
+<a href="#1270" id="1270">1270</a>
+<a href="#1271" id="1271">1271</a>
+<a href="#1272" id="1272">1272</a>
+<a href="#1273" id="1273">1273</a>
+<a href="#1274" id="1274">1274</a>
+<a href="#1275" id="1275">1275</a>
+<a href="#1276" id="1276">1276</a>
+<a href="#1277" id="1277">1277</a>
+<a href="#1278" id="1278">1278</a>
+<a href="#1279" id="1279">1279</a>
+<a href="#1280" id="1280">1280</a>
+<a href="#1281" id="1281">1281</a>
+<a href="#1282" id="1282">1282</a>
+<a href="#1283" id="1283">1283</a>
+<a href="#1284" id="1284">1284</a>
+<a href="#1285" id="1285">1285</a>
+<a href="#1286" id="1286">1286</a>
+<a href="#1287" id="1287">1287</a>
+<a href="#1288" id="1288">1288</a>
+<a href="#1289" id="1289">1289</a>
+<a href="#1290" id="1290">1290</a>
+<a href="#1291" id="1291">1291</a>
+<a href="#1292" id="1292">1292</a>
+<a href="#1293" id="1293">1293</a>
+<a href="#1294" id="1294">1294</a>
+<a href="#1295" id="1295">1295</a>
+<a href="#1296" id="1296">1296</a>
+<a href="#1297" id="1297">1297</a>
+<a href="#1298" id="1298">1298</a>
+<a href="#1299" id="1299">1299</a>
+<a href="#1300" id="1300">1300</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2022 Parity Technologies (UK) Ltd.
@@ -1411,9 +1443,10 @@
 		<span class="doccomment">/// Identifier for the class of non-native asset.
 		/// Note: A `From&lt;u32&gt;` bound here would prevent `MultiLocation` from being used as an
 		/// `AssetId`.
-		</span><span class="kw">type </span>AssetId: AssetId + PartialOrd;
+		</span><span class="kw">type </span>AssetId: AssetId;
 
 		<span class="doccomment">/// Type that identifies either the native currency or a token class from `Assets`.
+		/// `Ord` is added because of `get_pool_id`.
 		</span><span class="kw">type </span>MultiAssetId: AssetId + Ord + From&lt;<span class="self">Self</span>::AssetId&gt;;
 
 		<span class="doccomment">/// Type to convert an `AssetId` into `MultiAssetId`.
@@ -1471,7 +1504,7 @@
 
 		<span class="doccomment">/// The benchmarks need a way to create asset ids from u32s.
 		</span><span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-		</span><span class="kw">type </span>BenchmarkHelper: BenchmarkHelper&lt;<span class="self">Self</span>::AssetId&gt;;
+		</span><span class="kw">type </span>BenchmarkHelper: BenchmarkHelper&lt;<span class="self">Self</span>::AssetId, <span class="self">Self</span>::MultiAssetId&gt;;
 	}
 
 	<span class="doccomment">/// Map from `PoolAssetId` to `PoolInfo`. This establishes whether a pool has been officially
@@ -1496,6 +1529,8 @@
 			<span class="doccomment">/// The pool id associated with the pool. Note that the order of the assets may not be
 			/// the same as the order specified in the create pool extrinsic.
 			</span>pool_id: PoolIdOf&lt;T&gt;,
+			<span class="doccomment">/// The account ID of the pool.
+			</span>pool_account: T::AccountId,
 			<span class="doccomment">/// The id of the liquidity tokens that will be minted when assets are added to this
 			/// pool.
 			</span>lp_token: T::PoolAssetId,
@@ -1570,6 +1605,8 @@
 	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
 		<span class="doccomment">/// Provided assets are equal.
 		</span>EqualAssets,
+		<span class="doccomment">/// Provided asset is not supported for pool.
+		</span>UnsupportedAsset,
 		<span class="doccomment">/// Pool already exists.
 		</span>PoolExists,
 		<span class="doccomment">/// Desired amount can&#39;t be zero.
@@ -1652,14 +1689,13 @@
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(asset1 != asset2, Error::&lt;T&gt;::EqualAssets);
 
-			<span class="kw">let </span>pool_id = <span class="self">Self</span>::get_pool_id(asset1.clone(), asset2.clone());
-			<span class="kw">let </span>(asset1, asset2) = pool_id.clone();
-
-			<span class="kw">if </span>!T::AllowMultiAssetPools::get() &amp;&amp; !T::MultiAssetIdConverter::is_native(<span class="kw-2">&amp;</span>asset1) {
+			<span class="comment">// prepare pool_id
+			</span><span class="kw">let </span>pool_id = <span class="self">Self</span>::get_pool_id(asset1, asset2);
+			<span class="macro">ensure!</span>(!Pools::&lt;T&gt;::contains_key(<span class="kw-2">&amp;</span>pool_id), Error::&lt;T&gt;::PoolExists);
+			<span class="kw">let </span>(asset1, asset2) = <span class="kw-2">&amp;</span>pool_id;
+			<span class="kw">if </span>!T::AllowMultiAssetPools::get() &amp;&amp; !T::MultiAssetIdConverter::is_native(asset1) {
 				<span class="prelude-val">Err</span>(Error::&lt;T&gt;::PoolMustContainNativeCurrency)<span class="question-mark">?</span>;
 			}
-
-			<span class="macro">ensure!</span>(!Pools::&lt;T&gt;::contains_key(<span class="kw-2">&amp;</span>pool_id), Error::&lt;T&gt;::PoolExists);
 
 			<span class="kw">let </span>pool_account = <span class="self">Self</span>::get_pool_account(<span class="kw-2">&amp;</span>pool_id);
 			frame_system::Pallet::&lt;T&gt;::inc_providers(<span class="kw-2">&amp;</span>pool_account);
@@ -1672,15 +1708,22 @@
 				Preserve,
 			)<span class="question-mark">?</span>;
 
-			<span class="kw">if let </span><span class="prelude-val">Ok</span>(asset) = T::MultiAssetIdConverter::try_convert(<span class="kw-2">&amp;</span>asset1) {
-				<span class="kw">if </span>!T::Assets::contains(<span class="kw-2">&amp;</span>asset, <span class="kw-2">&amp;</span>pool_account) {
-					T::Assets::touch(asset, pool_account.clone(), sender.clone())<span class="question-mark">?</span>;
-				}
+			<span class="comment">// try to convert both assets
+			</span><span class="kw">match </span>T::MultiAssetIdConverter::try_convert(asset1) {
+				MultiAssetIdConversionResult::Converted(asset) =&gt;
+					<span class="kw">if </span>!T::Assets::contains(<span class="kw-2">&amp;</span>asset, <span class="kw-2">&amp;</span>pool_account) {
+						T::Assets::touch(asset, pool_account.clone(), sender.clone())<span class="question-mark">?
+					</span>},
+				MultiAssetIdConversionResult::Unsupported(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(Error::&lt;T&gt;::UnsupportedAsset)<span class="question-mark">?</span>,
+				MultiAssetIdConversionResult::Native =&gt; (),
 			}
-			<span class="kw">if let </span><span class="prelude-val">Ok</span>(asset) = T::MultiAssetIdConverter::try_convert(<span class="kw-2">&amp;</span>asset2) {
-				<span class="kw">if </span>!T::Assets::contains(<span class="kw-2">&amp;</span>asset, <span class="kw-2">&amp;</span>pool_account) {
-					T::Assets::touch(asset, pool_account.clone(), sender.clone())<span class="question-mark">?</span>;
-				}
+			<span class="kw">match </span>T::MultiAssetIdConverter::try_convert(asset2) {
+				MultiAssetIdConversionResult::Converted(asset) =&gt;
+					<span class="kw">if </span>!T::Assets::contains(<span class="kw-2">&amp;</span>asset, <span class="kw-2">&amp;</span>pool_account) {
+						T::Assets::touch(asset, pool_account.clone(), sender.clone())<span class="question-mark">?
+					</span>},
+				MultiAssetIdConversionResult::Unsupported(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(Error::&lt;T&gt;::UnsupportedAsset)<span class="question-mark">?</span>,
+				MultiAssetIdConversionResult::Native =&gt; (),
 			}
 
 			<span class="kw">let </span>lp_token = NextPoolAssetId::&lt;T&gt;::get().unwrap_or(T::PoolAssetId::initial_value());
@@ -1693,7 +1736,12 @@
 			<span class="kw">let </span>pool_info = PoolInfo { lp_token: lp_token.clone() };
 			Pools::&lt;T&gt;::insert(pool_id.clone(), pool_info);
 
-			<span class="self">Self</span>::deposit_event(Event::PoolCreated { creator: sender, pool_id, lp_token });
+			<span class="self">Self</span>::deposit_event(Event::PoolCreated {
+				creator: sender,
+				pool_id,
+				pool_account,
+				lp_token,
+			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -2035,34 +2083,35 @@
 			amount: T::AssetBalance,
 			keep_alive: bool,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;T::AssetBalance, DispatchError&gt; {
-			<span class="self">Self</span>::deposit_event(Event::Transfer {
-				from: from.clone(),
-				to: to.clone(),
-				asset: (<span class="kw-2">*</span>asset_id).clone(),
-				amount,
-			});
-			<span class="kw">if </span>T::MultiAssetIdConverter::is_native(asset_id) {
-				<span class="kw">let </span>preservation = <span class="kw">match </span>keep_alive {
-					<span class="bool-val">true </span>=&gt; Preserve,
-					<span class="bool-val">false </span>=&gt; Expendable,
-				};
-				<span class="kw">let </span>amount = <span class="self">Self</span>::convert_asset_balance_to_native_balance(amount)<span class="question-mark">?</span>;
-				<span class="prelude-val">Ok</span>(<span class="self">Self</span>::convert_native_balance_to_asset_balance(T::Currency::transfer(
-					from,
-					to,
+			<span class="kw">let </span>result = <span class="kw">match </span>T::MultiAssetIdConverter::try_convert(asset_id) {
+				MultiAssetIdConversionResult::Converted(asset_id) =&gt;
+					T::Assets::transfer(asset_id, from, to, amount, Expendable),
+				MultiAssetIdConversionResult::Native =&gt; {
+					<span class="kw">let </span>preservation = <span class="kw">match </span>keep_alive {
+						<span class="bool-val">true </span>=&gt; Preserve,
+						<span class="bool-val">false </span>=&gt; Expendable,
+					};
+					<span class="kw">let </span>amount = <span class="self">Self</span>::convert_asset_balance_to_native_balance(amount)<span class="question-mark">?</span>;
+					<span class="prelude-val">Ok</span>(<span class="self">Self</span>::convert_native_balance_to_asset_balance(T::Currency::transfer(
+						from,
+						to,
+						amount,
+						preservation,
+					)<span class="question-mark">?</span>)<span class="question-mark">?</span>)
+				},
+				MultiAssetIdConversionResult::Unsupported(<span class="kw">_</span>) =&gt;
+					<span class="prelude-val">Err</span>(Error::&lt;T&gt;::UnsupportedAsset.into()),
+			};
+
+			<span class="kw">if </span>result.is_ok() {
+				<span class="self">Self</span>::deposit_event(Event::Transfer {
+					from: from.clone(),
+					to: to.clone(),
+					asset: (<span class="kw-2">*</span>asset_id).clone(),
 					amount,
-					preservation,
-				)<span class="question-mark">?</span>)<span class="question-mark">?</span>)
-			} <span class="kw">else </span>{
-				T::Assets::transfer(
-					T::MultiAssetIdConverter::try_convert(<span class="kw-2">&amp;</span>asset_id)
-						.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::Overflow)<span class="question-mark">?</span>,
-					from,
-					to,
-					amount,
-					Expendable,
-				)
+				});
 			}
+			result
 		}
 
 		<span class="doccomment">/// Convert a `Balance` type to an `AssetBalance`.
@@ -2166,28 +2215,40 @@
 			owner: <span class="kw-2">&amp;</span>T::AccountId,
 			asset: <span class="kw-2">&amp;</span>T::MultiAssetId,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;T::AssetBalance, Error&lt;T&gt;&gt; {
-			<span class="kw">if </span>T::MultiAssetIdConverter::is_native(asset) {
-				<span class="self">Self</span>::convert_native_balance_to_asset_balance(
-					&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency&gt;::reducible_balance(owner, Expendable, Polite),
-				)
-			} <span class="kw">else </span>{
-				<span class="prelude-val">Ok</span>(&lt;&lt;T <span class="kw">as </span>Config&gt;::Assets&gt;::reducible_balance(
-					T::MultiAssetIdConverter::try_convert(asset)
-						.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::Overflow)<span class="question-mark">?</span>,
-					owner,
-					Expendable,
-					Polite,
-				))
+			<span class="kw">match </span>T::MultiAssetIdConverter::try_convert(asset) {
+				MultiAssetIdConversionResult::Converted(asset_id) =&gt; <span class="prelude-val">Ok</span>(
+					&lt;&lt;T <span class="kw">as </span>Config&gt;::Assets&gt;::reducible_balance(asset_id, owner, Expendable, Polite),
+				),
+				MultiAssetIdConversionResult::Native =&gt;
+					<span class="self">Self</span>::convert_native_balance_to_asset_balance(
+						&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency&gt;::reducible_balance(owner, Expendable, Polite),
+					),
+				MultiAssetIdConversionResult::Unsupported(<span class="kw">_</span>) =&gt;
+					<span class="prelude-val">Err</span>(Error::&lt;T&gt;::UnsupportedAsset.into()),
 			}
 		}
 
-		<span class="doccomment">/// Returns a pool id constructed from 2 sorted assets.
-		/// Native asset should be lower than the other asset ids.
+		<span class="doccomment">/// Returns a pool id constructed from 2 assets.
+		/// 1. Native asset should be lower than the other asset ids.
+		/// 2. Two native or two non-native assets are compared by their `Ord` implementation.
+		///
+		/// We expect deterministic order, so (asset1, asset2) or (asset2, asset1) returns the same
+		/// result.
 		</span><span class="kw">pub fn </span>get_pool_id(asset1: T::MultiAssetId, asset2: T::MultiAssetId) -&gt; PoolIdOf&lt;T&gt; {
-			<span class="kw">if </span>asset1 &lt;= asset2 {
-				(asset1, asset2)
-			} <span class="kw">else </span>{
-				(asset2, asset1)
+			<span class="kw">match </span>(
+				T::MultiAssetIdConverter::is_native(<span class="kw-2">&amp;</span>asset1),
+				T::MultiAssetIdConverter::is_native(<span class="kw-2">&amp;</span>asset2),
+			) {
+				(<span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="kw">return </span>(asset1, asset2),
+				(<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="kw">return </span>(asset2, asset1),
+				<span class="kw">_ </span>=&gt; {
+					<span class="comment">// else we want to be deterministic based on `Ord` implementation
+					</span><span class="kw">if </span>asset1 &lt;= asset2 {
+						(asset1, asset2)
+					} <span class="kw">else </span>{
+						(asset2, asset1)
+					}
+				},
 			}
 		}
 
@@ -2429,7 +2490,9 @@
 					()
 				);
 			} <span class="kw">else </span>{
-				<span class="kw">let </span>asset_id = T::MultiAssetIdConverter::try_convert(asset).map_err(|<span class="kw">_</span>| ())<span class="question-mark">?</span>;
+				<span class="kw">let </span>MultiAssetIdConversionResult::Converted(asset_id) = T::MultiAssetIdConverter::try_convert(asset) <span class="kw">else </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(())
+				};
 				<span class="kw">let </span>minimal = T::Assets::minimum_balance(asset_id);
 				<span class="macro">ensure!</span>(value &gt;= minimal, ());
 			}
@@ -2447,7 +2510,8 @@
 			<span class="kw">for </span>assets_pair <span class="kw">in </span>path.windows(<span class="number">2</span>) {
 				<span class="kw">if let </span>[asset1, asset2] = assets_pair {
 					<span class="kw">let </span>pool_id = <span class="self">Self</span>::get_pool_id(asset1.clone(), asset2.clone());
-					<span class="kw">let </span>new_element = pools.try_insert(pool_id).expect(<span class="string">&quot;can&#39;t get here&quot;</span>);
+					<span class="kw">let </span>new_element =
+						pools.try_insert(pool_id).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::Overflow)<span class="question-mark">?</span>;
 					<span class="kw">if </span>!new_element {
 						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NonUniquePath.into())
 					}
