@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ChainHeadEvent","FollowEvent","RuntimeEvent"],"struct":["BestBlockChanged","ChainHeadResult","ErrorEvent","Finalized","Initialized","NetworkConfig","NewBlock","RuntimeVersionEvent"]};
+window.SIDEBAR_ITEMS = {"enum":["ChainHeadEvent","ChainHeadStorageEvent","FollowEvent","RuntimeEvent","StorageQueryType","StorageResultType"],"struct":["BestBlockChanged","ChainHeadResult","ErrorEvent","Finalized","Initialized","ItemsEvent","NetworkConfig","NewBlock","RuntimeVersionEvent","StorageQuery","StorageResult"]};

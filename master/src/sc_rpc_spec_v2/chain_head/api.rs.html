@@ -156,7 +156,7 @@
 </span><span class="attr">#![allow(non_snake_case)]
 
 </span><span class="doccomment">//! API trait of the chain head.
-</span><span class="kw">use </span><span class="kw">crate</span>::chain_head::event::{ChainHeadEvent, FollowEvent, NetworkConfig};
+</span><span class="kw">use </span><span class="kw">crate</span>::chain_head::event::{ChainHeadEvent, FollowEvent, NetworkConfig, StorageQuery};
 <span class="kw">use </span>jsonrpsee::{core::RpcResult, proc_macros::rpc};
 
 <span class="attr">#[rpc(client, server)]
@@ -223,7 +223,7 @@
 	</span><span class="attr">#[method(name = <span class="string">&quot;chainHead_unstable_genesisHash&quot;</span>, blocking)]
 	</span><span class="kw">fn </span>chain_head_unstable_genesis_hash(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;String&gt;;
 
-	<span class="doccomment">/// Return a storage entry at a specific block&#39;s state.
+	<span class="doccomment">/// Returns storage entries at a specific block&#39;s state.
 	///
 	/// # Unstable
 	///
@@ -237,8 +237,8 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		follow_subscription: String,
 		hash: Hash,
-		key: String,
-		child_key: <span class="prelude-ty">Option</span>&lt;String&gt;,
+		items: Vec&lt;StorageQuery&lt;String&gt;&gt;,
+		child_trie: <span class="prelude-ty">Option</span>&lt;String&gt;,
 		network_config: <span class="prelude-ty">Option</span>&lt;NetworkConfig&gt;,
 	);
 

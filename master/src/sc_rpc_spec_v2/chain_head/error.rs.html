@@ -72,6 +72,12 @@
 <a href="#72" id="72">72</a>
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -113,6 +119,9 @@
 	<span class="doccomment">/// Invalid subscription ID provided by the RPC server.
 	</span><span class="attr">#[error(<span class="string">&quot;Invalid subscription ID&quot;</span>)]
 	</span>InvalidSubscriptionID,
+	<span class="doccomment">/// Wait-for-continue event not generated.
+	</span><span class="attr">#[error(<span class="string">&quot;Wait for continue event was not generated for the subscription&quot;</span>)]
+	</span>InvalidContinue,
 }
 
 <span class="comment">// Base code for all `chainHead` errors.
@@ -125,6 +134,8 @@
 </span><span class="kw">const </span>INVALID_PARAM_ERROR: i32 = BASE_ERROR + <span class="number">3</span>;
 <span class="doccomment">/// Invalid subscription ID.
 </span><span class="kw">const </span>INVALID_SUB_ID: i32 = BASE_ERROR + <span class="number">4</span>;
+<span class="doccomment">/// Wait-for-continue event not generated.
+</span><span class="kw">const </span>INVALID_CONTINUE: i32 = BASE_ERROR + <span class="number">5</span>;
 
 <span class="kw">impl </span>From&lt;Error&gt; <span class="kw">for </span>ErrorObject&lt;<span class="lifetime">&#39;static</span>&gt; {
 	<span class="kw">fn </span>from(e: Error) -&gt; <span class="self">Self </span>{
@@ -136,6 +147,7 @@
 				ErrorObject::owned(FETCH_BLOCK_HEADER_ERROR, msg, <span class="prelude-val">None</span>::&lt;()&gt;),
 			Error::InvalidParam(<span class="kw">_</span>) =&gt; ErrorObject::owned(INVALID_PARAM_ERROR, msg, <span class="prelude-val">None</span>::&lt;()&gt;),
 			Error::InvalidSubscriptionID =&gt; ErrorObject::owned(INVALID_SUB_ID, msg, <span class="prelude-val">None</span>::&lt;()&gt;),
+			Error::InvalidContinue =&gt; ErrorObject::owned(INVALID_CONTINUE, msg, <span class="prelude-val">None</span>::&lt;()&gt;),
 		}
 		.into()
 	}
