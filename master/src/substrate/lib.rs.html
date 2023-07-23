@@ -260,6 +260,41 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -367,6 +402,21 @@
 //! * `pallet-*` and `frame-*` crates, located under `./frame` folder. These are the crates related
 //!   to FRAME. See [`frame_support`] for more information.
 //!
+//! ### Wasm Build
+//!
+//! Many of the Substrate crates, such as entire `sp-*`, need to compile to both Wasm (when a Wasm
+//! runtime is being generated) and native (for example, when testing). To achieve this, Substrate
+//! follows the convention of the Rust community, and uses a `feature = &quot;std&quot;` to signify that a
+//!  crate is being built with the standard library, and is built for native. Otherwise, it is built
+//!  for `no_std`.
+//!
+//! This can be summarized in `#![cfg_attr(not(feature = &quot;std&quot;), no_std)]`, which you can often find
+//! in any Substrate-based runtime.
+//!
+//! Substrate-based runtimes use [`substrate-wasm-builder`] in their `build.rs` to automatically
+//! build their Wasm files as a part of normal build commandsOnce built, the wasm file is placed in
+//! `./target/{debug|release}/wbuild/{runtime_name}.wasm`.
+//!
 //! ### Binaries
 //!
 //! Multiple binaries are shipped with substrate, the most important of which are located in the
@@ -374,12 +424,29 @@
 //!
 //! * [`node`] is an extensive substrate node that contains the superset of all runtime and client
 //!   side features. The corresponding runtime, called [`kitchensink_runtime`] contains all of the
-//!   modules that are provided with `FRAME`. This node and runtime is only used for testing.
+//!   modules that are provided with `FRAME`. This node and runtime is only used for testing and
+//!   demonstration.
+//!     * [`chain-spec-builder`]: Utility to build more detailed chain-specs for the aforementioned
+//!       node. Other projects typically contain a `build-spec` subcommand that does the same.
 //! * [`node-template`]: a template node that contains a minimal set of features and can act as a
 //!   starting point of a project.
 //! * [`subkey`]: Substrate&#39;s key management utility.
-//! * [`chain-spec-builder`]: Substrate&#39;s utility to build *chain specifications*. Such
-//!   specifications can then be used with `--chain` argument of a typical substrate node&#39;s CLI.
+//!
+//! ### Anatomy of a Binary Crate
+//!
+//! From the above, [`node`] and [`node-template`] are essentially blueprints of a substrate-based
+//! project, as the name of the latter is implying. Each substrate-based project typically contains
+//! the following:
+//!
+//! * Under `./runtime`, a `./runtime/src/lib.rs` which is the top level runtime amalgamator file.
+//!   This file typically contains the [`frame_support::construct_runtime`] macro, which is the
+//!   final definition of a runtime.
+//!
+//! * Under `./node`, a `main.rs`, which is the point, and a `./service.rs`, which contains all the
+//!   client side components. Skimming this file yields an overview of the networking, database,
+//!   consensus and similar client side components.
+//!
+//! &gt; The above two are conventions, not rules.
 //!
 //! ## Parachain?
 //!
@@ -394,7 +461,7 @@
 //!
 //! Additional noteworthy crates within substrate:
 //!
-//! - RPC APIs of a Substrate node: [`sc-rpc-api`]
+//! - RPC APIs of a Substrate node: [`sc-rpc-api`]/[`sc-rpc`]
 //! - CLI Options of a Substrate node: [`sc-cli`]
 //! - All of the consensus related crates provided by Substrate:
 //!     - [`sc-consensus-aura`]
@@ -413,6 +480,7 @@
 //!
 //! Notable upstream crates:
 //!
+//! - [`parity-scale-codec`](https://github.com/paritytech/parity-scale-codec)
 //! - [`parity-db`](https://github.com/paritytech/parity-db)
 //! - [`trie`](https://github.com/paritytech/trie)
 //! - [`parity-common`](https://github.com/paritytech/parity-common)
@@ -434,6 +502,7 @@
 //! [`sc-client-db`]: ../sc_client_db/index.html
 //! [`sc-network`]: ../sc_network/index.html
 //! [`sc-rpc-api`]: ../sc_rpc_api/index.html
+//! [`sc-rpc`]: ../sc_rpc/index.html
 //! [`sc-cli`]: ../sc_cli/index.html
 //! [`sc-consensus-aura`]: ../sc_consensus_aura/index.html
 //! [`sc-consensus-babe`]: ../sc_consensus_babe/index.html
@@ -444,8 +513,9 @@
 //! [`node`]: ../node_cli/index.html
 //! [`node-template`]: ../node_template/index.html
 //! [`kitchensink_runtime`]: ../kitchensink_runtime/index.html
-//! [`subkey`]: ..//subkey/index.html
-//! [`chian-spec-builder`]: ../chain_spec_builder/index.html
+//! [`subkey`]: ../subkey/index.html
+//! [`chain-spec-builder`]: ../chain_spec_builder/index.html
+//! [`substrate-wasm-builder`]: https://crates.io/crates/substrate-wasm-builder
 
 </span><span class="attr">#![deny(rustdoc::broken_intra_doc_links)]
 #![deny(rustdoc::private_intra_doc_links)]
