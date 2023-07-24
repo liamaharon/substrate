@@ -1531,6 +1531,8 @@
 <a href="#1531" id="1531">1531</a>
 <a href="#1532" id="1532">1532</a>
 <a href="#1533" id="1533">1533</a>
+<a href="#1534" id="1534">1534</a>
+<a href="#1535" id="1535">1535</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1590,9 +1592,11 @@
 <span class="kw">pub use </span>types::<span class="kw-2">*</span>;
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;runtime::uniques&quot;</span>;
+<span class="doccomment">/// The log target for this pallet.
+</span><span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;runtime::uniques&quot;</span>;
 
-<span class="kw">type </span>AccountIdLookupOf&lt;T&gt; = &lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::Lookup <span class="kw">as </span>StaticLookup&gt;::Source;
+<span class="doccomment">/// A type alias for the account ID type used in the dispatchable functions of this pallet.
+</span><span class="kw">type </span>AccountIdLookupOf&lt;T&gt; = &lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::Lookup <span class="kw">as </span>StaticLookup&gt;::Source;
 
 <span class="attr">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
