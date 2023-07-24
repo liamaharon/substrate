@@ -647,6 +647,9 @@
 <a href="#647" id="647">647</a>
 <a href="#648" id="648">648</a>
 <a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1100,6 +1103,7 @@
 				received_handshake,
 				notifications_sink,
 				negotiated_fallback,
+				inbound,
 			} =&gt; {
 				<span class="comment">// Set number 0 is hardcoded the default set of peers we sync from.
 				</span><span class="kw">if </span>set_id == HARDCODED_PEERSETS_SYNC {
@@ -1119,6 +1123,7 @@
 							<span class="kw">let </span>(tx, rx) = oneshot::channel();
 							<span class="kw">let _ </span>= <span class="self">self</span>.tx.unbounded_send(
 								<span class="kw">crate</span>::SyncEvent::NotificationStreamOpened {
+									inbound,
 									remote: peer_id,
 									received_handshake: handshake,
 									sink: notifications_sink,
@@ -1159,6 +1164,7 @@
 									<span class="kw">let </span>(tx, rx) = oneshot::channel();
 									<span class="kw">let _ </span>= <span class="self">self</span>.tx.unbounded_send(
 										<span class="kw">crate</span>::SyncEvent::NotificationStreamOpened {
+											inbound,
 											remote: peer_id,
 											received_handshake: handshake,
 											sink: notifications_sink,

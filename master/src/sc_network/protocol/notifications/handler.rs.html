@@ -1604,6 +1604,13 @@
 <a href="#1604" id="1604">1604</a>
 <a href="#1605" id="1605">1605</a>
 <a href="#1606" id="1606">1606</a>
+<a href="#1607" id="1607">1607</a>
+<a href="#1608" id="1608">1608</a>
+<a href="#1609" id="1609">1609</a>
+<a href="#1610" id="1610">1610</a>
+<a href="#1611" id="1611">1611</a>
+<a href="#1612" id="1612">1612</a>
+<a href="#1613" id="1613">1613</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1809,6 +1816,8 @@
 	</span>Opening {
 		<span class="doccomment">/// Substream opened by the remote. If `Some`, has been accepted.
 		</span>in_substream: <span class="prelude-ty">Option</span>&lt;NotificationsInSubstream&lt;NegotiatedSubstream&gt;&gt;,
+		<span class="doccomment">/// Is the connection inbound.
+		</span>inbound: bool,
 	},
 
 	<span class="doccomment">/// Protocol is in the &quot;Open&quot; state.
@@ -1882,6 +1891,8 @@
 		</span>received_handshake: Vec&lt;u8&gt;,
 		<span class="doccomment">/// How notifications can be sent to this node.
 		</span>notifications_sink: NotificationsSink,
+		<span class="doccomment">/// Is the connection inbound.
+		</span>inbound: bool,
 	},
 
 	<span class="doccomment">/// Acknowledges a [`NotifsHandlerIn::Open`]. The remote has refused the attempt to open
@@ -2124,7 +2135,7 @@
 						<span class="macro">error!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;☎️ State mismatch in notifications handler&quot;</span>);
 						<span class="macro">debug_assert!</span>(<span class="bool-val">false</span>);
 					},
-					State::Opening { <span class="kw-2">ref mut </span>in_substream } =&gt; {
+					State::Opening { <span class="kw-2">ref mut </span>in_substream, inbound } =&gt; {
 						<span class="kw">let </span>(async_tx, async_rx) = mpsc::channel(ASYNC_NOTIFICATIONS_BUFFER_SIZE);
 						<span class="kw">let </span>(sync_tx, sync_rx) = mpsc::channel(SYNC_NOTIFICATIONS_BUFFER_SIZE);
 						<span class="kw">let </span>notifications_sink = NotificationsSink {
@@ -2149,6 +2160,7 @@
 								endpoint: <span class="self">self</span>.endpoint.clone(),
 								received_handshake: new_open.handshake,
 								notifications_sink,
+								inbound,
 							},
 						));
 					},
@@ -2203,7 +2215,7 @@
 							);
 						}
 
-						protocol_info.state = State::Opening { in_substream: <span class="prelude-val">None </span>};
+						protocol_info.state = State::Opening { in_substream: <span class="prelude-val">None</span>, inbound: <span class="bool-val">false </span>};
 					},
 					State::OpenDesiredByRemote { pending_opening, in_substream } =&gt; {
 						<span class="kw">let </span>handshake_message = protocol_info.config.handshake.read().clone();
@@ -2229,12 +2241,13 @@
 						<span class="comment">// The state change is done in two steps because of borrowing issues.
 						</span><span class="kw">let </span>in_substream = <span class="kw">match </span>mem::replace(
 							<span class="kw-2">&amp;mut </span>protocol_info.state,
-							State::Opening { in_substream: <span class="prelude-val">None </span>},
+							State::Opening { in_substream: <span class="prelude-val">None</span>, inbound: <span class="bool-val">false </span>},
 						) {
 							State::OpenDesiredByRemote { in_substream, .. } =&gt; in_substream,
 							<span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
 						};
-						protocol_info.state = State::Opening { in_substream: <span class="prelude-val">Some</span>(in_substream) };
+						protocol_info.state =
+							State::Opening { in_substream: <span class="prelude-val">Some</span>(in_substream), inbound: <span class="bool-val">true </span>};
 					},
 					State::Opening { .. } | State::Open { .. } =&gt; {
 						<span class="comment">// As documented, it is forbidden to send an `Open` while there is already
@@ -2378,7 +2391,7 @@
 			</span><span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.protocols[protocol_index].state {
 				State::Closed { .. } |
 				State::Open { in_substream: <span class="prelude-val">None</span>, .. } |
-				State::Opening { in_substream: <span class="prelude-val">None </span>} =&gt; {},
+				State::Opening { in_substream: <span class="prelude-val">None</span>, .. } =&gt; {},
 
 				State::Open { in_substream: in_substream @ <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. } =&gt;
 					<span class="kw">match </span>Stream::poll_next(Pin::new(in_substream.as_mut().unwrap()), cx) {
@@ -2499,6 +2512,7 @@
 				endpoint,
 				received_handshake,
 				notifications_sink,
+				inbound: <span class="bool-val">false</span>,
 			}
 		}
 
@@ -2737,7 +2751,7 @@
 		</span>handler.on_behaviour_event(NotifsHandlerIn::Open { protocol_index: <span class="number">0 </span>});
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 
 		<span class="comment">// remote now tries to open another substream, verify that it is rejected and closed
@@ -2774,7 +2788,7 @@
 		.<span class="kw">await</span>;
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 	}
 
@@ -2810,7 +2824,7 @@
 		</span>handler.on_behaviour_event(NotifsHandlerIn::Open { protocol_index: <span class="number">0 </span>});
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 
 		<span class="comment">// accept the substream and move its state to `Open`
@@ -2901,7 +2915,7 @@
 		</span>handler.on_behaviour_event(NotifsHandlerIn::Open { protocol_index: <span class="number">0 </span>});
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 
 		handler.on_behaviour_event(NotifsHandlerIn::Close { protocol_index: <span class="number">0 </span>});
@@ -2961,7 +2975,7 @@
 		</span>handler.on_behaviour_event(NotifsHandlerIn::Open { protocol_index: <span class="number">0 </span>});
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 
 		handler.on_behaviour_event(NotifsHandlerIn::Close { protocol_index: <span class="number">0 </span>});
@@ -3044,7 +3058,7 @@
 		</span>handler.on_behaviour_event(NotifsHandlerIn::Open { protocol_index: <span class="number">0 </span>});
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 
 		handler.on_behaviour_event(NotifsHandlerIn::Close { protocol_index: <span class="number">0 </span>});
@@ -3093,7 +3107,7 @@
 		</span>handler.on_behaviour_event(NotifsHandlerIn::Open { protocol_index: <span class="number">0 </span>});
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			handler.protocols[<span class="number">0</span>].state,
-			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>) }
+			State::Opening { in_substream: <span class="prelude-val">Some</span>(<span class="kw">_</span>), .. }
 		));
 
 		handler.on_behaviour_event(NotifsHandlerIn::Close { protocol_index: <span class="number">0 </span>});

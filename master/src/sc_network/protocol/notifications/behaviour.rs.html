@@ -4560,6 +4560,10 @@
 <a href="#4560" id="4560">4560</a>
 <a href="#4561" id="4561">4561</a>
 <a href="#4562" id="4562">4562</a>
+<a href="#4563" id="4563">4563</a>
+<a href="#4564" id="4564">4564</a>
+<a href="#4565" id="4565">4565</a>
+<a href="#4566" id="4566">4566</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -4881,6 +4885,8 @@
 		</span>received_handshake: Vec&lt;u8&gt;,
 		<span class="doccomment">/// Object that permits sending notifications to the peer.
 		</span>notifications_sink: NotificationsSink,
+		<span class="doccomment">/// Is the connection inbound.
+		</span>inbound: bool,
 	},
 
 	<span class="doccomment">/// The [`NotificationsSink`] object used to send notifications with the given peer must be
@@ -6372,6 +6378,7 @@
 				negotiated_fallback,
 				received_handshake,
 				notifications_sink,
+				inbound,
 				..
 			} =&gt; {
 				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
@@ -6396,6 +6403,7 @@
 								<span class="kw">let </span>event = NotificationsOut::CustomProtocolOpen {
 									peer_id,
 									set_id,
+									inbound,
 									negotiated_fallback,
 									received_handshake,
 									notifications_sink: notifications_sink.clone(),

@@ -918,6 +918,53 @@
 <a href="#918" id="918">918</a>
 <a href="#919" id="919">919</a>
 <a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
+<a href="#950" id="950">950</a>
+<a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
+<a href="#958" id="958">958</a>
+<a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
+<a href="#964" id="964">964</a>
+<a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2017-2023 Parity Technologies (UK) Ltd.
@@ -1098,6 +1145,8 @@
 	</span>last_notification_sent: Instant,
 	<span class="doccomment">/// Instant when the last notification was received from peer.
 	</span>last_notification_received: Instant,
+	<span class="doccomment">/// Is the peer inbound.
+	</span>inbound: bool,
 }
 
 <span class="kw">pub struct </span>SyncingEngine&lt;B: BlockT, Client&gt; {
@@ -1157,6 +1206,12 @@
 
 	<span class="doccomment">/// Number of slots to allocate to light nodes.
 	</span>default_peers_set_num_light: usize,
+
+	<span class="doccomment">/// Maximum number of inbound peers.
+	</span>max_in_peers: usize,
+
+	<span class="doccomment">/// Number of inbound peers accepted so far.
+	</span>num_in_peers: usize,
 
 	<span class="doccomment">/// A cache for the data that was associated to a block announcement.
 	</span>block_announce_data_cache: LruMap&lt;B::Hash, Vec&lt;u8&gt;&gt;,
@@ -1290,6 +1345,12 @@
 			.flatten()
 			.expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>);
 
+		<span class="comment">// `default_peers_set.in_peers` contains an unspecified amount of light peers so the number
+		// of full inbound peers must be calculated from the total full peer count
+		</span><span class="kw">let </span>max_full_peers = net_config.network_config.default_peers_set_num_full;
+		<span class="kw">let </span>max_out_peers = net_config.network_config.default_peers_set.out_peers;
+		<span class="kw">let </span>max_in_peers = (max_full_peers - max_out_peers) <span class="kw">as </span>usize;
+
 		<span class="prelude-val">Ok</span>((
 			<span class="self">Self </span>{
 				roles,
@@ -1311,6 +1372,8 @@
 				default_peers_set_no_slot_peers,
 				default_peers_set_num_full,
 				default_peers_set_num_light,
+				num_in_peers: <span class="number">0usize</span>,
+				max_in_peers,
 				event_streams: Vec::new(),
 				tick_timeout: Delay::new(TICK_TIMEOUT),
 				syncing_started: <span class="prelude-val">None</span>,
@@ -1638,8 +1701,9 @@
 					remote,
 					received_handshake,
 					sink,
+					inbound,
 					tx,
-				} =&gt; <span class="kw">match </span><span class="self">self</span>.on_sync_peer_connected(remote, <span class="kw-2">&amp;</span>received_handshake, sink) {
+				} =&gt; <span class="kw">match </span><span class="self">self</span>.on_sync_peer_connected(remote, <span class="kw-2">&amp;</span>received_handshake, sink, inbound) {
 					<span class="prelude-val">Ok</span>(()) =&gt; {
 						<span class="kw">let _ </span>= tx.send(<span class="bool-val">true</span>);
 					},
@@ -1708,15 +1772,31 @@
 	///
 	/// Returns a result if the handshake of this peer was indeed accepted.
 	</span><span class="kw">pub fn </span>on_sync_peer_disconnected(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer: PeerId) -&gt; <span class="prelude-ty">Result</span>&lt;(), ()&gt; {
-		<span class="kw">if </span><span class="self">self</span>.peers.remove(<span class="kw-2">&amp;</span>peer).is_some() {
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(info) = <span class="self">self</span>.peers.remove(<span class="kw-2">&amp;</span>peer) {
 			<span class="kw">if </span><span class="self">self</span>.important_peers.contains(<span class="kw-2">&amp;</span>peer) {
 				<span class="macro">log::warn!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;Reserved peer {} disconnected&quot;</span>, peer);
 			} <span class="kw">else </span>{
 				<span class="macro">log::debug!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;{} disconnected&quot;</span>, peer);
 			}
 
+			<span class="kw">if </span>!<span class="self">self</span>.default_peers_set_no_slot_connected_peers.remove(<span class="kw-2">&amp;</span>peer) &amp;&amp;
+				info.inbound &amp;&amp; info.info.roles.is_full()
+			{
+				<span class="kw">match </span><span class="self">self</span>.num_in_peers.checked_sub(<span class="number">1</span>) {
+					<span class="prelude-val">Some</span>(value) =&gt; {
+						<span class="self">self</span>.num_in_peers = value;
+					},
+					<span class="prelude-val">None </span>=&gt; {
+						<span class="macro">log::error!</span>(
+							target: <span class="string">&quot;sync&quot;</span>,
+							<span class="string">&quot;trying to disconnect an inbound node which is not counted as inbound&quot;
+						</span>);
+						<span class="macro">debug_assert!</span>(<span class="bool-val">false</span>);
+					},
+				}
+			}
+
 			<span class="self">self</span>.chain_sync.peer_disconnected(<span class="kw-2">&amp;</span>peer);
-			<span class="self">self</span>.default_peers_set_no_slot_connected_peers.remove(<span class="kw-2">&amp;</span>peer);
 			<span class="self">self</span>.event_streams
 				.retain(|stream| stream.unbounded_send(SyncEvent::PeerDisconnected(peer)).is_ok());
 			<span class="prelude-val">Ok</span>(())
@@ -1735,6 +1815,7 @@
 		who: PeerId,
 		status: <span class="kw-2">&amp;</span>BlockAnnouncesHandshake&lt;B&gt;,
 		sink: NotificationsSink,
+		inbound: bool,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), ()&gt; {
 		<span class="macro">log::trace!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;New peer {} {:?}&quot;</span>, who, status);
 
@@ -1777,6 +1858,15 @@
 		<span class="kw">let </span>no_slot_peer = <span class="self">self</span>.default_peers_set_no_slot_peers.contains(<span class="kw-2">&amp;</span>who);
 		<span class="kw">let </span>this_peer_reserved_slot: usize = <span class="kw">if </span>no_slot_peer { <span class="number">1 </span>} <span class="kw">else </span>{ <span class="number">0 </span>};
 
+		<span class="comment">// make sure to accept no more than `--in-peers` many full nodes
+		</span><span class="kw">if </span>!no_slot_peer &amp;&amp;
+			status.roles.is_full() &amp;&amp;
+			inbound &amp;&amp; <span class="self">self</span>.num_in_peers == <span class="self">self</span>.max_in_peers
+		{
+			<span class="macro">log::debug!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;All inbound slots have been consumed, rejecting {who}&quot;</span>);
+			<span class="kw">return </span><span class="prelude-val">Err</span>(())
+		}
+
 		<span class="kw">if </span>status.roles.is_full() &amp;&amp;
 			<span class="self">self</span>.chain_sync.num_peers() &gt;=
 				<span class="self">self</span>.default_peers_set_num_full +
@@ -1807,6 +1897,7 @@
 			sink,
 			last_notification_sent: Instant::now(),
 			last_notification_received: Instant::now(),
+			inbound,
 		};
 
 		<span class="kw">let </span>req = <span class="kw">if </span>peer.info.roles.is_full() {
@@ -1824,8 +1915,11 @@
 		<span class="macro">log::debug!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;Connected {}&quot;</span>, who);
 
 		<span class="self">self</span>.peers.insert(who, peer);
+
 		<span class="kw">if </span>no_slot_peer {
 			<span class="self">self</span>.default_peers_set_no_slot_connected_peers.insert(who);
+		} <span class="kw">else if </span>inbound &amp;&amp; status.roles.is_full() {
+			<span class="self">self</span>.num_in_peers += <span class="number">1</span>;
 		}
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(req) = req {
