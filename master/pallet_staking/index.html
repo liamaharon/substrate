@@ -100,7 +100,7 @@ and change their role, alongside some helper functions to get/set the metadata o
 <h3 id="usage"><a href="#usage">Usage</a></h3><h4 id="example-rewarding-a-validator-by-id"><a href="#example-rewarding-a-validator-by-id">Example: Rewarding a validator by id.</a></h4>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>pallet_staking::{<span class="self">self </span><span class="kw">as </span>staking};
 
-<span class="attr">#[frame_support::pallet]
+<span class="attr">#[frame_support::pallet(dev_mode)]
 </span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;

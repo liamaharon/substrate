@@ -1838,6 +1838,12 @@
 <a href="#1838" id="1838">1838</a>
 <a href="#1839" id="1839">1839</a>
 <a href="#1840" id="1840">1840</a>
+<a href="#1841" id="1841">1841</a>
+<a href="#1842" id="1842">1842</a>
+<a href="#1843" id="1843">1843</a>
+<a href="#1844" id="1844">1844</a>
+<a href="#1845" id="1845">1845</a>
+<a href="#1846" id="1846">1846</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2629,8 +2635,14 @@
 				<span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
 			};
 
+			<span class="kw">let </span>voter_weight = weight_of(<span class="kw-2">&amp;</span>voter);
+			<span class="comment">// if voter weight is zero, do not consider this voter for the snapshot.
+			</span><span class="kw">if </span>voter_weight.is_zero() {
+				<span class="macro">log!</span>(debug, <span class="string">&quot;voter&#39;s active balance is 0. skip this voter.&quot;</span>);
+				<span class="kw">continue
+			</span>}
+
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(Nominations { targets, .. }) = &lt;Nominators&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>voter) {
-				<span class="kw">let </span>voter_weight = weight_of(<span class="kw-2">&amp;</span>voter);
 				<span class="kw">if </span>!targets.is_empty() {
 					all_voters.push((voter.clone(), voter_weight, targets));
 					nominators_taken.saturating_inc();
@@ -2643,7 +2655,7 @@
 				<span class="comment">// if this voter is a validator:
 				</span><span class="kw">let </span>self_vote = (
 					voter.clone(),
-					weight_of(<span class="kw-2">&amp;</span>voter),
+					voter_weight,
 					<span class="macro">vec!</span>[voter.clone()]
 						.try_into()
 						.expect(<span class="string">&quot;`MaxVotesPerVoter` must be greater than or equal to 1&quot;</span>),
@@ -2670,7 +2682,7 @@
 		<span class="self">Self</span>::register_weight(T::WeightInfo::get_npos_voters(validators_taken, nominators_taken));
 
 		<span class="kw">let </span>min_active_stake: T::CurrencyBalance =
-			<span class="kw">if </span>all_voters.len() == <span class="number">0 </span>{ <span class="number">0u64</span>.into() } <span class="kw">else </span>{ min_active_stake.into() };
+			<span class="kw">if </span>all_voters.is_empty() { Zero::zero() } <span class="kw">else </span>{ min_active_stake.into() };
 
 		MinimumActiveStake::&lt;T&gt;::put(min_active_stake);
 

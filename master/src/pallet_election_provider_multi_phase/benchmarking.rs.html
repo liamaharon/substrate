@@ -532,6 +532,8 @@
 <a href="#532" id="532">532</a>
 <a href="#533" id="533">533</a>
 <a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -703,10 +705,12 @@
 	</span><span class="kw">let </span><span class="kw-2">mut </span>targets = (<span class="number">0</span>..t)
 		.map(|i| {
 			<span class="kw">let </span>target = frame_benchmarking::account::&lt;T::AccountId&gt;(<span class="string">&quot;Target&quot;</span>, i, SEED);
+
 			T::DataProvider::add_target(target.clone());
 			target
 		})
 		.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
+
 	<span class="comment">// we should always have enough voters to fill.
 	</span><span class="macro">assert!</span>(
 		targets.len() &gt; &lt;T::DataProvider <span class="kw">as </span>ElectionDataProvider&gt;::MaxVotesPerVoter::get() <span class="kw">as </span>usize
@@ -810,7 +814,7 @@
 		&lt;MultiPhase::&lt;T&gt;&gt;::create_snapshot_internal(targets, voters, desired_targets)
 	} verify {
 		<span class="macro">assert!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot().is_some());
-		<span class="macro">assert_eq!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot_metadata().ok_or(<span class="string">&quot;metadata missing&quot;</span>)<span class="question-mark">?</span>.voters, v + t);
+		<span class="macro">assert_eq!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot_metadata().ok_or(<span class="string">&quot;metadata missing&quot;</span>)<span class="question-mark">?</span>.voters, v);
 		<span class="macro">assert_eq!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot_metadata().ok_or(<span class="string">&quot;metadata missing&quot;</span>)<span class="question-mark">?</span>.targets, t);
 	}
 
@@ -984,7 +988,7 @@
 		&lt;MultiPhase::&lt;T&gt;&gt;::create_snapshot().map_err(|<span class="kw">_</span>| <span class="string">&quot;could not create snapshot&quot;</span>)<span class="question-mark">?</span>;
 	} verify {
 		<span class="macro">assert!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot().is_some());
-		<span class="macro">assert_eq!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot_metadata().ok_or(<span class="string">&quot;snapshot missing&quot;</span>)<span class="question-mark">?</span>.voters, v + t);
+		<span class="macro">assert_eq!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot_metadata().ok_or(<span class="string">&quot;snapshot missing&quot;</span>)<span class="question-mark">?</span>.voters, v);
 		<span class="macro">assert_eq!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot_metadata().ok_or(<span class="string">&quot;snapshot missing&quot;</span>)<span class="question-mark">?</span>.targets, t);
 	}
 
