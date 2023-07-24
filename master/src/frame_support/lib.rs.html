@@ -2915,6 +2915,9 @@
 <a href="#2915" id="2915">2915</a>
 <a href="#2916" id="2916">2916</a>
 <a href="#2917" id="2917">2917</a>
+<a href="#2918" id="2918">2918</a>
+<a href="#2919" id="2919">2919</a>
+<a href="#2920" id="2920">2920</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -5832,4 +5835,7 @@
 
 <span class="comment">// Generate a macro that will enable/disable code based on `std` feature being active.
 </span><span class="macro">sp_core::generate_feature_enabled_macro!</span>(std_enabled, feature = <span class="string">&quot;std&quot;</span>, $);
+
+<span class="comment">// Helper for implementing GenesisBuilder runtime API
+</span><span class="kw">pub mod </span>genesis_builder_helper;
 </code></pre></div></section></main></body></html>

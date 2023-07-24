@@ -172,6 +172,10 @@
 <a href="#172" id="172">172</a>
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -247,10 +251,10 @@
 }
 
 <span class="kw">impl </span>GenesisStorageBuilder {
-	<span class="doccomment">/// Creates a storage builder for genesis config. `substrage test runtime` `GenesisConfig` is
-	/// initialized with provided `authorities`, `endowed_accounts` with given balance. Key-pairs
-	/// from `extra_storage` will be injected into built storage. `HEAP_PAGES` key and value will
-	/// also be placed into storage.
+	<span class="doccomment">/// Creates a storage builder for genesis config. `substrage test runtime`
+	/// [`RuntimeGenesisConfig`] is initialized with provided `authorities`, `endowed_accounts` with
+	/// given balance. Key-value pairs from `extra_storage` will be injected into built storage.
+	/// `HEAP_PAGES` key and value will also be placed into storage.
 	</span><span class="kw">pub fn </span>new(
 		authorities: Vec&lt;AccountId&gt;,
 		endowed_accounts: Vec&lt;AccountId&gt;,
@@ -265,7 +269,7 @@
 		}
 	}
 
-	<span class="doccomment">/// Override default wasm code to be placed into GenesisConfig.
+	<span class="doccomment">/// Override default wasm code to be placed into RuntimeGenesisConfig.
 	</span><span class="kw">pub fn </span>with_wasm_code(<span class="kw-2">mut </span><span class="self">self</span>, wasm_code: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">self</span>.wasm_code = wasm_code.clone();
 		<span class="self">self
@@ -281,8 +285,8 @@
 		<span class="self">self
 	</span>}
 
-	<span class="doccomment">/// Builds the `GenesisConfig` and returns its storage.
-	</span><span class="kw">pub fn </span>build(<span class="self">self</span>) -&gt; Storage {
+	<span class="doccomment">/// A `RuntimeGenesisConfig` from internal configuration
+	</span><span class="kw">pub fn </span>genesis_config(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RuntimeGenesisConfig {
 		<span class="kw">let </span>authorities_sr25519: Vec&lt;<span class="kw">_</span>&gt; = <span class="self">self
 			</span>.authorities
 			.clone()
@@ -290,7 +294,7 @@
 			.map(|id| sr25519::Public::from(id))
 			.collect();
 
-		<span class="kw">let </span>genesis_config = RuntimeGenesisConfig {
+		RuntimeGenesisConfig {
 			system: frame_system::GenesisConfig {
 				code: <span class="self">self</span>.wasm_code.clone().unwrap_or(wasm_binary_unwrap().to_vec()),
 				..Default::default()
@@ -309,11 +313,15 @@
 				..Default::default()
 			},
 			balances: pallet_balances::GenesisConfig { balances: <span class="self">self</span>.balances.clone() },
-		};
+		}
+	}
 
-		<span class="kw">let </span><span class="kw-2">mut </span>storage = genesis_config
+	<span class="doccomment">/// Builds the `RuntimeGenesisConfig` and returns its storage.
+	</span><span class="kw">pub fn </span>build(<span class="self">self</span>) -&gt; Storage {
+		<span class="kw">let </span><span class="kw-2">mut </span>storage = <span class="self">self
+			</span>.genesis_config()
 			.build_storage()
-			.expect(<span class="string">&quot;Build storage from substrate-test-runtime GenesisConfig&quot;</span>);
+			.expect(<span class="string">&quot;Build storage from substrate-test-runtime RuntimeGenesisConfig&quot;</span>);
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(heap_pages) = <span class="self">self</span>.heap_pages_override {
 			storage.top.insert(well_known_keys::HEAP_PAGES.into(), heap_pages.encode());
