@@ -1840,10 +1840,6 @@
 <a href="#1840" id="1840">1840</a>
 <a href="#1841" id="1841">1841</a>
 <a href="#1842" id="1842">1842</a>
-<a href="#1843" id="1843">1843</a>
-<a href="#1844" id="1844">1844</a>
-<a href="#1845" id="1845">1845</a>
-<a href="#1846" id="1846">1846</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3682,10 +3678,6 @@
 		<span class="kw">let </span>real_total: BalanceOf&lt;T&gt; =
 			ledger.unlocking.iter().fold(ledger.active, |a, c| a + c.value);
 		<span class="macro">ensure!</span>(real_total == ledger.total, <span class="string">&quot;ledger.total corrupt&quot;</span>);
-
-		<span class="kw">if </span>!(ledger.active &gt;= T::Currency::minimum_balance() || ledger.active.is_zero()) {
-			<span class="macro">log!</span>(warn, <span class="string">&quot;ledger.active less than ED: {:?}, {:?}&quot;</span>, ctrl, ledger)
-		}
 
 		<span class="prelude-val">Ok</span>(())
 	}
