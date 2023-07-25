@@ -824,7 +824,7 @@
 				<span class="kw">let _ </span>= sender.send(network_service.local_peer_id().to_base58());
 			},
 			sc_rpc::system::Request::LocalListenAddresses(sender) =&gt; {
-				<span class="kw">let </span>peer_id = (network_service.local_peer_id()).into();
+				<span class="kw">let </span>peer_id = network_service.local_peer_id();
 				<span class="kw">let </span>p2p_proto_suffix = sc_network::multiaddr::Protocol::P2p(peer_id);
 				<span class="kw">let </span>addresses = network_service
 					.listen_addresses()

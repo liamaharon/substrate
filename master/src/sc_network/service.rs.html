@@ -1778,8 +1778,6 @@
 <a href="#1778" id="1778">1778</a>
 <a href="#1779" id="1779">1779</a>
 <a href="#1780" id="1780">1780</a>
-<a href="#1781" id="1781">1781</a>
-<a href="#1782" id="1782">1782</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1837,17 +1835,15 @@
 
 <span class="kw">use </span>either::Either;
 <span class="kw">use </span>futures::{channel::oneshot, prelude::<span class="kw-2">*</span>};
-<span class="attr">#[allow(deprecated)]
-</span><span class="kw">use </span>libp2p::{
-	connection_limits::Exceeded,
+<span class="kw">use </span>libp2p::{
+	connection_limits::{ConnectionLimits, Exceeded},
 	core::{upgrade, ConnectedPoint, Endpoint},
 	identify::Info <span class="kw">as </span>IdentifyInfo,
 	kad::record::Key <span class="kw">as </span>KademliaKey,
 	multiaddr,
-	ping::Failure <span class="kw">as </span>PingFailure,
 	swarm::{
-		AddressScore, ConnectionError, ConnectionId, ConnectionLimits, DialError, Executor,
-		ListenError, NetworkBehaviour, Swarm, SwarmBuilder, SwarmEvent, THandlerErr,
+		ConnectionError, ConnectionId, DialError, Executor, ListenError, NetworkBehaviour, Swarm,
+		SwarmBuilder, SwarmEvent, THandlerErr,
 	},
 	Multiaddr, PeerId,
 };
@@ -2133,6 +2129,11 @@
 					discovery_config,
 					request_response_protocols,
 					peerset_handle.clone(),
+					ConnectionLimits::default()
+						.with_max_established_per_peer(<span class="prelude-val">Some</span>(<span class="kw">crate</span>::MAX_CONNECTIONS_PER_PEER <span class="kw">as </span>u32))
+						.with_max_established_incoming(<span class="prelude-val">Some</span>(
+							<span class="kw">crate</span>::MAX_CONNECTIONS_ESTABLISHED_INCOMING,
+						)),
 				);
 
 				<span class="kw">match </span>result {
@@ -2156,15 +2157,7 @@
 					SpawnImpl(params.executor),
 				)
 			};
-			<span class="attr">#[allow(deprecated)]
-			</span><span class="kw">let </span>builder = builder
-				.connection_limits(
-					ConnectionLimits::default()
-						.with_max_established_per_peer(<span class="prelude-val">Some</span>(<span class="kw">crate</span>::MAX_CONNECTIONS_PER_PEER <span class="kw">as </span>u32))
-						.with_max_established_incoming(<span class="prelude-val">Some</span>(
-							<span class="kw">crate</span>::MAX_CONNECTIONS_ESTABLISHED_INCOMING,
-						)),
-				)
+			<span class="kw">let </span>builder = builder
 				.substream_upgrade_protocol_override(upgrade::Version::V1Lazy)
 				.notify_handler_buffer_size(NonZeroUsize::new(<span class="number">32</span>).expect(<span class="string">&quot;32 != 0; qed&quot;</span>))
 				<span class="comment">// NOTE: 24 is somewhat arbitrary and should be tuned in the future if necessary.
@@ -2196,11 +2189,7 @@
 
 		<span class="comment">// Add external addresses.
 		</span><span class="kw">for </span>addr <span class="kw">in </span><span class="kw-2">&amp;</span>network_config.public_addresses {
-			Swarm::&lt;Behaviour&lt;B&gt;&gt;::add_external_address(
-				<span class="kw-2">&amp;mut </span>swarm,
-				addr.clone(),
-				AddressScore::Infinite,
-			);
+			Swarm::&lt;Behaviour&lt;B&gt;&gt;::add_external_address(<span class="kw-2">&amp;mut </span>swarm, addr.clone());
 		}
 
 		<span class="kw">let </span>external_addresses = Arc::new(Mutex::new(Vec::new()));
@@ -2384,7 +2373,7 @@
 
 		<span class="kw">let </span>peer_id = Swarm::&lt;Behaviour&lt;B&gt;&gt;::local_peer_id(swarm).to_base58();
 		<span class="kw">let </span>listened_addresses = swarm.listeners().cloned().collect();
-		<span class="kw">let </span>external_addresses = swarm.external_addresses().map(|r| <span class="kw-2">&amp;</span>r.addr).cloned().collect();
+		<span class="kw">let </span>external_addresses = swarm.external_addresses().cloned().collect();
 
 		NetworkState {
 			peer_id,
@@ -2462,8 +2451,7 @@
 			.into_iter()
 			.map(|<span class="kw-2">mut </span>addr| {
 				<span class="kw">let </span>peer = <span class="kw">match </span>addr.pop() {
-					<span class="prelude-val">Some</span>(multiaddr::Protocol::P2p(key)) =&gt; PeerId::from_multihash(key)
-						.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid PeerId format&quot;</span>.to_string())<span class="question-mark">?</span>,
+					<span class="prelude-val">Some</span>(multiaddr::Protocol::P2p(peer_id)) =&gt; peer_id,
 					<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Missing PeerId from address&quot;</span>.to_string()),
 				};
 
@@ -2979,8 +2967,7 @@
 			<span class="self">self</span>.network_service.behaviour_mut().user_protocol_mut().num_connected_peers();
 		<span class="self">self</span>.num_connected.store(num_connected_peers, Ordering::Relaxed);
 		{
-			<span class="kw">let </span>external_addresses =
-				<span class="self">self</span>.network_service.external_addresses().map(|r| <span class="kw-2">&amp;</span>r.addr).cloned().collect();
+			<span class="kw">let </span>external_addresses = <span class="self">self</span>.network_service.external_addresses().cloned().collect();
 			<span class="kw-2">*</span><span class="self">self</span>.external_addresses.lock() = external_addresses;
 
 			<span class="kw">let </span>listen_addresses =
@@ -3183,7 +3170,12 @@
 				peer_id,
 				info:
 					IdentifyInfo {
-						protocol_version, agent_version, <span class="kw-2">mut </span>listen_addrs, protocols, ..
+						protocol_version,
+						agent_version,
+						<span class="kw-2">mut </span>listen_addrs,
+						protocols,
+						observed_addr,
+						..
 					},
 			}) =&gt; {
 				<span class="kw">if </span>listen_addrs.len() &gt; <span class="number">30 </span>{
@@ -3195,11 +3187,17 @@
 					listen_addrs.truncate(<span class="number">30</span>);
 				}
 				<span class="kw">for </span>addr <span class="kw">in </span>listen_addrs {
-					<span class="self">self</span>.network_service
-						.behaviour_mut()
-						.add_self_reported_address_to_dht(<span class="kw-2">&amp;</span>peer_id, <span class="kw-2">&amp;</span>protocols, addr);
+					<span class="self">self</span>.network_service.behaviour_mut().add_self_reported_address_to_dht(
+						<span class="kw-2">&amp;</span>peer_id,
+						<span class="kw-2">&amp;</span>protocols,
+						addr.clone(),
+					);
 				}
 				<span class="self">self</span>.network_service.behaviour_mut().user_protocol_mut().add_known_peer(peer_id);
+				<span class="comment">// Confirm the observed address manually since they are no longer trusted by
+				// default (libp2p &gt;= 0.52)
+				// TODO: remove this when/if AutoNAT is implemented.
+				</span><span class="self">self</span>.network_service.add_external_address(observed_addr);
 			},
 			SwarmEvent::Behaviour(BehaviourOut::Discovered(peer_id)) =&gt; {
 				<span class="self">self</span>.network_service.behaviour_mut().user_protocol_mut().add_known_peer(peer_id);
@@ -3344,8 +3342,14 @@
 					}
 				}
 			},
-			SwarmEvent::ConnectionClosed { peer_id, cause, endpoint, num_established } =&gt; {
-				<span class="macro">debug!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; Disconnected({:?}, {:?})&quot;</span>, peer_id, cause);
+			SwarmEvent::ConnectionClosed {
+				connection_id,
+				peer_id,
+				cause,
+				endpoint,
+				num_established,
+			} =&gt; {
+				<span class="macro">debug!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; Disconnected({:?} via {:?}: {:?})&quot;</span>, peer_id, connection_id, cause);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 					<span class="kw">let </span>direction = <span class="kw">match </span>endpoint {
 						ConnectedPoint::Dialer { .. } =&gt; <span class="string">&quot;out&quot;</span>,
@@ -3354,10 +3358,12 @@
 					<span class="kw">let </span>reason = <span class="kw">match </span>cause {
 						<span class="prelude-val">Some</span>(ConnectionError::IO(<span class="kw">_</span>)) =&gt; <span class="string">&quot;transport-error&quot;</span>,
 						<span class="prelude-val">Some</span>(ConnectionError::Handler(Either::Left(Either::Left(
-							Either::Right(Either::Left(PingFailure::Timeout)),
+							Either::Left(Either::Right(<span class="kw">_</span>)),
 						)))) =&gt; <span class="string">&quot;ping-timeout&quot;</span>,
 						<span class="prelude-val">Some</span>(ConnectionError::Handler(Either::Left(Either::Left(
-							Either::Left(NotifsHandlerError::SyncNotificationsClogged),
+							Either::Left(Either::Left(
+								NotifsHandlerError::SyncNotificationsClogged,
+							)),
 						)))) =&gt; <span class="string">&quot;sync-notifications-clogged&quot;</span>,
 						<span class="prelude-val">Some</span>(ConnectionError::Handler(<span class="kw">_</span>)) =&gt; <span class="string">&quot;protocol-error&quot;</span>,
 						<span class="prelude-val">Some</span>(ConnectionError::KeepAliveTimeout) =&gt; <span class="string">&quot;keep-alive-timeout&quot;</span>,
@@ -3383,12 +3389,12 @@
 					metrics.listeners_local_addresses.dec();
 				}
 			},
-			SwarmEvent::OutgoingConnectionError { peer_id, error } =&gt; {
+			SwarmEvent::OutgoingConnectionError { connection_id, peer_id, error } =&gt; {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(peer_id) = peer_id {
 					<span class="macro">trace!</span>(
 						target: <span class="string">&quot;sub-libp2p&quot;</span>,
-						<span class="string">&quot;Libp2p =&gt; Failed to reach {:?}: {}&quot;</span>,
-						peer_id, error,
+						<span class="string">&quot;Libp2p =&gt; Failed to reach {:?} via {:?}: {}&quot;</span>,
+						peer_id, connection_id, error,
 					);
 
 					<span class="kw">let </span>not_reported = !<span class="self">self</span>.reported_invalid_boot_nodes.contains(<span class="kw-2">&amp;</span>peer_id);
@@ -3426,12 +3432,9 @@
 							} <span class="kw">else </span>{
 								<span class="prelude-val">None
 							</span>},
-						DialError::ConnectionLimit(<span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(<span class="string">&quot;limit-reached&quot;</span>),
-						DialError::InvalidPeerId(<span class="kw">_</span>) |
-						DialError::WrongPeerId { .. } |
-						DialError::LocalPeerId { .. } =&gt; <span class="prelude-val">Some</span>(<span class="string">&quot;invalid-peer-id&quot;</span>),
+						DialError::WrongPeerId { .. } | DialError::LocalPeerId { .. } =&gt;
+							<span class="prelude-val">Some</span>(<span class="string">&quot;invalid-peer-id&quot;</span>),
 						DialError::Transport(<span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(<span class="string">&quot;transport-error&quot;</span>),
-						DialError::Banned |
 						DialError::NoAddresses |
 						DialError::DialPeerConditionFalse(<span class="kw">_</span>) |
 						DialError::Aborted =&gt; <span class="prelude-val">None</span>, <span class="comment">// ignore them
@@ -3441,21 +3444,26 @@
 					}
 				}
 			},
-			SwarmEvent::Dialing(peer_id) =&gt; {
-				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; Dialing({:?})&quot;</span>, peer_id)
+			SwarmEvent::Dialing { peer_id, connection_id } =&gt; {
+				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; Dialing({:?} via {:?})&quot;</span>, peer_id, connection_id)
 			},
-			SwarmEvent::IncomingConnection { local_addr, send_back_addr } =&gt; {
-				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; IncomingConnection({},{}))&quot;</span>,
-					local_addr, send_back_addr);
+			SwarmEvent::IncomingConnection { connection_id, local_addr, send_back_addr } =&gt; {
+				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; IncomingConnection({},{} via {:?}))&quot;</span>,
+					local_addr, send_back_addr, connection_id);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 					metrics.incoming_connections_total.inc();
 				}
 			},
-			SwarmEvent::IncomingConnectionError { local_addr, send_back_addr, error } =&gt; {
+			SwarmEvent::IncomingConnectionError {
+				connection_id,
+				local_addr,
+				send_back_addr,
+				error,
+			} =&gt; {
 				<span class="macro">debug!</span>(
 					target: <span class="string">&quot;sub-libp2p&quot;</span>,
-					<span class="string">&quot;Libp2p =&gt; IncomingConnectionError({},{}): {}&quot;</span>,
-					local_addr, send_back_addr, error,
+					<span class="string">&quot;Libp2p =&gt; IncomingConnectionError({},{} via {:?}): {}&quot;</span>,
+					local_addr, send_back_addr, connection_id, error,
 				);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 					<span class="attr">#[allow(deprecated)]
@@ -3466,7 +3474,6 @@
 							} <span class="kw">else </span>{
 								<span class="prelude-val">None
 							</span>},
-						ListenError::ConnectionLimit(<span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(<span class="string">&quot;limit-reached&quot;</span>),
 						ListenError::WrongPeerId { .. } | ListenError::LocalPeerId { .. } =&gt;
 							<span class="prelude-val">Some</span>(<span class="string">&quot;invalid-peer-id&quot;</span>),
 						ListenError::Transport(<span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(<span class="string">&quot;transport-error&quot;</span>),
@@ -3479,17 +3486,6 @@
 							.with_label_values(<span class="kw-2">&amp;</span>[reason])
 							.inc();
 					}
-				}
-			},
-			<span class="attr">#[allow(deprecated)]
-			</span>SwarmEvent::BannedPeer { peer_id, endpoint } =&gt; {
-				<span class="macro">debug!</span>(
-					target: <span class="string">&quot;sub-libp2p&quot;</span>,
-					<span class="string">&quot;Libp2p =&gt; BannedPeer({}). Connected via {:?}.&quot;</span>,
-					peer_id, endpoint,
-				);
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
-					metrics.incoming_connections_errors_total.with_label_values(<span class="kw-2">&amp;</span>[<span class="string">&quot;banned&quot;</span>]).inc();
 				}
 			},
 			SwarmEvent::ListenerClosed { reason, addresses, .. } =&gt; {

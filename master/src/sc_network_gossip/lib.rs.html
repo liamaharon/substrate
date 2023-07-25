@@ -166,7 +166,8 @@
 	validator::{DiscardAll, MessageIntent, ValidationResult, Validator, ValidatorContext},
 };
 
-<span class="kw">use </span>libp2p::{multiaddr, PeerId};
+<span class="kw">use </span>libp2p_identity::PeerId;
+<span class="kw">use </span>multiaddr::{Multiaddr, Protocol};
 <span class="kw">use </span>sc_network::{
 	types::ProtocolName, NetworkBlock, NetworkEventStream, NetworkNotification, NetworkPeers,
 };
@@ -181,8 +182,7 @@
 <span class="doccomment">/// Abstraction over a network.
 </span><span class="kw">pub trait </span>Network&lt;B: BlockT&gt;: NetworkPeers + NetworkEventStream + NetworkNotification {
 	<span class="kw">fn </span>add_set_reserved(<span class="kw-2">&amp;</span><span class="self">self</span>, who: PeerId, protocol: ProtocolName) {
-		<span class="kw">let </span>addr =
-			iter::once(multiaddr::Protocol::P2p(who.into())).collect::&lt;multiaddr::Multiaddr&gt;();
+		<span class="kw">let </span>addr = Multiaddr::empty().with(Protocol::P2p(who));
 		<span class="kw">let </span>result = <span class="self">self</span>.add_peers_to_reserved_set(protocol, iter::once(addr).collect());
 		<span class="kw">if let </span><span class="prelude-val">Err</span>(err) = result {
 			<span class="macro">log::error!</span>(target: <span class="string">&quot;gossip&quot;</span>, <span class="string">&quot;add_set_reserved failed: {}&quot;</span>, err);

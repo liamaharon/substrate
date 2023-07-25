@@ -776,11 +776,6 @@
 <a href="#776" id="776">776</a>
 <a href="#777" id="777">777</a>
 <a href="#778" id="778">778</a>
-<a href="#779" id="779">779</a>
-<a href="#780" id="780">780</a>
-<a href="#781" id="781">781</a>
-<a href="#782" id="782">782</a>
-<a href="#783" id="783">783</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -892,8 +887,7 @@
 <span class="doccomment">/// Splits a Multiaddress into a Multiaddress and PeerId.
 </span><span class="kw">pub fn </span>parse_addr(<span class="kw-2">mut </span>addr: Multiaddr) -&gt; <span class="prelude-ty">Result</span>&lt;(PeerId, Multiaddr), ParseErr&gt; {
 	<span class="kw">let </span>who = <span class="kw">match </span>addr.pop() {
-		<span class="prelude-val">Some</span>(multiaddr::Protocol::P2p(key)) =&gt;
-			PeerId::from_multihash(key).map_err(|<span class="kw">_</span>| ParseErr::InvalidPeerId)<span class="question-mark">?</span>,
+		<span class="prelude-val">Some</span>(multiaddr::Protocol::P2p(peer_id)) =&gt; peer_id,
 		<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(ParseErr::PeerIdMissing),
 	};
 
@@ -926,7 +920,7 @@
 <span class="kw">impl </span>MultiaddrWithPeerId {
 	<span class="doccomment">/// Concatenates the multiaddress and peer ID into one multiaddress containing both.
 	</span><span class="kw">pub fn </span>concat(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Multiaddr {
-		<span class="kw">let </span>proto = multiaddr::Protocol::P2p(From::from(<span class="self">self</span>.peer_id));
+		<span class="kw">let </span>proto = multiaddr::Protocol::P2p(<span class="self">self</span>.peer_id);
 		<span class="self">self</span>.multiaddr.clone().with(proto)
 	}
 }
@@ -964,8 +958,6 @@
 </span><span class="kw">pub enum </span>ParseErr {
 	<span class="doccomment">/// Error while parsing the multiaddress.
 	</span>MultiaddrParse(multiaddr::Error),
-	<span class="doccomment">/// Multihash of the peer ID is invalid.
-	</span>InvalidPeerId,
 	<span class="doccomment">/// The peer ID is missing from the address.
 	</span>PeerIdMissing,
 }
@@ -974,7 +966,6 @@
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::MultiaddrParse(err) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, err),
-			<span class="self">Self</span>::InvalidPeerId =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Peer id at the end of the address is invalid&quot;</span>),
 			<span class="self">Self</span>::PeerIdMissing =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Peer id is missing from the address&quot;</span>),
 		}
 	}
@@ -984,7 +975,6 @@
 	<span class="kw">fn </span>source(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>(<span class="kw">dyn </span>std::error::Error + <span class="lifetime">&#39;static</span>)&gt; {
 		<span class="kw">match </span><span class="self">self </span>{
 			<span class="self">Self</span>::MultiaddrParse(err) =&gt; <span class="prelude-val">Some</span>(err),
-			<span class="self">Self</span>::InvalidPeerId =&gt; <span class="prelude-val">None</span>,
 			<span class="self">Self</span>::PeerIdMissing =&gt; <span class="prelude-val">None</span>,
 		}
 	}

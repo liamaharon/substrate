@@ -856,7 +856,7 @@
 </span><span class="kw">use crate</span>::{MessageIntent, Network, ValidationResult, Validator, ValidatorContext};
 
 <span class="kw">use </span>ahash::AHashSet;
-<span class="kw">use </span>libp2p::PeerId;
+<span class="kw">use </span>libp2p_identity::PeerId;
 <span class="kw">use </span>schnellru::{ByLength, LruMap};
 
 <span class="kw">use </span>prometheus_endpoint::{register, Counter, PrometheusError, Registry, U64};
@@ -1358,8 +1358,8 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::multiaddr::Multiaddr;
 	<span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>multiaddr::Multiaddr;
 	<span class="kw">use </span>sc_network::{
 		config::MultiaddrWithPeerId, event::Event, NetworkBlock, NetworkEventStream,
 		NetworkNotification, NetworkPeers, NotificationSenderError,

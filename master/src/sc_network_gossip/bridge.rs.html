@@ -819,6 +819,7 @@
 <a href="#819" id="819">819</a>
 <a href="#820" id="820">820</a>
 <a href="#821" id="821">821</a>
+<a href="#822" id="822">822</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -849,7 +850,7 @@
 	channel::mpsc::{channel, Receiver, Sender},
 	prelude::<span class="kw-2">*</span>,
 };
-<span class="kw">use </span>libp2p::PeerId;
+<span class="kw">use </span>libp2p_identity::PeerId;
 <span class="kw">use </span>log::trace;
 <span class="kw">use </span>prometheus_endpoint::Registry;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
@@ -1151,12 +1152,13 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use crate</span>::{multiaddr::Multiaddr, ValidationResult, ValidatorContext};
+	<span class="kw">use crate</span>::{ValidationResult, ValidatorContext};
 	<span class="kw">use </span>futures::{
 		channel::mpsc::{unbounded, UnboundedSender},
 		executor::{block_on, block_on_stream},
 		future::poll_fn,
 	};
+	<span class="kw">use </span>multiaddr::Multiaddr;
 	<span class="kw">use </span>quickcheck::{Arbitrary, Gen, QuickCheck};
 	<span class="kw">use </span>sc_network::{
 		config::MultiaddrWithPeerId, NetworkBlock, NetworkEventStream, NetworkNotification,
