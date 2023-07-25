@@ -1143,7 +1143,7 @@
 		<span class="kw">let </span>call = Call::&lt;T, I&gt;::create { admin, config: default_collection_config::&lt;T, I&gt;() };
 	}: { call.dispatch_bypass_filter(origin)<span class="question-mark">? </span>}
 	verify {
-		assert_last_event::&lt;T, I&gt;(Event::Created { collection: T::Helper::collection(<span class="number">0</span>), creator: caller.clone(), owner: caller }.into());
+		assert_last_event::&lt;T, I&gt;(Event::NextCollectionIdIncremented { next_id: <span class="prelude-val">Some</span>(T::Helper::collection(<span class="number">1</span>)) }.into());
 	}
 
 	force_create {
@@ -1151,7 +1151,7 @@
 		<span class="kw">let </span>caller_lookup = T::Lookup::unlookup(caller.clone());
 	}: <span class="kw">_</span>(SystemOrigin::Root, caller_lookup, default_collection_config::&lt;T, I&gt;())
 	verify {
-		assert_last_event::&lt;T, I&gt;(Event::ForceCreated { collection: T::Helper::collection(<span class="number">0</span>), owner: caller }.into());
+		assert_last_event::&lt;T, I&gt;(Event::NextCollectionIdIncremented { next_id: <span class="prelude-val">Some</span>(T::Helper::collection(<span class="number">1</span>)) }.into());
 	}
 
 	destroy {

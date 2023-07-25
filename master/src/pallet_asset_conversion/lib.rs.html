@@ -1298,6 +1298,12 @@
 <a href="#1298" id="1298">1298</a>
 <a href="#1299" id="1299">1299</a>
 <a href="#1300" id="1300">1300</a>
+<a href="#1301" id="1301">1301</a>
+<a href="#1302" id="1302">1302</a>
+<a href="#1303" id="1303">1303</a>
+<a href="#1304" id="1304">1304</a>
+<a href="#1305" id="1305">1305</a>
+<a href="#1306" id="1306">1306</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2022 Parity Technologies (UK) Ltd.
@@ -1656,6 +1662,8 @@
 		</span>PathError,
 		<span class="doccomment">/// The provided path must consists of unique assets.
 		</span>NonUniquePath,
+		<span class="doccomment">/// It was not possible to get or increment the Id of the pool.
+		</span>IncorrectPoolAssetId,
 		<span class="doccomment">/// Unable to find an element in an array/vec that should have one-to-one correspondence
 		/// with another. For example, an array of assets constituting a `path` should have a
 		/// corresponding array of `amounts` along the path.
@@ -1726,8 +1734,10 @@
 				MultiAssetIdConversionResult::Native =&gt; (),
 			}
 
-			<span class="kw">let </span>lp_token = NextPoolAssetId::&lt;T&gt;::get().unwrap_or(T::PoolAssetId::initial_value());
-			<span class="kw">let </span>next_lp_token_id = lp_token.increment();
+			<span class="kw">let </span>lp_token = NextPoolAssetId::&lt;T&gt;::get()
+				.or(T::PoolAssetId::initial_value())
+				.ok_or(Error::&lt;T&gt;::IncorrectPoolAssetId)<span class="question-mark">?</span>;
+			<span class="kw">let </span>next_lp_token_id = lp_token.increment().ok_or(Error::&lt;T&gt;::IncorrectPoolAssetId)<span class="question-mark">?</span>;
 			NextPoolAssetId::&lt;T&gt;::set(<span class="prelude-val">Some</span>(next_lp_token_id));
 
 			T::PoolAssets::create(lp_token.clone(), pool_account.clone(), <span class="bool-val">false</span>, <span class="number">1u32</span>.into())<span class="question-mark">?</span>;
@@ -2523,7 +2533,9 @@
 		<span class="doccomment">/// Returns the next pool asset id for benchmark purposes only.
 		</span><span class="attr">#[cfg(any(test, feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
 		</span><span class="kw">pub fn </span>get_next_pool_asset_id() -&gt; T::PoolAssetId {
-			NextPoolAssetId::&lt;T&gt;::get().unwrap_or(T::PoolAssetId::initial_value())
+			NextPoolAssetId::&lt;T&gt;::get()
+				.or(T::PoolAssetId::initial_value())
+				.expect(<span class="string">&quot;Next pool asset ID can not be None&quot;</span>)
 		}
 	}
 }

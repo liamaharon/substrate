@@ -1877,6 +1877,22 @@
 <a href="#1877" id="1877">1877</a>
 <a href="#1878" id="1878">1878</a>
 <a href="#1879" id="1879">1879</a>
+<a href="#1880" id="1880">1880</a>
+<a href="#1881" id="1881">1881</a>
+<a href="#1882" id="1882">1882</a>
+<a href="#1883" id="1883">1883</a>
+<a href="#1884" id="1884">1884</a>
+<a href="#1885" id="1885">1885</a>
+<a href="#1886" id="1886">1886</a>
+<a href="#1887" id="1887">1887</a>
+<a href="#1888" id="1888">1888</a>
+<a href="#1889" id="1889">1889</a>
+<a href="#1890" id="1890">1890</a>
+<a href="#1891" id="1891">1891</a>
+<a href="#1892" id="1892">1892</a>
+<a href="#1893" id="1893">1893</a>
+<a href="#1894" id="1894">1894</a>
+<a href="#1895" id="1895">1895</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1980,6 +1996,14 @@
 			+ IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// Identifier for the collection of item.
+		///
+		/// SAFETY: The functions in the `Incrementable` trait are fallible. If the functions
+		/// of the implementation both return `None`, the automatic CollectionId generation
+		/// should not be used. So the `create` and `force_create` extrinsics and the
+		/// `create_collection` function will return an `UnknownCollection` Error. Instead use
+		/// the `create_collection_with_id` function. However, if the `Incrementable` trait
+		/// implementation has an incremental order, the `create_collection_with_id` function
+		/// should not be used as it can claim a value in the ID sequence.
 		</span><span class="kw">type </span>CollectionId: Member + Parameter + MaxEncodedLen + Copy + Incrementable;
 
 		<span class="doccomment">/// The type used to identify a unique item within a collection.
@@ -2355,7 +2379,7 @@
 		<span class="doccomment">/// Mint settings for a collection had changed.
 		</span>CollectionMintSettingsUpdated { collection: T::CollectionId },
 		<span class="doccomment">/// Event gets emitted when the `NextCollectionId` gets incremented.
-		</span>NextCollectionIdIncremented { next_id: T::CollectionId },
+		</span>NextCollectionIdIncremented { next_id: <span class="prelude-ty">Option</span>&lt;T::CollectionId&gt; },
 		<span class="doccomment">/// The price was set for the item.
 		</span>ItemPriceSet {
 			collection: T::CollectionId,
@@ -2544,8 +2568,9 @@
 			admin: AccountIdLookupOf&lt;T&gt;,
 			config: CollectionConfigFor&lt;T, I&gt;,
 		) -&gt; DispatchResult {
-			<span class="kw">let </span>collection =
-				NextCollectionId::&lt;T, I&gt;::get().unwrap_or(T::CollectionId::initial_value());
+			<span class="kw">let </span>collection = NextCollectionId::&lt;T, I&gt;::get()
+				.or(T::CollectionId::initial_value())
+				.ok_or(Error::&lt;T, I&gt;::UnknownCollection)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>owner = T::CreateOrigin::ensure_origin(origin, <span class="kw-2">&amp;</span>collection)<span class="question-mark">?</span>;
 			<span class="kw">let </span>admin = T::Lookup::lookup(admin)<span class="question-mark">?</span>;
@@ -2563,7 +2588,10 @@
 				config,
 				T::CollectionDeposit::get(),
 				Event::Created { collection, creator: owner, owner: admin },
-			)
+			)<span class="question-mark">?</span>;
+
+			<span class="self">Self</span>::set_next_collection_id(collection);
+			<span class="prelude-val">Ok</span>(())
 		}
 
 		<span class="doccomment">/// Issue a new collection of non-fungible items from a privileged origin.
@@ -2591,8 +2619,9 @@
 			T::ForceOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
 			<span class="kw">let </span>owner = T::Lookup::lookup(owner)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>collection =
-				NextCollectionId::&lt;T, I&gt;::get().unwrap_or(T::CollectionId::initial_value());
+			<span class="kw">let </span>collection = NextCollectionId::&lt;T, I&gt;::get()
+				.or(T::CollectionId::initial_value())
+				.ok_or(Error::&lt;T, I&gt;::UnknownCollection)<span class="question-mark">?</span>;
 
 			<span class="self">Self</span>::do_create_collection(
 				collection,
@@ -2601,7 +2630,10 @@
 				config,
 				Zero::zero(),
 				Event::ForceCreated { collection, owner },
-			)
+			)<span class="question-mark">?</span>;
+
+			<span class="self">Self</span>::set_next_collection_id(collection);
+			<span class="prelude-val">Ok</span>(())
 		}
 
 		<span class="doccomment">/// Destroy a collection of fungible items.
