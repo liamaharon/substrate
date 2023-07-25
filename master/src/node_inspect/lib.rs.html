@@ -344,13 +344,13 @@
 <span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
 <span class="kw">use </span>sp_runtime::{
 	generic::BlockId,
-	traits::{Block, Hash, HashFor, NumberFor},
+	traits::{Block, Hash, HashingFor, NumberFor},
 };
 <span class="kw">use </span>std::{fmt, fmt::Debug, marker::PhantomData, str::FromStr};
 
 <span class="doccomment">/// A helper type for a generic block input.
 </span><span class="kw">pub type </span>BlockAddressFor&lt;TBlock&gt; =
-	BlockAddress&lt;&lt;HashFor&lt;TBlock&gt; <span class="kw">as </span>Hash&gt;::Output, NumberFor&lt;TBlock&gt;&gt;;
+	BlockAddress&lt;&lt;HashingFor&lt;TBlock&gt; <span class="kw">as </span>Hash&gt;::Output, NumberFor&lt;TBlock&gt;&gt;;
 
 <span class="doccomment">/// A Pretty formatter implementation.
 </span><span class="kw">pub trait </span>PrettyPrinter&lt;TBlock: Block&gt; {
@@ -477,7 +477,7 @@
 	<span class="doccomment">/// Get a pretty-printed extrinsic.
 	</span><span class="kw">pub fn </span>extrinsic(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		input: ExtrinsicAddress&lt;&lt;HashFor&lt;TBlock&gt; <span class="kw">as </span>Hash&gt;::Output, NumberFor&lt;TBlock&gt;&gt;,
+		input: ExtrinsicAddress&lt;&lt;HashingFor&lt;TBlock&gt; <span class="kw">as </span>Hash&gt;::Output, NumberFor&lt;TBlock&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
 		<span class="kw">struct </span>ExtrinsicPrinter&lt;<span class="lifetime">&#39;a</span>, A: Block, B&gt;(A::Extrinsic, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>B);
 		<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, A: Block, B: PrettyPrinter&lt;A&gt;&gt; fmt::Display <span class="kw">for </span>ExtrinsicPrinter&lt;<span class="lifetime">&#39;a</span>, A, B&gt; {

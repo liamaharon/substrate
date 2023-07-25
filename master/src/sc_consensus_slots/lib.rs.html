@@ -1296,7 +1296,7 @@
 <span class="kw">use </span>sp_consensus::{Proposal, Proposer, SelectChain, SyncOracle};
 <span class="kw">use </span>sp_consensus_slots::{Slot, SlotDuration};
 <span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
-<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, HashFor, Header <span class="kw">as </span>HeaderT};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, HashingFor, Header <span class="kw">as </span>HeaderT};
 <span class="kw">use </span>std::{
 	fmt::Debug,
 	ops::Deref,
@@ -1309,7 +1309,7 @@
 ///
 /// See [`sp_state_machine::StorageChanges`] for more information.
 </span><span class="kw">pub type </span>StorageChanges&lt;Transaction, Block&gt; =
-	sp_state_machine::StorageChanges&lt;Transaction, HashFor&lt;Block&gt;&gt;;
+	sp_state_machine::StorageChanges&lt;Transaction, HashingFor&lt;Block&gt;&gt;;
 
 <span class="doccomment">/// The result of [`SlotWorker::on_slot`].
 </span><span class="attr">#[derive(Debug, Clone)]

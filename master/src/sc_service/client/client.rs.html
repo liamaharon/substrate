@@ -2220,7 +2220,7 @@
 <span class="kw">use </span>sp_runtime::{
 	generic::{BlockId, SignedBlock},
 	traits::{
-		Block <span class="kw">as </span>BlockT, BlockIdTo, HashFor, Header <span class="kw">as </span>HeaderT, NumberFor, One,
+		Block <span class="kw">as </span>BlockT, BlockIdTo, HashingFor, Header <span class="kw">as </span>HeaderT, NumberFor, One,
 		SaturatedConversion, Zero,
 	},
 	Digest, Justification, Justifications, StateVersion,
@@ -3420,11 +3420,11 @@
 		<span class="comment">// this is a read proof, using version V0 or V1 is equivalent.
 		</span><span class="kw">let </span>root = state.storage_root(std::iter::empty(), StateVersion::V0).<span class="number">0</span>;
 
-		<span class="kw">let </span>(proof, count) = prove_range_read_with_child_with_size::&lt;<span class="kw">_</span>, HashFor&lt;Block&gt;&gt;(
+		<span class="kw">let </span>(proof, count) = prove_range_read_with_child_with_size::&lt;<span class="kw">_</span>, HashingFor&lt;Block&gt;&gt;(
 			state, size_limit, start_key,
 		)<span class="question-mark">?</span>;
 		<span class="kw">let </span>proof = proof
-			.into_compact_proof::&lt;HashFor&lt;Block&gt;&gt;(root)
+			.into_compact_proof::&lt;HashingFor&lt;Block&gt;&gt;(root)
 			.map_err(|e| sp_blockchain::Error::from_state(Box::new(e)))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>((proof, count))
 	}
@@ -3547,16 +3547,16 @@
 		proof: CompactProof,
 		start_key: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 	) -&gt; sp_blockchain::Result&lt;(KeyValueStates, usize)&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>db = sp_state_machine::MemoryDB::&lt;HashFor&lt;Block&gt;&gt;::new(<span class="kw-2">&amp;</span>[]);
+		<span class="kw">let </span><span class="kw-2">mut </span>db = sp_state_machine::MemoryDB::&lt;HashingFor&lt;Block&gt;&gt;::new(<span class="kw-2">&amp;</span>[]);
 		<span class="comment">// Compact encoding
-		</span><span class="kw">let _ </span>= sp_trie::decode_compact::&lt;sp_state_machine::LayoutV0&lt;HashFor&lt;Block&gt;&gt;, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+		</span><span class="kw">let _ </span>= sp_trie::decode_compact::&lt;sp_state_machine::LayoutV0&lt;HashingFor&lt;Block&gt;&gt;, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
 			<span class="kw-2">&amp;mut </span>db,
 			proof.iter_compact_encoded_nodes(),
 			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>root),
 		)
 		.map_err(|e| sp_blockchain::Error::from_state(Box::new(e)))<span class="question-mark">?</span>;
 		<span class="kw">let </span>proving_backend = sp_state_machine::TrieBackendBuilder::new(db, root).build();
-		<span class="kw">let </span>state = read_range_proof_check_with_child_on_proving_backend::&lt;HashFor&lt;Block&gt;&gt;(
+		<span class="kw">let </span>state = read_range_proof_check_with_child_on_proving_backend::&lt;HashingFor&lt;Block&gt;&gt;(
 			<span class="kw-2">&amp;</span>proving_backend,
 			start_key,
 		)<span class="question-mark">?</span>;

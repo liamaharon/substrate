@@ -703,6 +703,7 @@
 <a href="#703" id="703">703</a>
 <a href="#704" id="704">704</a>
 <a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -733,7 +734,7 @@
 	storage::{ChildInfo, TrackedStorageKey},
 };
 <span class="kw">use </span>sp_runtime::{
-	traits::{Block <span class="kw">as </span>BlockT, HashFor},
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor},
 	StateVersion, Storage,
 };
 <span class="kw">use </span>sp_state_machine::{
@@ -757,9 +758,9 @@
 	_block: std::marker::PhantomData&lt;Block&gt;,
 }
 
-<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashFor&lt;Block&gt;&gt; <span class="kw">for </span>StorageDb&lt;Block&gt; {
+<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">for </span>StorageDb&lt;Block&gt; {
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>Block::Hash, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;, String&gt; {
-		<span class="kw">let </span>prefixed_key = prefixed_key::&lt;HashFor&lt;Block&gt;&gt;(key, prefix);
+		<span class="kw">let </span>prefixed_key = prefixed_key::&lt;HashingFor&lt;Block&gt;&gt;(key, prefix);
 		<span class="self">self</span>.db
 			.get(<span class="number">0</span>, <span class="kw-2">&amp;</span>prefixed_key)
 			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;Database backend error: {:?}&quot;</span>, e))
@@ -789,19 +790,19 @@
 	record: Cell&lt;Vec&lt;Vec&lt;u8&gt;&gt;&gt;,
 	key_tracker: Arc&lt;Mutex&lt;KeyTracker&gt;&gt;,
 	whitelist: RefCell&lt;Vec&lt;TrackedStorageKey&gt;&gt;,
-	proof_recorder: <span class="prelude-ty">Option</span>&lt;sp_trie::recorder::Recorder&lt;HashFor&lt;B&gt;&gt;&gt;,
+	proof_recorder: <span class="prelude-ty">Option</span>&lt;sp_trie::recorder::Recorder&lt;HashingFor&lt;B&gt;&gt;&gt;,
 	proof_recorder_root: Cell&lt;B::Hash&gt;,
-	shared_trie_cache: SharedTrieCache&lt;HashFor&lt;B&gt;&gt;,
+	shared_trie_cache: SharedTrieCache&lt;HashingFor&lt;B&gt;&gt;,
 }
 
 <span class="doccomment">/// A raw iterator over the `BenchmarkingState`.
 </span><span class="kw">pub struct </span>RawIter&lt;B: BlockT&gt; {
-	inner: &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::RawIter,
+	inner: &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::RawIter,
 	child_trie: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
 	key_tracker: Arc&lt;Mutex&lt;KeyTracker&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;B: BlockT&gt; StorageIterator&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>RawIter&lt;B&gt; {
+<span class="kw">impl</span>&lt;B: BlockT&gt; StorageIterator&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RawIter&lt;B&gt; {
 	<span class="kw">type </span>Backend = BenchmarkingState&lt;B&gt;;
 	<span class="kw">type </span>Error = String;
 
@@ -843,8 +844,8 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, String&gt; {
 		<span class="kw">let </span>state_version = sp_runtime::StateVersion::default();
 		<span class="kw">let </span><span class="kw-2">mut </span>root = B::Hash::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>mdb = MemoryDB::&lt;HashFor&lt;B&gt;&gt;::default();
-		sp_trie::trie_types::TrieDBMutBuilderV1::&lt;HashFor&lt;B&gt;&gt;::new(<span class="kw-2">&amp;mut </span>mdb, <span class="kw-2">&amp;mut </span>root).build();
+		<span class="kw">let </span><span class="kw-2">mut </span>mdb = MemoryDB::&lt;HashingFor&lt;B&gt;&gt;::default();
+		sp_trie::trie_types::TrieDBMutBuilderV1::&lt;HashingFor&lt;B&gt;&gt;::new(<span class="kw-2">&amp;mut </span>mdb, <span class="kw-2">&amp;mut </span>root).build();
 
 		<span class="kw">let </span><span class="kw-2">mut </span>state = BenchmarkingState {
 			state: RefCell::new(<span class="prelude-val">None</span>),
@@ -1046,10 +1047,10 @@
 	<span class="string">&quot;State is not open&quot;</span>.into()
 }
 
-<span class="kw">impl</span>&lt;B: BlockT&gt; StateBackend&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>BenchmarkingState&lt;B&gt; {
-	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::Error;
-	<span class="kw">type </span>Transaction = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::Transaction;
-	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
+<span class="kw">impl</span>&lt;B: BlockT&gt; StateBackend&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>BenchmarkingState&lt;B&gt; {
+	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Error;
+	<span class="kw">type </span>Transaction = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Transaction;
+	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
 	<span class="kw">type </span>RawIter = RawIter&lt;B&gt;;
 
 	<span class="kw">fn </span>storage(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;, <span class="self">Self</span>::Error&gt; {
@@ -1164,7 +1165,7 @@
 
 	<span class="kw">fn </span>commit(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		storage_root: &lt;HashFor&lt;B&gt; <span class="kw">as </span>Hasher&gt;::Out,
+		storage_root: &lt;HashingFor&lt;B&gt; <span class="kw">as </span>Hasher&gt;::Out,
 		<span class="kw-2">mut </span>transaction: <span class="self">Self</span>::Transaction,
 		main_storage_changes: StorageCollection,
 		child_storage_changes: ChildStorageCollection,
@@ -1319,7 +1320,8 @@
 				</span><span class="macro">log::debug!</span>(target: <span class="string">&quot;benchmark&quot;</span>, <span class="string">&quot;Some proof size: {}&quot;</span>, <span class="kw-2">&amp;</span>proof_size);
 				proof_size
 			} <span class="kw">else </span>{
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(size) = proof.encoded_compact_size::&lt;HashFor&lt;B&gt;&gt;(proof_recorder_root) {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(size) = proof.encoded_compact_size::&lt;HashingFor&lt;B&gt;&gt;(proof_recorder_root)
+				{
 					size <span class="kw">as </span>u32
 				} <span class="kw">else if </span>proof_recorder_root == <span class="self">self</span>.root.get() {
 					<span class="macro">log::debug!</span>(target: <span class="string">&quot;benchmark&quot;</span>, <span class="string">&quot;No changes - no proof&quot;</span>);

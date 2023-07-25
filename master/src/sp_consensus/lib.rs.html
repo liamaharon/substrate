@@ -281,7 +281,7 @@
 
 <span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>sp_runtime::{
-	traits::{Block <span class="kw">as </span>BlockT, HashFor},
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor},
 	Digest,
 };
 <span class="kw">use </span>sp_state_machine::StorageProof;
@@ -353,7 +353,7 @@
 	<span class="doccomment">/// Proof that was recorded while building the block.
 	</span><span class="kw">pub </span>proof: Proof,
 	<span class="doccomment">/// The storage changes while building this block.
-	</span><span class="kw">pub </span>storage_changes: sp_state_machine::StorageChanges&lt;Transaction, HashFor&lt;Block&gt;&gt;,
+	</span><span class="kw">pub </span>storage_changes: sp_state_machine::StorageChanges&lt;Transaction, HashingFor&lt;Block&gt;&gt;,
 }
 
 <span class="doccomment">/// Error that is returned when [`ProofRecording`] requested to record a proof,

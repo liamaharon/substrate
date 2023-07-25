@@ -511,7 +511,7 @@
 
 	<span class="prelude-val">Ok</span>(<span class="macro">quote!</span>(
 		<span class="kw">impl </span>#crate_::ApiExt&lt;#block_type&gt; <span class="kw">for </span>#self_ty {
-			<span class="kw">type </span>StateBackend = #crate_::InMemoryBackend&lt;#crate_::HashFor&lt;#block_type&gt;&gt;;
+			<span class="kw">type </span>StateBackend = #crate_::InMemoryBackend&lt;#crate_::HashingFor&lt;#block_type&gt;&gt;;
 
 			<span class="kw">fn </span>execute_in_transaction&lt;F: FnOnce(<span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; #crate_::TransactionOutcome&lt;R&gt;, R&gt;(
 				<span class="kw-2">&amp;</span><span class="self">self</span>,

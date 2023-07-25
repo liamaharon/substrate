@@ -1138,6 +1138,27 @@
 <a href="#1138" id="1138">1138</a>
 <a href="#1139" id="1139">1139</a>
 <a href="#1140" id="1140">1140</a>
+<a href="#1141" id="1141">1141</a>
+<a href="#1142" id="1142">1142</a>
+<a href="#1143" id="1143">1143</a>
+<a href="#1144" id="1144">1144</a>
+<a href="#1145" id="1145">1145</a>
+<a href="#1146" id="1146">1146</a>
+<a href="#1147" id="1147">1147</a>
+<a href="#1148" id="1148">1148</a>
+<a href="#1149" id="1149">1149</a>
+<a href="#1150" id="1150">1150</a>
+<a href="#1151" id="1151">1151</a>
+<a href="#1152" id="1152">1152</a>
+<a href="#1153" id="1153">1153</a>
+<a href="#1154" id="1154">1154</a>
+<a href="#1155" id="1155">1155</a>
+<a href="#1156" id="1156">1156</a>
+<a href="#1157" id="1157">1157</a>
+<a href="#1158" id="1158">1158</a>
+<a href="#1159" id="1159">1159</a>
+<a href="#1160" id="1160">1160</a>
+<a href="#1161" id="1161">1161</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1444,7 +1465,10 @@
 					</span>.propose_with(inherent_data, inherent_digests, deadline, block_size_limit)
 					.<span class="kw">await</span>;
 				<span class="kw">if </span>tx.send(res).is_err() {
-					<span class="macro">trace!</span>(target: LOG_TARGET, <span class="string">&quot;Could not send block production result to proposer!&quot;</span>);
+					<span class="macro">trace!</span>(
+						target: LOG_TARGET,
+						<span class="string">&quot;Could not send block production result to proposer!&quot;
+					</span>);
 				}
 			}),
 		);
@@ -1524,7 +1548,10 @@
 		<span class="kw">for </span>inherent <span class="kw">in </span>inherents {
 			<span class="kw">match </span>block_builder.push(inherent) {
 				<span class="prelude-val">Err</span>(ApplyExtrinsicFailed(Validity(e))) <span class="kw">if </span>e.exhausted_resources() =&gt; {
-					<span class="macro">warn!</span>(target: LOG_TARGET, <span class="string">&quot;⚠️  Dropping non-mandatory inherent from overweight block.&quot;</span>)
+					<span class="macro">warn!</span>(
+						target: LOG_TARGET,
+						<span class="string">&quot;⚠️  Dropping non-mandatory inherent from overweight block.&quot;
+					</span>)
 				},
 				<span class="prelude-val">Err</span>(ApplyExtrinsicFailed(Validity(e))) <span class="kw">if </span>e.was_mandatory() =&gt; {
 					<span class="macro">error!</span>(
@@ -1533,7 +1560,10 @@
 					<span class="kw">return </span><span class="prelude-val">Err</span>(ApplyExtrinsicFailed(Validity(e)))
 				},
 				<span class="prelude-val">Err</span>(e) =&gt; {
-					<span class="macro">warn!</span>(target: LOG_TARGET, <span class="string">&quot;❗️ Inherent extrinsic returned unexpected error: {}. Dropping.&quot;</span>, e);
+					<span class="macro">warn!</span>(
+						target: LOG_TARGET,
+						<span class="string">&quot;❗️ Inherent extrinsic returned unexpected error: {}. Dropping.&quot;</span>, e
+					);
 				},
 				<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {},
 			}
@@ -1589,9 +1619,10 @@
 
 			<span class="kw">let </span>now = (<span class="self">self</span>.now)();
 			<span class="kw">if </span>now &gt; deadline {
-				<span class="macro">debug!</span>(target: LOG_TARGET,
+				<span class="macro">debug!</span>(
+					target: LOG_TARGET,
 					<span class="string">&quot;Consensus deadline reached when pushing block transactions, \
-					proceeding with proposing.&quot;
+				proceeding with proposing.&quot;
 				</span>);
 				<span class="kw">break </span>EndProposingReason::HitDeadline
 			}
@@ -1605,21 +1636,26 @@
 				pending_iterator.report_invalid(<span class="kw-2">&amp;</span>pending_tx);
 				<span class="kw">if </span>skipped &lt; MAX_SKIPPED_TRANSACTIONS {
 					skipped += <span class="number">1</span>;
-					<span class="macro">debug!</span>(target: LOG_TARGET,
+					<span class="macro">debug!</span>(
+						target: LOG_TARGET,
 						<span class="string">&quot;Transaction would overflow the block size limit, \
-						 but will try {} more transactions before quitting.&quot;</span>,
+					 but will try {} more transactions before quitting.&quot;</span>,
 						MAX_SKIPPED_TRANSACTIONS - skipped,
 					);
 					<span class="kw">continue
 				</span>} <span class="kw">else if </span>now &lt; soft_deadline {
-					<span class="macro">debug!</span>(target: LOG_TARGET,
+					<span class="macro">debug!</span>(
+						target: LOG_TARGET,
 						<span class="string">&quot;Transaction would overflow the block size limit, \
-						 but we still have time before the soft deadline, so \
-						 we will try a bit more.&quot;
+					 but we still have time before the soft deadline, so \
+					 we will try a bit more.&quot;
 					</span>);
 					<span class="kw">continue
 				</span>} <span class="kw">else </span>{
-					<span class="macro">debug!</span>(target: LOG_TARGET, <span class="string">&quot;Reached block size limit, proceeding with proposing.&quot;</span>);
+					<span class="macro">debug!</span>(
+						target: LOG_TARGET,
+						<span class="string">&quot;Reached block size limit, proceeding with proposing.&quot;
+					</span>);
 					<span class="kw">break </span>EndProposingReason::HitBlockSizeLimit
 				}
 			}
@@ -1644,22 +1680,28 @@
 							 so we will try a bit more before quitting.&quot;
 						</span>);
 					} <span class="kw">else </span>{
-						<span class="macro">debug!</span>(target: LOG_TARGET, <span class="string">&quot;Reached block weight limit, proceeding with proposing.&quot;</span>);
+						<span class="macro">debug!</span>(
+							target: LOG_TARGET,
+							<span class="string">&quot;Reached block weight limit, proceeding with proposing.&quot;
+						</span>);
 						<span class="kw">break </span>EndProposingReason::HitBlockWeightLimit
 					}
 				},
 				<span class="prelude-val">Err</span>(e) =&gt; {
 					pending_iterator.report_invalid(<span class="kw-2">&amp;</span>pending_tx);
-					<span class="macro">debug!</span>(target: LOG_TARGET, <span class="string">&quot;[{:?}] Invalid transaction: {}&quot;</span>, pending_tx_hash, e);
+					<span class="macro">debug!</span>(
+						target: LOG_TARGET,
+						<span class="string">&quot;[{:?}] Invalid transaction: {}&quot;</span>, pending_tx_hash, e
+					);
 					unqueue_invalid.push(pending_tx_hash);
 				},
 			}
 		};
 
 		<span class="kw">if </span><span class="macro">matches!</span>(end_reason, EndProposingReason::HitBlockSizeLimit) &amp;&amp; !transaction_pushed {
-			<span class="macro">warn!</span>(target: LOG_TARGET,
-				<span class="string">&quot;Hit block size limit of `{}` without including any transaction!&quot;</span>,
-				block_size_limit,
+			<span class="macro">warn!</span>(
+				target: LOG_TARGET,
+				<span class="string">&quot;Hit block size limit of `{}` without including any transaction!&quot;</span>, block_size_limit,
 			);
 		}
 

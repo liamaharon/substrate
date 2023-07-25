@@ -254,7 +254,7 @@
 <span class="kw">use </span>sc_service::Configuration;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_database::{ColumnId, Database};
-<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, HashFor};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, HashingFor};
 <span class="kw">use </span>sp_state_machine::Storage;
 <span class="kw">use </span>sp_storage::{ChildInfo, ChildType, PrefixedStorageKey, StateVersion};
 
@@ -359,7 +359,7 @@
 		cfg: Configuration,
 		client: Arc&lt;C&gt;,
 		db: (Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, ColumnId),
-		storage: Arc&lt;<span class="kw">dyn </span>Storage&lt;HashFor&lt;Block&gt;&gt;&gt;,
+		storage: Arc&lt;<span class="kw">dyn </span>Storage&lt;HashingFor&lt;Block&gt;&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;
 	<span class="kw">where
 		</span>BA: ClientBackend&lt;Block&gt;,

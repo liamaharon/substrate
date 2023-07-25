@@ -882,6 +882,7 @@
 <a href="#882" id="882">882</a>
 <a href="#883" id="883">883</a>
 <a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -909,7 +910,7 @@
 };
 <span class="kw">use </span>sp_runtime::{
 	generic::BlockId,
-	traits::{Block <span class="kw">as </span>BlockT, HashFor, Header <span class="kw">as </span>HeaderT, NumberFor, Zero},
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor, Header <span class="kw">as </span>HeaderT, NumberFor, Zero},
 	Justification, Justifications, StateVersion, Storage,
 };
 <span class="kw">use </span>sp_state_machine::{
@@ -1363,9 +1364,10 @@
 <span class="doccomment">/// In-memory operation.
 </span><span class="kw">pub struct </span>BlockImportOperation&lt;Block: BlockT&gt; {
 	pending_block: <span class="prelude-ty">Option</span>&lt;PendingBlock&lt;Block&gt;&gt;,
-	old_state: InMemoryBackend&lt;HashFor&lt;Block&gt;&gt;,
-	new_state:
-		<span class="prelude-ty">Option</span>&lt;&lt;InMemoryBackend&lt;HashFor&lt;Block&gt;&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::Transaction&gt;,
+	old_state: InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt;,
+	new_state: <span class="prelude-ty">Option</span>&lt;
+		&lt;InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction,
+	&gt;,
 	aux: Vec&lt;(Vec&lt;u8&gt;, <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;)&gt;,
 	finalized_blocks: Vec&lt;(Block::Hash, <span class="prelude-ty">Option</span>&lt;Justification&gt;)&gt;,
 	set_head: <span class="prelude-ty">Option</span>&lt;Block::Hash&gt;,
@@ -1401,7 +1403,7 @@
 }
 
 <span class="kw">impl</span>&lt;Block: BlockT&gt; backend::BlockImportOperation&lt;Block&gt; <span class="kw">for </span>BlockImportOperation&lt;Block&gt; {
-	<span class="kw">type </span>State = InMemoryBackend&lt;HashFor&lt;Block&gt;&gt;;
+	<span class="kw">type </span>State = InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt;;
 
 	<span class="kw">fn </span>state(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sp_blockchain::Result&lt;<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>::State&gt;&gt; {
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.old_state))
@@ -1423,7 +1425,7 @@
 
 	<span class="kw">fn </span>update_db_storage(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		update: &lt;InMemoryBackend&lt;HashFor&lt;Block&gt;&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::Transaction,
+		update: &lt;InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction,
 	) -&gt; sp_blockchain::Result&lt;()&gt; {
 		<span class="self">self</span>.new_state = <span class="prelude-val">Some</span>(update);
 		<span class="prelude-val">Ok</span>(())
@@ -1490,7 +1492,7 @@
 /// &gt; **Warning**: Doesn&#39;t support all the features necessary for a proper database. Only use this
 /// &gt; struct for testing purposes. Do **NOT** use in production.
 </span><span class="kw">pub struct </span>Backend&lt;Block: BlockT&gt; {
-	states: RwLock&lt;HashMap&lt;Block::Hash, InMemoryBackend&lt;HashFor&lt;Block&gt;&gt;&gt;&gt;,
+	states: RwLock&lt;HashMap&lt;Block::Hash, InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;&gt;,
 	blockchain: Blockchain&lt;Block&gt;,
 	import_lock: RwLock&lt;()&gt;,
 	pinned_blocks: RwLock&lt;HashMap&lt;Block::Hash, i64&gt;&gt;,
@@ -1545,7 +1547,7 @@
 <span class="kw">impl</span>&lt;Block: BlockT&gt; backend::Backend&lt;Block&gt; <span class="kw">for </span>Backend&lt;Block&gt; {
 	<span class="kw">type </span>BlockImportOperation = BlockImportOperation&lt;Block&gt;;
 	<span class="kw">type </span>Blockchain = Blockchain&lt;Block&gt;;
-	<span class="kw">type </span>State = InMemoryBackend&lt;HashFor&lt;Block&gt;&gt;;
+	<span class="kw">type </span>State = InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt;;
 	<span class="kw">type </span>OffchainStorage = OffchainStorage;
 
 	<span class="kw">fn </span>begin_operation(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sp_blockchain::Result&lt;<span class="self">Self</span>::BlockImportOperation&gt; {

@@ -4269,7 +4269,7 @@
 };
 <span class="kw">use </span>sp_runtime::{
 	traits::{
-		Block <span class="kw">as </span>BlockT, CheckedSub, Hash, HashFor, Header <span class="kw">as </span>HeaderT, NumberFor, One,
+		Block <span class="kw">as </span>BlockT, CheckedSub, Hash, HashingFor, Header <span class="kw">as </span>HeaderT, NumberFor, One,
 		SaturatedConversion, Zero,
 	},
 	EncodedJustification, Justifications,
@@ -7328,7 +7328,7 @@
 		}
 		<span class="kw">if let </span>(<span class="prelude-val">Some</span>(header), <span class="prelude-val">Some</span>(body)) = (<span class="kw-2">&amp;</span>b.header, <span class="kw-2">&amp;</span>b.body) {
 			<span class="kw">let </span>expected = <span class="kw-2">*</span>header.extrinsics_root();
-			<span class="kw">let </span>got = HashFor::&lt;Block&gt;::ordered_trie_root(
+			<span class="kw">let </span>got = HashingFor::&lt;Block&gt;::ordered_trie_root(
 				body.iter().map(Encode::encode).collect(),
 				sp_runtime::StateVersion::V0,
 			);

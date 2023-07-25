@@ -862,7 +862,7 @@
 <span class="kw">use </span>prometheus_endpoint::{register, Counter, PrometheusError, Registry, U64};
 <span class="kw">use </span>sc_network::types::ProtocolName;
 <span class="kw">use </span>sc_network_common::role::ObservedRole;
-<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Hash, HashFor};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Hash, HashingFor};
 <span class="kw">use </span>std::{collections::HashMap, iter, sync::Arc, time, time::Instant};
 
 <span class="comment">// FIXME: Add additional spam/DoS attack protection: https://github.com/paritytech/substrate/issues/1115
@@ -1065,7 +1065,7 @@
 	/// message is already expired it should be dropped on the next garbage
 	/// collection.
 	</span><span class="kw">pub fn </span>register_message(<span class="kw-2">&amp;mut </span><span class="self">self</span>, topic: B::Hash, message: Vec&lt;u8&gt;) {
-		<span class="kw">let </span>message_hash = HashFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message[..]);
+		<span class="kw">let </span>message_hash = HashingFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message[..]);
 		<span class="self">self</span>.register_message_hashed(message_hash, topic, message, <span class="prelude-val">None</span>);
 	}
 
@@ -1180,7 +1180,7 @@
 		}
 
 		<span class="kw">for </span>message <span class="kw">in </span>messages {
-			<span class="kw">let </span>message_hash = HashFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message[..]);
+			<span class="kw">let </span>message_hash = HashingFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message[..]);
 
 			<span class="kw">if </span><span class="self">self</span>.known_messages.get(<span class="kw-2">&amp;</span>message_hash).is_some() {
 				<span class="macro">tracing::trace!</span>(
@@ -1293,7 +1293,7 @@
 		message: Vec&lt;u8&gt;,
 		force: bool,
 	) {
-		<span class="kw">let </span>message_hash = HashFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message);
+		<span class="kw">let </span>message_hash = HashingFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message);
 		<span class="self">self</span>.register_message_hashed(message_hash, topic, message.clone(), <span class="prelude-val">None</span>);
 		<span class="kw">let </span>intent = <span class="kw">if </span>force { MessageIntent::ForcedBroadcast } <span class="kw">else </span>{ MessageIntent::Broadcast };
 		propagate(
@@ -1314,7 +1314,7 @@
 			<span class="prelude-val">Some</span>(peer) =&gt; peer,
 		};
 
-		<span class="kw">let </span>message_hash = HashFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message);
+		<span class="kw">let </span>message_hash = HashingFor::&lt;B&gt;::hash(<span class="kw-2">&amp;</span>message);
 
 		<span class="macro">tracing::trace!</span>(
 			target: <span class="string">&quot;gossip&quot;</span>,
@@ -1577,7 +1577,7 @@
 
 		<span class="comment">// Register message.
 		</span><span class="kw">let </span>message = <span class="macro">vec!</span>[<span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>];
-		<span class="kw">let </span>topic = HashFor::&lt;Block&gt;::hash(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);
+		<span class="kw">let </span>topic = HashingFor::&lt;Block&gt;::hash(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>]);
 		consensus.register_message(topic, message.clone());
 
 		<span class="macro">assert_eq!</span>(

@@ -325,7 +325,7 @@
 	P: TransactionPool + <span class="lifetime">&#39;static</span>,
 	SC: SelectChain&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	B: sc_client_api::Backend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	B::State: sc_client_api::backend::StateBackend&lt;sp_runtime::traits::HashFor&lt;Block&gt;&gt;,
+	B::State: sc_client_api::backend::StateBackend&lt;sp_runtime::traits::HashingFor&lt;Block&gt;&gt;,
 {
 	<span class="kw">use </span>mmr_rpc::{Mmr, MmrApiServer};
 	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};

@@ -1970,13 +1970,6 @@
 <a href="#1970" id="1970">1970</a>
 <a href="#1971" id="1971">1971</a>
 <a href="#1972" id="1972">1972</a>
-<a href="#1973" id="1973">1973</a>
-<a href="#1974" id="1974">1974</a>
-<a href="#1975" id="1975">1975</a>
-<a href="#1976" id="1976">1976</a>
-<a href="#1977" id="1977">1977</a>
-<a href="#1978" id="1978">1978</a>
-<a href="#1979" id="1979">1979</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2378,11 +2371,7 @@
 				PeerState::Connected(direction)
 			},
 			<span class="prelude-val">None </span>=&gt; {
-				<span class="macro">trace!</span>(
-					target: LOG_TARGET,
-					<span class="string">&quot;Adding reserved node {peer_id} on {:?}.&quot;</span>,
-					<span class="self">self</span>.set_id,
-				);
+				<span class="macro">trace!</span>(target: LOG_TARGET, <span class="string">&quot;Adding reserved node {peer_id} on {:?}.&quot;</span>, <span class="self">self</span>.set_id,);
 				PeerState::NotConnected
 			},
 		};
@@ -2405,8 +2394,7 @@
 			<span class="prelude-val">None </span>=&gt; {
 				<span class="macro">warn!</span>(
 					target: LOG_TARGET,
-					<span class="string">&quot;Trying to remove unknown reserved node {peer_id} from {:?}.&quot;</span>,
-					<span class="self">self</span>.set_id,
+					<span class="string">&quot;Trying to remove unknown reserved node {peer_id} from {:?}.&quot;</span>, <span class="self">self</span>.set_id,
 				);
 				<span class="kw">return
 			</span>},
@@ -2503,8 +2491,7 @@
 		</span><span class="kw">if </span><span class="self">self</span>.reserved_nodes.contains_key(<span class="kw-2">&amp;</span>peer_id) {
 			<span class="macro">debug!</span>(
 				target: LOG_TARGET,
-				<span class="string">&quot;Ignoring request to disconnect reserved peer {peer_id} from {:?}.&quot;</span>,
-				<span class="self">self</span>.set_id,
+				<span class="string">&quot;Ignoring request to disconnect reserved peer {peer_id} from {:?}.&quot;</span>, <span class="self">self</span>.set_id,
 			);
 			<span class="kw">return
 		</span>}
@@ -2525,8 +2512,7 @@
 			<span class="prelude-val">None </span>=&gt; {
 				<span class="macro">debug!</span>(
 					target: LOG_TARGET,
-					<span class="string">&quot;Trying to disconnect unknown peer {peer_id} from {:?}.&quot;</span>,
-					<span class="self">self</span>.set_id,
+					<span class="string">&quot;Trying to disconnect unknown peer {peer_id} from {:?}.&quot;</span>, <span class="self">self</span>.set_id,
 				);
 			},
 		}

@@ -4405,6 +4405,10 @@
 <a href="#4405" id="4405">4405</a>
 <a href="#4406" id="4406">4406</a>
 <a href="#4407" id="4407">4407</a>
+<a href="#4408" id="4408">4408</a>
+<a href="#4409" id="4409">4409</a>
+<a href="#4410" id="4410">4410</a>
+<a href="#4411" id="4411">4411</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -4486,7 +4490,7 @@
 <span class="kw">use </span>sp_runtime::{
 	generic::BlockId,
 	traits::{
-		Block <span class="kw">as </span>BlockT, Hash, HashFor, Header <span class="kw">as </span>HeaderT, NumberFor, One, SaturatedConversion,
+		Block <span class="kw">as </span>BlockT, Hash, HashingFor, Header <span class="kw">as </span>HeaderT, NumberFor, One, SaturatedConversion,
 		Zero,
 	},
 	Justification, Justifications, StateVersion, Storage,
@@ -4509,12 +4513,12 @@
 
 <span class="doccomment">/// DB-backed patricia trie state, transaction type is an overlay of changes to commit.
 </span><span class="kw">pub type </span>DbState&lt;B&gt; =
-	sp_state_machine::TrieBackend&lt;Arc&lt;<span class="kw">dyn </span>sp_state_machine::Storage&lt;HashFor&lt;B&gt;&gt;&gt;, HashFor&lt;B&gt;&gt;;
+	sp_state_machine::TrieBackend&lt;Arc&lt;<span class="kw">dyn </span>sp_state_machine::Storage&lt;HashingFor&lt;B&gt;&gt;&gt;, HashingFor&lt;B&gt;&gt;;
 
 <span class="doccomment">/// Builder for [`DbState`].
 </span><span class="kw">pub type </span>DbStateBuilder&lt;B&gt; = sp_state_machine::TrieBackendBuilder&lt;
-	Arc&lt;<span class="kw">dyn </span>sp_state_machine::Storage&lt;HashFor&lt;B&gt;&gt;&gt;,
-	HashFor&lt;B&gt;,
+	Arc&lt;<span class="kw">dyn </span>sp_state_machine::Storage&lt;HashingFor&lt;B&gt;&gt;&gt;,
+	HashingFor&lt;B&gt;,
 &gt;;
 
 <span class="doccomment">/// Length of a [`DbHash`].
@@ -4569,12 +4573,12 @@
 
 <span class="doccomment">/// A raw iterator over the `RefTrackingState`.
 </span><span class="kw">pub struct </span>RawIter&lt;B: BlockT&gt; {
-	inner: &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::RawIter,
+	inner: &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::RawIter,
 }
 
-<span class="kw">impl</span>&lt;B: BlockT&gt; StorageIterator&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>RawIter&lt;B&gt; {
+<span class="kw">impl</span>&lt;B: BlockT&gt; StorageIterator&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RawIter&lt;B&gt; {
 	<span class="kw">type </span>Backend = RefTrackingState&lt;B&gt;;
-	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::Error;
+	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Error;
 
 	<span class="kw">fn </span>next_key(<span class="kw-2">&amp;mut </span><span class="self">self</span>, backend: <span class="kw-2">&amp;</span><span class="self">Self</span>::Backend) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="prelude-ty">Result</span>&lt;StorageKey, <span class="self">Self</span>::Error&gt;&gt; {
 		<span class="self">self</span>.inner.next_key(<span class="kw-2">&amp;</span>backend.state)
@@ -4592,10 +4596,10 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;B: BlockT&gt; StateBackend&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>RefTrackingState&lt;B&gt; {
-	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::Error;
-	<span class="kw">type </span>Transaction = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::Transaction;
-	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
+<span class="kw">impl</span>&lt;B: BlockT&gt; StateBackend&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RefTrackingState&lt;B&gt; {
+	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Error;
+	<span class="kw">type </span>Transaction = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Transaction;
+	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
 	<span class="kw">type </span>RawIter = RawIter&lt;B&gt;;
 
 	<span class="kw">fn </span>storage(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;, <span class="self">Self</span>::Error&gt; {
@@ -4676,12 +4680,12 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;B: BlockT&gt; AsTrieBackend&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>RefTrackingState&lt;B&gt; {
-	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
+<span class="kw">impl</span>&lt;B: BlockT&gt; AsTrieBackend&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RefTrackingState&lt;B&gt; {
+	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
 
 	<span class="kw">fn </span>as_trie_backend(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-	) -&gt; <span class="kw-2">&amp;</span>sp_state_machine::TrieBackend&lt;<span class="self">Self</span>::TrieBackendStorage, HashFor&lt;B&gt;&gt; {
+	) -&gt; <span class="kw-2">&amp;</span>sp_state_machine::TrieBackend&lt;<span class="self">Self</span>::TrieBackendStorage, HashingFor&lt;B&gt;&gt; {
 		<span class="kw-2">&amp;</span><span class="self">self</span>.state.as_trie_backend()
 	}
 }
@@ -5225,7 +5229,7 @@
 <span class="doccomment">/// Database transaction
 </span><span class="kw">pub struct </span>BlockImportOperation&lt;Block: BlockT&gt; {
 	old_state: RecordStatsState&lt;RefTrackingState&lt;Block&gt;, Block&gt;,
-	db_updates: PrefixedMemoryDB&lt;HashFor&lt;Block&gt;&gt;,
+	db_updates: PrefixedMemoryDB&lt;HashingFor&lt;Block&gt;&gt;,
 	storage_updates: StorageCollection,
 	child_storage_updates: ChildStorageCollection,
 	offchain_storage_updates: OffchainChangesCollection,
@@ -5314,7 +5318,10 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn </span>update_db_storage(<span class="kw-2">&amp;mut </span><span class="self">self</span>, update: PrefixedMemoryDB&lt;HashFor&lt;Block&gt;&gt;) -&gt; ClientResult&lt;()&gt; {
+	<span class="kw">fn </span>update_db_storage(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		update: PrefixedMemoryDB&lt;HashingFor&lt;Block&gt;&gt;,
+	) -&gt; ClientResult&lt;()&gt; {
 		<span class="self">self</span>.db_updates = update;
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -5393,10 +5400,10 @@
 	prefix_keys: bool,
 }
 
-<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashFor&lt;Block&gt;&gt; <span class="kw">for </span>StorageDb&lt;Block&gt; {
+<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">for </span>StorageDb&lt;Block&gt; {
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>Block::Hash, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;, String&gt; {
 		<span class="kw">if </span><span class="self">self</span>.prefix_keys {
-			<span class="kw">let </span>key = prefixed_key::&lt;HashFor&lt;Block&gt;&gt;(key, prefix);
+			<span class="kw">let </span>key = prefixed_key::&lt;HashingFor&lt;Block&gt;&gt;(key, prefix);
 			<span class="self">self</span>.state_db.get(<span class="kw-2">&amp;</span>key, <span class="self">self</span>)
 		} <span class="kw">else </span>{
 			<span class="self">self</span>.state_db.get(key.as_ref(), <span class="self">self</span>)
@@ -5416,16 +5423,16 @@
 
 <span class="kw">struct </span>DbGenesisStorage&lt;Block: BlockT&gt; {
 	root: Block::Hash,
-	storage: PrefixedMemoryDB&lt;HashFor&lt;Block&gt;&gt;,
+	storage: PrefixedMemoryDB&lt;HashingFor&lt;Block&gt;&gt;,
 }
 
 <span class="kw">impl</span>&lt;Block: BlockT&gt; DbGenesisStorage&lt;Block&gt; {
-	<span class="kw">pub fn </span>new(root: Block::Hash, storage: PrefixedMemoryDB&lt;HashFor&lt;Block&gt;&gt;) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new(root: Block::Hash, storage: PrefixedMemoryDB&lt;HashingFor&lt;Block&gt;&gt;) -&gt; <span class="self">Self </span>{
 		DbGenesisStorage { root, storage }
 	}
 }
 
-<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashFor&lt;Block&gt;&gt; <span class="kw">for </span>DbGenesisStorage&lt;Block&gt; {
+<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">for </span>DbGenesisStorage&lt;Block&gt; {
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>Block::Hash, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;, String&gt; {
 		<span class="kw">use </span>hash_db::HashDB;
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>.storage.get(key, prefix))
@@ -5437,14 +5444,15 @@
 <span class="kw">impl</span>&lt;Block: BlockT&gt; EmptyStorage&lt;Block&gt; {
 	<span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>root = Block::Hash::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>mdb = MemoryDB::&lt;HashFor&lt;Block&gt;&gt;::default();
+		<span class="kw">let </span><span class="kw-2">mut </span>mdb = MemoryDB::&lt;HashingFor&lt;Block&gt;&gt;::default();
 		<span class="comment">// both triedbmut are the same on empty storage.
-		</span>sp_trie::trie_types::TrieDBMutBuilderV1::&lt;HashFor&lt;Block&gt;&gt;::new(<span class="kw-2">&amp;mut </span>mdb, <span class="kw-2">&amp;mut </span>root).build();
+		</span>sp_trie::trie_types::TrieDBMutBuilderV1::&lt;HashingFor&lt;Block&gt;&gt;::new(<span class="kw-2">&amp;mut </span>mdb, <span class="kw-2">&amp;mut </span>root)
+			.build();
 		EmptyStorage(root)
 	}
 }
 
-<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashFor&lt;Block&gt;&gt; <span class="kw">for </span>EmptyStorage&lt;Block&gt; {
+<span class="kw">impl</span>&lt;Block: BlockT&gt; sp_state_machine::Storage&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">for </span>EmptyStorage&lt;Block&gt; {
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, _key: <span class="kw-2">&amp;</span>Block::Hash, _prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;, String&gt; {
 		<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
 	}
@@ -5505,7 +5513,7 @@
 	io_stats: FrozenForDuration&lt;(kvdb::IoStats, StateUsageInfo)&gt;,
 	state_usage: Arc&lt;StateUsageStats&gt;,
 	genesis_state: RwLock&lt;<span class="prelude-ty">Option</span>&lt;Arc&lt;DbGenesisStorage&lt;Block&gt;&gt;&gt;&gt;,
-	shared_trie_cache: <span class="prelude-ty">Option</span>&lt;sp_trie::cache::SharedTrieCache&lt;HashFor&lt;Block&gt;&gt;&gt;,
+	shared_trie_cache: <span class="prelude-ty">Option</span>&lt;sp_trie::cache::SharedTrieCache&lt;HashingFor&lt;Block&gt;&gt;&gt;,
 }
 
 <span class="kw">impl</span>&lt;Block: BlockT&gt; Backend&lt;Block&gt; {
@@ -5580,7 +5588,7 @@
 	///
 	/// Should only be needed for benchmarking.
 	</span><span class="attr">#[cfg(any(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>))]
-	</span><span class="kw">pub fn </span>expose_storage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Arc&lt;<span class="kw">dyn </span>sp_state_machine::Storage&lt;HashFor&lt;Block&gt;&gt;&gt; {
+	</span><span class="kw">pub fn </span>expose_storage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Arc&lt;<span class="kw">dyn </span>sp_state_machine::Storage&lt;HashingFor&lt;Block&gt;&gt;&gt; {
 		<span class="self">self</span>.storage.clone()
 	}
 
@@ -7949,8 +7957,8 @@
 
 		<span class="kw">let </span>x0 = ExtrinsicWrapper::from(<span class="number">0u64</span>).encode();
 		<span class="kw">let </span>x1 = ExtrinsicWrapper::from(<span class="number">1u64</span>).encode();
-		<span class="kw">let </span>x0_hash = &lt;HashFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x0[<span class="number">1</span>..]);
-		<span class="kw">let </span>x1_hash = &lt;HashFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x1[<span class="number">1</span>..]);
+		<span class="kw">let </span>x0_hash = &lt;HashingFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x0[<span class="number">1</span>..]);
+		<span class="kw">let </span>x1_hash = &lt;HashingFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x1[<span class="number">1</span>..]);
 		<span class="kw">let </span>index = <span class="macro">vec!</span>[
 			IndexOperation::Insert {
 				extrinsic: <span class="number">0</span>,
@@ -7993,8 +8001,8 @@
 
 		<span class="kw">let </span>x0 = ExtrinsicWrapper::from(<span class="number">0u64</span>).encode();
 		<span class="kw">let </span>x1 = ExtrinsicWrapper::from(<span class="number">1u64</span>).encode();
-		<span class="kw">let </span>x0_hash = &lt;HashFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x0[..]);
-		<span class="kw">let </span>x1_hash = &lt;HashFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x1[..]);
+		<span class="kw">let </span>x0_hash = &lt;HashingFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x0[..]);
+		<span class="kw">let </span>x1_hash = &lt;HashingFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x1[..]);
 		<span class="kw">let </span>index = <span class="macro">vec!</span>[
 			IndexOperation::Insert {
 				extrinsic: <span class="number">0</span>,
@@ -8028,7 +8036,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>blocks = Vec::new();
 		<span class="kw">let </span><span class="kw-2">mut </span>prev_hash = Default::default();
 		<span class="kw">let </span>x1 = ExtrinsicWrapper::from(<span class="number">0u64</span>).encode();
-		<span class="kw">let </span>x1_hash = &lt;HashFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x1[<span class="number">1</span>..]);
+		<span class="kw">let </span>x1_hash = &lt;HashingFor&lt;Block&gt; <span class="kw">as </span>sp_core::Hasher&gt;::hash(<span class="kw-2">&amp;</span>x1[<span class="number">1</span>..]);
 		<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">10 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>index = Vec::new();
 			<span class="kw">if </span>i == <span class="number">0 </span>{

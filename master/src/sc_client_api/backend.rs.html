@@ -652,7 +652,7 @@
 <span class="kw">use </span>sp_consensus::BlockOrigin;
 <span class="kw">use </span>sp_core::offchain::OffchainStorage;
 <span class="kw">use </span>sp_runtime::{
-	traits::{Block <span class="kw">as </span>BlockT, HashFor, NumberFor},
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor, NumberFor},
 	Justification, Justifications, StateVersion, Storage,
 };
 <span class="kw">use </span>sp_state_machine::{
@@ -669,7 +669,7 @@
 </span><span class="kw">pub type </span>StateBackendFor&lt;B, Block&gt; = &lt;B <span class="kw">as </span>Backend&lt;Block&gt;&gt;::State;
 
 <span class="doccomment">/// Extracts the transaction for the given state backend.
-</span><span class="kw">pub type </span>TransactionForSB&lt;B, Block&gt; = &lt;B <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::Transaction;
+</span><span class="kw">pub type </span>TransactionForSB&lt;B, Block&gt; = &lt;B <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction;
 
 <span class="doccomment">/// Extracts the transaction for the given backend.
 </span><span class="kw">pub type </span>TransactionFor&lt;B, Block&gt; = TransactionForSB&lt;StateBackendFor&lt;B, Block&gt;, Block&gt;;
@@ -788,7 +788,7 @@
 /// Keeps hold if the inserted block state and data.
 </span><span class="kw">pub trait </span>BlockImportOperation&lt;Block: BlockT&gt; {
 	<span class="doccomment">/// Associated state backend type.
-	</span><span class="kw">type </span>State: StateBackend&lt;HashFor&lt;Block&gt;&gt;;
+	</span><span class="kw">type </span>State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;;
 
 	<span class="doccomment">/// Returns pending state.
 	///
@@ -942,16 +942,16 @@
 <span class="doccomment">/// An `Iterator` that iterates keys in a given block under a prefix.
 </span><span class="kw">pub struct </span>KeysIter&lt;State, Block&gt;
 <span class="kw">where
-	</span>State: StateBackend&lt;HashFor&lt;Block&gt;&gt;,
+	</span>State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;,
 	Block: BlockT,
 {
-	inner: &lt;State <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::RawIter,
+	inner: &lt;State <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::RawIter,
 	state: State,
 }
 
 <span class="kw">impl</span>&lt;State, Block&gt; KeysIter&lt;State, Block&gt;
 <span class="kw">where
-	</span>State: StateBackend&lt;HashFor&lt;Block&gt;&gt;,
+	</span>State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;,
 	Block: BlockT,
 {
 	<span class="doccomment">/// Create a new iterator over storage keys.
@@ -988,7 +988,7 @@
 <span class="kw">impl</span>&lt;State, Block&gt; Iterator <span class="kw">for </span>KeysIter&lt;State, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	State: StateBackend&lt;HashFor&lt;Block&gt;&gt;,
+	State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;,
 {
 	<span class="kw">type </span>Item = StorageKey;
 
@@ -1000,17 +1000,17 @@
 <span class="doccomment">/// An `Iterator` that iterates keys and values in a given block under a prefix.
 </span><span class="kw">pub struct </span>PairsIter&lt;State, Block&gt;
 <span class="kw">where
-	</span>State: StateBackend&lt;HashFor&lt;Block&gt;&gt;,
+	</span>State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;,
 	Block: BlockT,
 {
-	inner: &lt;State <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::RawIter,
+	inner: &lt;State <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::RawIter,
 	state: State,
 }
 
 <span class="kw">impl</span>&lt;State, Block&gt; Iterator <span class="kw">for </span>PairsIter&lt;State, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	State: StateBackend&lt;HashFor&lt;Block&gt;&gt;,
+	State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;,
 {
 	<span class="kw">type </span>Item = (StorageKey, StorageData);
 
@@ -1024,7 +1024,7 @@
 
 <span class="kw">impl</span>&lt;State, Block&gt; PairsIter&lt;State, Block&gt;
 <span class="kw">where
-	</span>State: StateBackend&lt;HashFor&lt;Block&gt;&gt;,
+	</span>State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;,
 	Block: BlockT,
 {
 	<span class="doccomment">/// Create a new iterator over storage key and value pairs.
@@ -1133,11 +1133,11 @@
 	<span class="doccomment">/// Associated blockchain backend type.
 	</span><span class="kw">type </span>Blockchain: BlockchainBackend&lt;Block&gt;;
 	<span class="doccomment">/// Associated state backend type.
-	</span><span class="kw">type </span>State: StateBackend&lt;HashFor&lt;Block&gt;&gt;
+	</span><span class="kw">type </span>State: StateBackend&lt;HashingFor&lt;Block&gt;&gt;
 		+ Send
 		+ AsTrieBackend&lt;
-			HashFor&lt;Block&gt;,
-			TrieBackendStorage = &lt;<span class="self">Self</span>::State <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::TrieBackendStorage,
+			HashingFor&lt;Block&gt;,
+			TrieBackendStorage = &lt;<span class="self">Self</span>::State <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::TrieBackendStorage,
 		&gt;;
 	<span class="doccomment">/// Offchain workers local storage.
 	</span><span class="kw">type </span>OffchainStorage: OffchainStorage;

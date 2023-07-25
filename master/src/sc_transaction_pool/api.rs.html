@@ -489,7 +489,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ex: <span class="kw-2">&amp;</span>graph::ExtrinsicFor&lt;<span class="self">Self</span>&gt;,
 	) -&gt; (graph::ExtrinsicHash&lt;<span class="self">Self</span>&gt;, usize) {
-		ex.using_encoded(|x| (&lt;traits::HashFor&lt;Block&gt; <span class="kw">as </span>traits::Hash&gt;::hash(x), x.len()))
+		ex.using_encoded(|x| (&lt;traits::HashingFor&lt;Block&gt; <span class="kw">as </span>traits::Hash&gt;::hash(x), x.len()))
 	}
 
 	<span class="kw">fn </span>block_header(

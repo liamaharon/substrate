@@ -871,7 +871,7 @@
 <span class="attr">#[doc(hidden)]
 </span><span class="kw">pub use </span>sp_runtime::{
 	generic::BlockId,
-	traits::{Block <span class="kw">as </span>BlockT, Hash <span class="kw">as </span>HashT, HashFor, Header <span class="kw">as </span>HeaderT, NumberFor},
+	traits::{Block <span class="kw">as </span>BlockT, Hash <span class="kw">as </span>HashT, HashingFor, Header <span class="kw">as </span>HeaderT, NumberFor},
 	transaction_validity::TransactionValidity,
 	RuntimeString, TransactionOutcome,
 };
@@ -1227,19 +1227,19 @@
 
 <span class="doccomment">/// A type that records all accessed trie nodes and generates a proof out of it.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-</span><span class="kw">pub type </span>ProofRecorder&lt;B&gt; = sp_trie::recorder::Recorder&lt;HashFor&lt;B&gt;&gt;;
+</span><span class="kw">pub type </span>ProofRecorder&lt;B&gt; = sp_trie::recorder::Recorder&lt;HashingFor&lt;B&gt;&gt;;
 
 <span class="doccomment">/// A type that is used as cache for the storage transactions.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">pub type </span>StorageTransactionCache&lt;Block, Backend&gt; = sp_state_machine::StorageTransactionCache&lt;
-	&lt;Backend <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::Transaction,
-	HashFor&lt;Block&gt;,
+	&lt;Backend <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction,
+	HashingFor&lt;Block&gt;,
 &gt;;
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">pub type </span>StorageChanges&lt;SBackend, Block&gt; = sp_state_machine::StorageChanges&lt;
-	&lt;SBackend <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::Transaction,
-	HashFor&lt;Block&gt;,
+	&lt;SBackend <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction,
+	HashingFor&lt;Block&gt;,
 &gt;;
 
 <span class="doccomment">/// Extract the state backend type for a type that implements `ProvideRuntimeApi`.
@@ -1250,7 +1250,7 @@
 <span class="doccomment">/// Extract the state backend transaction type for a type that implements `ProvideRuntimeApi`.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">pub type </span>TransactionFor&lt;P, Block&gt; =
-	&lt;StateBackendFor&lt;P, Block&gt; <span class="kw">as </span>StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;::Transaction;
+	&lt;StateBackendFor&lt;P, Block&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction;
 
 <span class="doccomment">/// Something that can be constructed to a runtime api.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
@@ -1305,7 +1305,7 @@
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">pub trait </span>ApiExt&lt;Block: BlockT&gt; {
 	<span class="doccomment">/// The state backend that is used to store the block states.
-	</span><span class="kw">type </span>StateBackend: StateBackend&lt;HashFor&lt;Block&gt;&gt;;
+	</span><span class="kw">type </span>StateBackend: StateBackend&lt;HashingFor&lt;Block&gt;&gt;;
 
 	<span class="doccomment">/// Execute the given closure inside a new transaction.
 	///
@@ -1372,7 +1372,7 @@
 
 <span class="doccomment">/// Parameters for [`CallApiAt::call_api_at`].
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-</span><span class="kw">pub struct </span>CallApiAtParams&lt;<span class="lifetime">&#39;a</span>, Block: BlockT, Backend: StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt; {
+</span><span class="kw">pub struct </span>CallApiAtParams&lt;<span class="lifetime">&#39;a</span>, Block: BlockT, Backend: StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt; {
 	<span class="doccomment">/// The block id that determines the state that should be setup when calling the function.
 	</span><span class="kw">pub </span>at: Block::Hash,
 	<span class="doccomment">/// The name of the function that should be called.
@@ -1395,7 +1395,7 @@
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">pub trait </span>CallApiAt&lt;Block: BlockT&gt; {
 	<span class="doccomment">/// The state backend that is used to store the block states.
-	</span><span class="kw">type </span>StateBackend: StateBackend&lt;HashFor&lt;Block&gt;&gt; + AsTrieBackend&lt;HashFor&lt;Block&gt;&gt;;
+	</span><span class="kw">type </span>StateBackend: StateBackend&lt;HashingFor&lt;Block&gt;&gt; + AsTrieBackend&lt;HashingFor&lt;Block&gt;&gt;;
 
 	<span class="doccomment">/// Calls the given api function with the given encoded arguments at the given block and returns
 	/// the encoded result.

@@ -208,6 +208,8 @@
 <a href="#208" id="208">208</a>
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -231,7 +233,7 @@
 </span><span class="kw">use </span><span class="kw">crate</span>::stats::StateUsageStats;
 <span class="kw">use </span>sp_core::storage::ChildInfo;
 <span class="kw">use </span>sp_runtime::{
-	traits::{Block <span class="kw">as </span>BlockT, HashFor},
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor},
 	StateVersion,
 };
 <span class="kw">use </span>sp_state_machine::{
@@ -266,7 +268,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;S: StateBackend&lt;HashFor&lt;B&gt;&gt;, B: BlockT&gt; RecordStatsState&lt;S, B&gt; {
+<span class="kw">impl</span>&lt;S: StateBackend&lt;HashingFor&lt;B&gt;&gt;, B: BlockT&gt; RecordStatsState&lt;S, B&gt; {
 	<span class="doccomment">/// Create a new instance wrapping generic State and shared cache.
 	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
 		state: S,
@@ -285,15 +287,15 @@
 
 <span class="kw">pub struct </span>RawIter&lt;S, B&gt;
 <span class="kw">where
-	</span>S: StateBackend&lt;HashFor&lt;B&gt;&gt;,
+	</span>S: StateBackend&lt;HashingFor&lt;B&gt;&gt;,
 	B: BlockT,
 {
-	inner: &lt;S <span class="kw">as </span>StateBackend&lt;HashFor&lt;B&gt;&gt;&gt;::RawIter,
+	inner: &lt;S <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::RawIter,
 }
 
-<span class="kw">impl</span>&lt;S, B&gt; StorageIterator&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>RawIter&lt;S, B&gt;
+<span class="kw">impl</span>&lt;S, B&gt; StorageIterator&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RawIter&lt;S, B&gt;
 <span class="kw">where
-	</span>S: StateBackend&lt;HashFor&lt;B&gt;&gt;,
+	</span>S: StateBackend&lt;HashingFor&lt;B&gt;&gt;,
 	B: BlockT,
 {
 	<span class="kw">type </span>Backend = RecordStatsState&lt;S, B&gt;;
@@ -315,7 +317,9 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;S: StateBackend&lt;HashFor&lt;B&gt;&gt;, B: BlockT&gt; StateBackend&lt;HashFor&lt;B&gt;&gt; <span class="kw">for </span>RecordStatsState&lt;S, B&gt; {
+<span class="kw">impl</span>&lt;S: StateBackend&lt;HashingFor&lt;B&gt;&gt;, B: BlockT&gt; StateBackend&lt;HashingFor&lt;B&gt;&gt;
+	<span class="kw">for </span>RecordStatsState&lt;S, B&gt;
+{
 	<span class="kw">type </span>Error = S::Error;
 	<span class="kw">type </span>Transaction = S::Transaction;
 	<span class="kw">type </span>TrieBackendStorage = S::TrieBackendStorage;
@@ -409,12 +413,12 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;S: StateBackend&lt;HashFor&lt;B&gt;&gt; + AsTrieBackend&lt;HashFor&lt;B&gt;&gt;, B: BlockT&gt; AsTrieBackend&lt;HashFor&lt;B&gt;&gt;
-	<span class="kw">for </span>RecordStatsState&lt;S, B&gt;
+<span class="kw">impl</span>&lt;S: StateBackend&lt;HashingFor&lt;B&gt;&gt; + AsTrieBackend&lt;HashingFor&lt;B&gt;&gt;, B: BlockT&gt;
+	AsTrieBackend&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RecordStatsState&lt;S, B&gt;
 {
-	<span class="kw">type </span>TrieBackendStorage = &lt;S <span class="kw">as </span>AsTrieBackend&lt;HashFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
+	<span class="kw">type </span>TrieBackendStorage = &lt;S <span class="kw">as </span>AsTrieBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
 
-	<span class="kw">fn </span>as_trie_backend(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>TrieBackend&lt;<span class="self">Self</span>::TrieBackendStorage, HashFor&lt;B&gt;&gt; {
+	<span class="kw">fn </span>as_trie_backend(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>TrieBackend&lt;<span class="self">Self</span>::TrieBackendStorage, HashingFor&lt;B&gt;&gt; {
 		<span class="self">self</span>.state.as_trie_backend()
 	}
 }

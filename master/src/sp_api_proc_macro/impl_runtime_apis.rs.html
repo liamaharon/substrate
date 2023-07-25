@@ -1410,7 +1410,7 @@
 
 		where_clause.predicates.push(<span class="macro">parse_quote! </span>{
 			RuntimeApiImplCall::StateBackend:
-				#crate_::StateBackend&lt;#crate_::HashFor&lt;__SrApiBlock__&gt;&gt;
+				#crate_::StateBackend&lt;#crate_::HashingFor&lt;__SrApiBlock__&gt;&gt;
 		});
 
 		where_clause.predicates.push(<span class="macro">parse_quote! </span>{ <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeApiImplCall: Send });

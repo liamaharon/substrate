@@ -428,7 +428,7 @@
 <span class="kw">use </span>sp_core::traits::CallContext;
 <span class="kw">use </span>sp_runtime::{
 	legacy,
-	traits::{Block <span class="kw">as </span>BlockT, Hash, HashFor, Header <span class="kw">as </span>HeaderT, NumberFor, One},
+	traits::{Block <span class="kw">as </span>BlockT, Hash, HashingFor, Header <span class="kw">as </span>HeaderT, NumberFor, One},
 	Digest,
 };
 
@@ -478,7 +478,7 @@
 /// backend to get the state of the block. Furthermore an optional `proof` is included which
 /// can be used to proof that the build block contains the expected data. The `proof` will
 /// only be set when proof recording was activated.
-</span><span class="kw">pub struct </span>BuiltBlock&lt;Block: BlockT, StateBackend: backend::StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt; {
+</span><span class="kw">pub struct </span>BuiltBlock&lt;Block: BlockT, StateBackend: backend::StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt; {
 	<span class="doccomment">/// The actual block that was build.
 	</span><span class="kw">pub </span>block: Block,
 	<span class="doccomment">/// The changes that need to be applied to the backend to get the state of the build block.
@@ -487,7 +487,7 @@
 	</span><span class="kw">pub </span>proof: <span class="prelude-ty">Option</span>&lt;StorageProof&gt;,
 }
 
-<span class="kw">impl</span>&lt;Block: BlockT, StateBackend: backend::StateBackend&lt;HashFor&lt;Block&gt;&gt;&gt;
+<span class="kw">impl</span>&lt;Block: BlockT, StateBackend: backend::StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;
 	BuiltBlock&lt;Block, StateBackend&gt;
 {
 	<span class="doccomment">/// Convert into the inner values.
@@ -629,7 +629,7 @@
 
 		<span class="macro">debug_assert_eq!</span>(
 			header.extrinsics_root().clone(),
-			HashFor::&lt;Block&gt;::ordered_trie_root(
+			HashingFor::&lt;Block&gt;::ordered_trie_root(
 				<span class="self">self</span>.extrinsics.iter().map(Encode::encode).collect(),
 				sp_runtime::StateVersion::V0,
 			),
