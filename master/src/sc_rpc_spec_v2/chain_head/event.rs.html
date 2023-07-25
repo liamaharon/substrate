@@ -954,7 +954,7 @@
 	</span><span class="kw">pub </span>key: Key,
 	<span class="doccomment">/// The type of the storage query.
 	</span><span class="attr">#[serde(rename = <span class="string">&quot;type&quot;</span>)]
-	</span><span class="kw">pub </span>queue_type: StorageQueryType,
+	</span><span class="kw">pub </span>query_type: StorageQueryType,
 }
 
 <span class="doccomment">/// The type of the storage query.
@@ -1263,7 +1263,7 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>chain_head_storage_query() {
 		<span class="comment">// Item with Value.
-		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, queue_type: StorageQueryType::Value };
+		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, query_type: StorageQueryType::Value };
 		<span class="comment">// Encode
 		</span><span class="kw">let </span>ser = serde_json::to_string(<span class="kw-2">&amp;</span>item).unwrap();
 		<span class="kw">let </span>exp = <span class="string">r#&quot;{&quot;key&quot;:&quot;0x1&quot;,&quot;type&quot;:&quot;value&quot;}&quot;#</span>;
@@ -1273,7 +1273,7 @@
 		<span class="macro">assert_eq!</span>(dec, item);
 
 		<span class="comment">// Item with Hash.
-		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, queue_type: StorageQueryType::Hash };
+		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, query_type: StorageQueryType::Hash };
 		<span class="comment">// Encode
 		</span><span class="kw">let </span>ser = serde_json::to_string(<span class="kw-2">&amp;</span>item).unwrap();
 		<span class="kw">let </span>exp = <span class="string">r#&quot;{&quot;key&quot;:&quot;0x1&quot;,&quot;type&quot;:&quot;hash&quot;}&quot;#</span>;
@@ -1283,7 +1283,7 @@
 		<span class="macro">assert_eq!</span>(dec, item);
 
 		<span class="comment">// Item with DescendantsValues.
-		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, queue_type: StorageQueryType::DescendantsValues };
+		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, query_type: StorageQueryType::DescendantsValues };
 		<span class="comment">// Encode
 		</span><span class="kw">let </span>ser = serde_json::to_string(<span class="kw-2">&amp;</span>item).unwrap();
 		<span class="kw">let </span>exp = <span class="string">r#&quot;{&quot;key&quot;:&quot;0x1&quot;,&quot;type&quot;:&quot;descendants-values&quot;}&quot;#</span>;
@@ -1293,7 +1293,7 @@
 		<span class="macro">assert_eq!</span>(dec, item);
 
 		<span class="comment">// Item with DescendantsHashes.
-		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, queue_type: StorageQueryType::DescendantsHashes };
+		</span><span class="kw">let </span>item = StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, query_type: StorageQueryType::DescendantsHashes };
 		<span class="comment">// Encode
 		</span><span class="kw">let </span>ser = serde_json::to_string(<span class="kw-2">&amp;</span>item).unwrap();
 		<span class="kw">let </span>exp = <span class="string">r#&quot;{&quot;key&quot;:&quot;0x1&quot;,&quot;type&quot;:&quot;descendants-hashes&quot;}&quot;#</span>;
@@ -1304,7 +1304,7 @@
 
 		<span class="comment">// Item with Merkle.
 		</span><span class="kw">let </span>item =
-			StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, queue_type: StorageQueryType::ClosestDescendantMerkleValue };
+			StorageQuery { key: <span class="string">&quot;0x1&quot;</span>, query_type: StorageQueryType::ClosestDescendantMerkleValue };
 		<span class="comment">// Encode
 		</span><span class="kw">let </span>ser = serde_json::to_string(<span class="kw-2">&amp;</span>item).unwrap();
 		<span class="kw">let </span>exp = <span class="string">r#&quot;{&quot;key&quot;:&quot;0x1&quot;,&quot;type&quot;:&quot;closest-descendant-merkle-value&quot;}&quot;#</span>;
