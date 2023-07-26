@@ -2641,6 +2641,8 @@
 <a href="#2641" id="2641">2641</a>
 <a href="#2642" id="2642">2642</a>
 <a href="#2643" id="2643">2643</a>
+<a href="#2644" id="2644">2644</a>
+<a href="#2645" id="2645">2645</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3788,9 +3790,11 @@
 	<span class="kw">type </span>UpdateOrigin = EnsureRoot&lt;AccountId&gt;;
 	<span class="kw">type </span>Balance = Balance;
 	<span class="kw">type </span>Currency = Balances;
-	<span class="kw">type </span>AssetId = u32;
+	<span class="kw">type </span>AssetKind = u32;
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = pallet_asset_rate::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+	</span><span class="kw">type </span>BenchmarkHelper = ();
 }
 
 <span class="macro">parameter_types! </span>{

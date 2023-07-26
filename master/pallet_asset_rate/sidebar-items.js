@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["benchmarking","pallet","weights"]};
+window.SIDEBAR_ITEMS = {"mod":["pallet","weights"],"trait":["AssetKindFactory"]};

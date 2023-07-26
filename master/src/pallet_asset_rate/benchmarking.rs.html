@@ -84,6 +84,21 @@
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
 <a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -106,28 +121,43 @@
 </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
 <span class="kw">use crate</span>::{pallet <span class="kw">as </span>pallet_asset_rate, Pallet <span class="kw">as </span>AssetRate};
 
+<span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>frame_benchmarking::v2::<span class="kw-2">*</span>;
 <span class="kw">use </span>frame_support::assert_ok;
 <span class="kw">use </span>frame_system::RawOrigin;
+<span class="kw">use </span>sp_core::crypto::FromEntropy;
 
-<span class="kw">const </span>ASSET_ID: u32 = <span class="number">1</span>;
+<span class="doccomment">/// Trait describing the factory function for the `AssetKind` parameter.
+</span><span class="kw">pub trait </span>AssetKindFactory&lt;AssetKind&gt; {
+	<span class="kw">fn </span>create_asset_kind(seed: u32) -&gt; AssetKind;
+}
+<span class="kw">impl</span>&lt;AssetKind&gt; AssetKindFactory&lt;AssetKind&gt; <span class="kw">for </span>()
+<span class="kw">where
+	</span>AssetKind: FromEntropy,
+{
+	<span class="kw">fn </span>create_asset_kind(seed: u32) -&gt; AssetKind {
+		AssetKind::from_entropy(<span class="kw-2">&amp;mut </span>seed.encode().as_slice()).unwrap()
+	}
+}
+
+<span class="kw">const </span>SEED: u32 = <span class="number">1</span>;
 
 <span class="kw">fn </span>default_conversion_rate() -&gt; FixedU128 {
 	FixedU128::from_u32(<span class="number">1u32</span>)
 }
 
-<span class="attr">#[benchmarks(<span class="kw">where </span>&lt;T <span class="kw">as </span>Config&gt;::AssetId: From&lt;u32&gt;)]
+<span class="attr">#[benchmarks]
 </span><span class="kw">mod </span>benchmarks {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 	<span class="attr">#[benchmark]
 	</span><span class="kw">fn </span>create() -&gt; <span class="prelude-ty">Result</span>&lt;(), BenchmarkError&gt; {
-		<span class="kw">let </span>asset_id: T::AssetId = ASSET_ID.into();
+		<span class="kw">let </span>asset_kind: T::AssetKind = T::BenchmarkHelper::create_asset_kind(SEED);
 		<span class="attr">#[extrinsic_call]
-		</span><span class="kw">_</span>(RawOrigin::Root, asset_id.clone(), default_conversion_rate());
+		</span><span class="kw">_</span>(RawOrigin::Root, asset_kind.clone(), default_conversion_rate());
 
 		<span class="macro">assert_eq!</span>(
-			pallet_asset_rate::ConversionRateToNative::&lt;T&gt;::get(asset_id),
+			pallet_asset_rate::ConversionRateToNative::&lt;T&gt;::get(asset_kind),
 			<span class="prelude-val">Some</span>(default_conversion_rate())
 		);
 		<span class="prelude-val">Ok</span>(())
@@ -135,18 +165,18 @@
 
 	<span class="attr">#[benchmark]
 	</span><span class="kw">fn </span>update() -&gt; <span class="prelude-ty">Result</span>&lt;(), BenchmarkError&gt; {
-		<span class="kw">let </span>asset_id: T::AssetId = ASSET_ID.into();
+		<span class="kw">let </span>asset_kind: T::AssetKind = T::BenchmarkHelper::create_asset_kind(SEED);
 		<span class="macro">assert_ok!</span>(AssetRate::&lt;T&gt;::create(
 			RawOrigin::Root.into(),
-			asset_id.clone(),
+			asset_kind.clone(),
 			default_conversion_rate()
 		));
 
 		<span class="attr">#[extrinsic_call]
-		</span><span class="kw">_</span>(RawOrigin::Root, asset_id.clone(), FixedU128::from_u32(<span class="number">2</span>));
+		</span><span class="kw">_</span>(RawOrigin::Root, asset_kind.clone(), FixedU128::from_u32(<span class="number">2</span>));
 
 		<span class="macro">assert_eq!</span>(
-			pallet_asset_rate::ConversionRateToNative::&lt;T&gt;::get(asset_id),
+			pallet_asset_rate::ConversionRateToNative::&lt;T&gt;::get(asset_kind),
 			<span class="prelude-val">Some</span>(FixedU128::from_u32(<span class="number">2</span>))
 		);
 		<span class="prelude-val">Ok</span>(())
@@ -154,17 +184,17 @@
 
 	<span class="attr">#[benchmark]
 	</span><span class="kw">fn </span>remove() -&gt; <span class="prelude-ty">Result</span>&lt;(), BenchmarkError&gt; {
-		<span class="kw">let </span>asset_id: T::AssetId = ASSET_ID.into();
+		<span class="kw">let </span>asset_kind: T::AssetKind = T::BenchmarkHelper::create_asset_kind(SEED);
 		<span class="macro">assert_ok!</span>(AssetRate::&lt;T&gt;::create(
 			RawOrigin::Root.into(),
-			ASSET_ID.into(),
+			asset_kind.clone(),
 			default_conversion_rate()
 		));
 
 		<span class="attr">#[extrinsic_call]
-		</span><span class="kw">_</span>(RawOrigin::Root, asset_id.clone());
+		</span><span class="kw">_</span>(RawOrigin::Root, asset_kind.clone());
 
-		<span class="macro">assert!</span>(pallet_asset_rate::ConversionRateToNative::&lt;T&gt;::get(asset_id).is_none());
+		<span class="macro">assert!</span>(pallet_asset_rate::ConversionRateToNative::&lt;T&gt;::get(asset_kind).is_none());
 		<span class="prelude-val">Ok</span>(())
 	}
 
