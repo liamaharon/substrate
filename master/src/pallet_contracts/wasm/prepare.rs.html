@@ -992,9 +992,9 @@
 					<span class="kw">let _ </span>= import.ty().func().ok_or(<span class="string">&quot;expected a function&quot;</span>)<span class="question-mark">?</span>;
 
 					<span class="kw">if </span>!&lt;T <span class="kw">as </span>Config&gt;::ChainExtension::enabled() &amp;&amp;
-						import.name().as_bytes() == <span class="string">b&quot;seal_call_chain_extension&quot; </span>||
-						import.name().as_bytes() == <span class="string">b&quot;call_chain_extension&quot;
-					</span>{
+						(import.name().as_bytes() == <span class="string">b&quot;seal_call_chain_extension&quot; </span>||
+							import.name().as_bytes() == <span class="string">b&quot;call_chain_extension&quot;</span>)
+					{
 						<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Module uses chain extensions but chain extensions are disabled&quot;</span>)
 					}
 				},
