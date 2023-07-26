@@ -406,6 +406,83 @@
 <a href="#406" id="406">406</a>
 <a href="#407" id="407">407</a>
 <a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -430,7 +507,7 @@
 <span class="kw">use crate</span>::{
 	exec::{AccountIdOf, Key},
 	weights::WeightInfo,
-	AddressGenerator, BalanceOf, CodeHash, Config, ContractInfoOf, DeletionQueue,
+	AddressGenerator, BalanceOf, CodeHash, CodeInfo, Config, ContractInfoOf, DeletionQueue,
 	DeletionQueueCounter, Error, Pallet, TrieId, SENTINEL,
 };
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
@@ -438,19 +515,22 @@
 	dispatch::DispatchError,
 	storage::child::{<span class="self">self</span>, ChildInfo},
 	weights::Weight,
-	DefaultNoBound, RuntimeDebugNoBound,
+	CloneNoBound, DefaultNoBound, RuntimeDebugNoBound,
 };
 <span class="kw">use </span>scale_info::TypeInfo;
+<span class="kw">use </span>sp_core::Get;
 <span class="kw">use </span>sp_io::KillStorageResult;
 <span class="kw">use </span>sp_runtime::{
 	traits::{Hash, Saturating, Zero},
-	RuntimeDebug,
+	BoundedBTreeMap, DispatchResult, RuntimeDebug,
 };
 <span class="kw">use </span>sp_std::{marker::PhantomData, ops::Deref, prelude::<span class="kw-2">*</span>};
 
+<span class="kw">use </span><span class="self">self</span>::meter::Diff;
+
 <span class="doccomment">/// Information for managing an account and its sub trie abstraction.
 /// This is the required info to cache for an account.
-</span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+</span><span class="attr">#[derive(Encode, Decode, CloneNoBound, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 </span><span class="kw">pub struct </span>ContractInfo&lt;T: Config&gt; {
 	<span class="doccomment">/// Unique ID for the subtree encoded as a bytes vector.
@@ -474,6 +554,12 @@
 	/// We need to store this information separately so it is not used when calculating any refunds
 	/// since the base deposit can only ever be refunded on contract termination.
 	</span>storage_base_deposit: BalanceOf&lt;T&gt;,
+	<span class="doccomment">/// Map of code hashes and deposit balances.
+	///
+	/// Tracks the code hash and deposit held for adding delegate dependencies. Dependencies added
+	/// to the map can not be removed from the chain state and can be safely used for delegate
+	/// calls.
+	</span>delegate_dependencies: BoundedBTreeMap&lt;CodeHash&lt;T&gt;, BalanceOf&lt;T&gt;, T::MaxDelegateDependencies&gt;,
 }
 
 <span class="kw">impl</span>&lt;T: Config&gt; ContractInfo&lt;T&gt; {
@@ -509,6 +595,7 @@
 			storage_byte_deposit: Zero::zero(),
 			storage_item_deposit: Zero::zero(),
 			storage_base_deposit: Zero::zero(),
+			delegate_dependencies: Default::default(),
 		};
 
 		<span class="prelude-val">Ok</span>(contract)
@@ -531,9 +618,14 @@
 			.saturating_sub(Pallet::&lt;T&gt;::min_balance())
 	}
 
-	<span class="doccomment">/// Return the account that storage deposits should be deposited into.
+	<span class="doccomment">/// Returns the account that storage deposits should be deposited into.
 	</span><span class="kw">pub fn </span>deposit_account(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>DepositAccount&lt;T&gt; {
 		<span class="kw-2">&amp;</span><span class="self">self</span>.deposit_account
+	}
+
+	<span class="doccomment">/// Returns the storage base deposit of the contract.
+	</span><span class="kw">pub fn </span>storage_base_deposit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BalanceOf&lt;T&gt; {
+		<span class="self">self</span>.storage_base_deposit
 	}
 
 	<span class="doccomment">/// Reads a storage kv pair of a contract.
@@ -607,6 +699,68 @@
 			(<span class="prelude-val">Some</span>(old_len), <span class="prelude-val">None</span>) =&gt; WriteOutcome::Overwritten(old_len),
 			(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">Some</span>(old_value)) =&gt; WriteOutcome::Taken(old_value),
 		})
+	}
+
+	<span class="doccomment">/// Sets and returns the contract base deposit.
+	///
+	/// The base deposit is updated when the `code_hash` of the contract changes, as it depends on
+	/// the deposit paid to upload the contract&#39;s code.
+	</span><span class="kw">pub fn </span>update_base_deposit(<span class="kw-2">&amp;mut </span><span class="self">self</span>, code_info: <span class="kw-2">&amp;</span>CodeInfo&lt;T&gt;) -&gt; BalanceOf&lt;T&gt; {
+		<span class="kw">let </span>ed = Pallet::&lt;T&gt;::min_balance();
+		<span class="kw">let </span>info_deposit =
+			Diff { bytes_added: <span class="self">self</span>.encoded_size() <span class="kw">as </span>u32, items_added: <span class="number">1</span>, ..Default::default() }
+				.update_contract::&lt;T&gt;(<span class="prelude-val">None</span>)
+				.charge_or_zero();
+
+		<span class="comment">// Instantiating the contract prevents its code to be deleted, therefore the base deposit
+		// includes a fraction (`T::CodeHashLockupDepositPercent`) of the original storage deposit
+		// to prevent abuse.
+		</span><span class="kw">let </span>upload_deposit = T::CodeHashLockupDepositPercent::get().mul_ceil(code_info.deposit());
+
+		<span class="comment">// Instantiate needs to transfer at least the minimum balance in order to pull the
+		// deposit account into existence.
+		// We also add another `ed` here which goes to the contract&#39;s own account into existence.
+		</span><span class="kw">let </span>deposit = info_deposit.saturating_add(upload_deposit).max(ed).saturating_add(ed);
+
+		<span class="self">self</span>.storage_base_deposit = deposit;
+		deposit
+	}
+
+	<span class="doccomment">/// Adds a new delegate dependency to the contract.
+	/// The `amount` is the amount of funds that will be reserved for the dependency.
+	///
+	/// Returns an error if the maximum number of delegate_dependencies is reached or if
+	/// the delegate dependency already exists.
+	</span><span class="kw">pub fn </span>add_delegate_dependency(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		code_hash: CodeHash&lt;T&gt;,
+		amount: BalanceOf&lt;T&gt;,
+	) -&gt; DispatchResult {
+		<span class="self">self</span>.delegate_dependencies
+			.try_insert(code_hash, amount)
+			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::MaxDelegateDependenciesReached)<span class="question-mark">?
+			</span>.map_or(<span class="prelude-val">Ok</span>(()), |<span class="kw">_</span>| <span class="prelude-val">Err</span>(Error::&lt;T&gt;::DelegateDependencyAlreadyExists))
+			.map_err(Into::into)
+	}
+
+	<span class="doccomment">/// Removes the delegate dependency from the contract and returns the deposit held for this
+	/// dependency.
+	///
+	/// Returns an error if the entry doesn&#39;t exist.
+	</span><span class="kw">pub fn </span>remove_delegate_dependency(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		code_hash: <span class="kw-2">&amp;</span>CodeHash&lt;T&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BalanceOf&lt;T&gt;, DispatchError&gt; {
+		<span class="self">self</span>.delegate_dependencies
+			.remove(code_hash)
+			.ok_or(Error::&lt;T&gt;::DelegateDependencyNotFound.into())
+	}
+
+	<span class="doccomment">/// Returns the delegate_dependencies of the contract.
+	</span><span class="kw">pub fn </span>delegate_dependencies(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+	) -&gt; <span class="kw-2">&amp;</span>BoundedBTreeMap&lt;CodeHash&lt;T&gt;, BalanceOf&lt;T&gt;, T::MaxDelegateDependencies&gt; {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.delegate_dependencies
 	}
 
 	<span class="doccomment">/// Push a contract&#39;s trie to the deletion queue for lazy removal.

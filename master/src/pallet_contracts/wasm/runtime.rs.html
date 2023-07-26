@@ -2822,6 +2822,35 @@
 <a href="#2822" id="2822">2822</a>
 <a href="#2823" id="2823">2823</a>
 <a href="#2824" id="2824">2824</a>
+<a href="#2825" id="2825">2825</a>
+<a href="#2826" id="2826">2826</a>
+<a href="#2827" id="2827">2827</a>
+<a href="#2828" id="2828">2828</a>
+<a href="#2829" id="2829">2829</a>
+<a href="#2830" id="2830">2830</a>
+<a href="#2831" id="2831">2831</a>
+<a href="#2832" id="2832">2832</a>
+<a href="#2833" id="2833">2833</a>
+<a href="#2834" id="2834">2834</a>
+<a href="#2835" id="2835">2835</a>
+<a href="#2836" id="2836">2836</a>
+<a href="#2837" id="2837">2837</a>
+<a href="#2838" id="2838">2838</a>
+<a href="#2839" id="2839">2839</a>
+<a href="#2840" id="2840">2840</a>
+<a href="#2841" id="2841">2841</a>
+<a href="#2842" id="2842">2842</a>
+<a href="#2843" id="2843">2843</a>
+<a href="#2844" id="2844">2844</a>
+<a href="#2845" id="2845">2845</a>
+<a href="#2846" id="2846">2846</a>
+<a href="#2847" id="2847">2847</a>
+<a href="#2848" id="2848">2848</a>
+<a href="#2849" id="2849">2849</a>
+<a href="#2850" id="2850">2850</a>
+<a href="#2851" id="2851">2851</a>
+<a href="#2852" id="2852">2852</a>
+<a href="#2853" id="2853">2853</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3091,6 +3120,10 @@
 	</span>AccountEntranceCount,
 	<span class="doccomment">/// Weight of calling `instantiation_nonce`
 	</span>InstantationNonce,
+	<span class="doccomment">/// Weight of calling `add_delegate_dependency`
+	</span>AddDelegateDependency,
+	<span class="doccomment">/// Weight of calling `remove_delegate_dependency`
+	</span>RemoveDelegateDependency,
 }
 
 <span class="kw">impl </span>RuntimeCosts {
@@ -3172,6 +3205,8 @@
 			ReentrantCount =&gt; s.reentrance_count,
 			AccountEntranceCount =&gt; s.account_reentrance_count,
 			InstantationNonce =&gt; s.instantiation_nonce,
+			AddDelegateDependency =&gt; s.add_delegate_dependency,
+			RemoveDelegateDependency =&gt; s.remove_delegate_dependency,
 		};
 		RuntimeToken {
 			<span class="attr">#[cfg(test)]
@@ -4396,9 +4431,6 @@
 	/// to `address_len_ptr`. The constructors output buffer is copied to `output_ptr` and its
 	/// length to `output_len_ptr`. The copy of the output buffer and address can be skipped by
 	/// supplying the sentinel value of `SENTINEL` to `output_ptr` or `address_ptr`.
-	///
-	/// `value` must be at least the minimum balance. Otherwise the instantiation fails and the
-	/// contract is not created.
 	///
 	/// # Parameters
 	///
@@ -5644,6 +5676,32 @@
 	</span><span class="kw">fn </span>instantiation_nonce(ctx: <span class="kw">_</span>, _memory: <span class="kw">_</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u64, TrapReason&gt; {
 		ctx.charge_gas(RuntimeCosts::InstantationNonce)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(ctx.ext.nonce())
+	}
+
+	<span class="doccomment">/// Adds a new delegate dependency to the contract.
+	///
+	/// # Parameters
+	///
+	/// - `code_hash_ptr`: A pointer to the code hash of the dependency.
+	</span><span class="attr">#[unstable]
+	</span><span class="kw">fn </span>add_delegate_dependency(ctx: <span class="kw">_</span>, memory: <span class="kw">_</span>, code_hash_ptr: u32) -&gt; <span class="prelude-ty">Result</span>&lt;(), TrapReason&gt; {
+		ctx.charge_gas(RuntimeCosts::AddDelegateDependency)<span class="question-mark">?</span>;
+		<span class="kw">let </span>code_hash = ctx.read_sandbox_memory_as(memory, code_hash_ptr)<span class="question-mark">?</span>;
+		ctx.ext.add_delegate_dependency(code_hash)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="doccomment">/// Removes the delegate dependency from the contract.
+	///
+	/// # Parameters
+	///
+	/// - `code_hash_ptr`: A pointer to the code hash of the dependency.
+	</span><span class="attr">#[unstable]
+	</span><span class="kw">fn </span>remove_delegate_dependency(ctx: <span class="kw">_</span>, memory: <span class="kw">_</span>, code_hash_ptr: u32) -&gt; <span class="prelude-ty">Result</span>&lt;(), TrapReason&gt; {
+		ctx.charge_gas(RuntimeCosts::RemoveDelegateDependency)<span class="question-mark">?</span>;
+		<span class="kw">let </span>code_hash = ctx.read_sandbox_memory_as(memory, code_hash_ptr)<span class="question-mark">?</span>;
+		ctx.ext.remove_delegate_dependency(<span class="kw-2">&amp;</span>code_hash)<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(())
 	}
 }
 </code></pre></div></section></main></body></html>

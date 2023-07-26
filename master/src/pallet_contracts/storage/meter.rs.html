@@ -860,6 +860,12 @@
 <a href="#860" id="860">860</a>
 <a href="#861" id="861">861</a>
 <a href="#862" id="862">862</a>
+<a href="#863" id="863">863</a>
+<a href="#864" id="864">864</a>
+<a href="#865" id="865">865</a>
+<a href="#866" id="866">866</a>
+<a href="#867" id="867">867</a>
+<a href="#868" id="868">868</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -881,9 +887,9 @@
 
 </span><span class="kw">use crate</span>::{
 	storage::{ContractInfo, DepositAccount},
-	BalanceOf, Config, Error, Inspect, Origin, Pallet, System,
+	BalanceOf, CodeInfo, Config, Error, Inspect, Origin, Pallet, StorageDeposit <span class="kw">as </span>Deposit, System,
 };
-<span class="kw">use </span>codec::Encode;
+
 <span class="kw">use </span>frame_support::{
 	dispatch::{fmt::Debug, DispatchError},
 	ensure,
@@ -893,7 +899,6 @@
 	},
 	DefaultNoBound, RuntimeDebugNoBound,
 };
-<span class="kw">use </span>pallet_contracts_primitives::StorageDeposit <span class="kw">as </span>Deposit;
 <span class="kw">use </span>sp_runtime::{
 	traits::{Saturating, Zero},
 	FixedPointNumber, FixedU128,
@@ -1260,7 +1265,7 @@
 	</span>T: Config,
 	E: Ext&lt;T&gt;,
 {
-	<span class="doccomment">/// Charge `diff` from the meter.
+	<span class="doccomment">/// Charges `diff` from the meter.
 	</span><span class="kw">pub fn </span>charge(<span class="kw-2">&amp;mut </span><span class="self">self</span>, diff: <span class="kw-2">&amp;</span>Diff) {
 		<span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.own_contribution {
 			Contribution::Alive(own) =&gt; <span class="kw-2">*</span>own = own.saturating_add(diff),
@@ -1268,46 +1273,52 @@
 		};
 	}
 
-	<span class="doccomment">/// Charge from `origin` a storage deposit for contract instantiation.
+	<span class="doccomment">/// Adds a deposit charge.
+	///
+	/// Use this method instead of [`Self::charge`] when the charge is not the result of a storage
+	/// change. This is the case when a `delegate_dependency` is added or removed, or when the
+	/// `code_hash` is updated. [`Self::charge`] cannot be used here because we keep track of the
+	/// deposit charge separately from the storage charge.
+	</span><span class="kw">pub fn </span>charge_deposit(<span class="kw-2">&amp;mut </span><span class="self">self</span>, deposit_account: DepositAccount&lt;T&gt;, amount: DepositOf&lt;T&gt;) {
+		<span class="self">self</span>.total_deposit = <span class="self">self</span>.total_deposit.saturating_add(<span class="kw-2">&amp;</span>amount);
+		<span class="self">self</span>.charges.push(Charge { deposit_account, amount, terminated: <span class="bool-val">false </span>});
+	}
+
+	<span class="doccomment">/// Charges from `origin` a storage deposit for contract instantiation.
 	///
 	/// This immediately transfers the balance in order to create the account.
 	</span><span class="kw">pub fn </span>charge_instantiate(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		origin: <span class="kw-2">&amp;</span>T::AccountId,
 		contract: <span class="kw-2">&amp;</span>T::AccountId,
-		info: <span class="kw-2">&amp;mut </span>ContractInfo&lt;T&gt;,
+		contract_info: <span class="kw-2">&amp;mut </span>ContractInfo&lt;T&gt;,
+		code_info: <span class="kw-2">&amp;</span>CodeInfo&lt;T&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;DepositOf&lt;T&gt;, DispatchError&gt; {
 		<span class="macro">debug_assert!</span>(<span class="self">self</span>.is_alive());
-
 		<span class="kw">let </span>ed = Pallet::&lt;T&gt;::min_balance();
-		<span class="kw">let </span><span class="kw-2">mut </span>deposit =
-			Diff { bytes_added: info.encoded_size() <span class="kw">as </span>u32, items_added: <span class="number">1</span>, ..Default::default() }
-				.update_contract::&lt;T&gt;(<span class="prelude-val">None</span>);
 
-		<span class="comment">// Instantiate needs to transfer at least the minimum balance in order to pull the
-		// deposit account into existence.
-		// We also add another `ed` here which goes to the contract&#39;s own account into existence.
-		</span>deposit = deposit.max(Deposit::Charge(ed)).saturating_add(<span class="kw-2">&amp;</span>Deposit::Charge(ed));
-		<span class="kw">if </span>deposit.charge_or_zero() &gt; <span class="self">self</span>.limit {
+		<span class="kw">let </span>deposit = contract_info.update_base_deposit(<span class="kw-2">&amp;</span>code_info);
+		<span class="kw">if </span>deposit &gt; <span class="self">self</span>.limit {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(&lt;Error&lt;T&gt;&gt;::StorageDepositLimitExhausted.into())
 		}
+
+		<span class="kw">let </span>deposit = Deposit::Charge(deposit);
 
 		<span class="comment">// We do not increase `own_contribution` because this will be charged later when the
 		// contract execution does conclude and hence would lead to a double charge.
 		</span><span class="self">self</span>.total_deposit = deposit.clone();
-		info.storage_base_deposit = deposit.charge_or_zero();
 
 		<span class="comment">// Normally, deposit charges are deferred to be able to coalesce them with refunds.
 		// However, we need to charge immediately so that the account is created before
 		// charges possibly below the ed are collected and fail.
 		</span>E::charge(
 			origin,
-			info.deposit_account(),
+			contract_info.deposit_account(),
 			<span class="kw-2">&amp;</span>deposit.saturating_sub(<span class="kw-2">&amp;</span>Deposit::Charge(ed)),
 			<span class="bool-val">false</span>,
 		)<span class="question-mark">?</span>;
 
-		System::&lt;T&gt;::inc_consumers(info.deposit_account())<span class="question-mark">?</span>;
+		System::&lt;T&gt;::inc_consumers(contract_info.deposit_account())<span class="question-mark">?</span>;
 
 		<span class="comment">// We also need to make sure that the contract&#39;s account itself exists.
 		</span>T::Currency::transfer(origin, contract, ed, ExistenceRequirement::KeepAlive)<span class="question-mark">?</span>;
@@ -1526,6 +1537,7 @@
 			storage_byte_deposit: info.bytes_deposit,
 			storage_item_deposit: info.items_deposit,
 			storage_base_deposit: Default::default(),
+			delegate_dependencies: Default::default(),
 		}
 	}
 

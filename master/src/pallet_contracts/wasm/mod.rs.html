@@ -3318,6 +3318,82 @@
 <a href="#3318" id="3318">3318</a>
 <a href="#3319" id="3319">3319</a>
 <a href="#3320" id="3320">3320</a>
+<a href="#3321" id="3321">3321</a>
+<a href="#3322" id="3322">3322</a>
+<a href="#3323" id="3323">3323</a>
+<a href="#3324" id="3324">3324</a>
+<a href="#3325" id="3325">3325</a>
+<a href="#3326" id="3326">3326</a>
+<a href="#3327" id="3327">3327</a>
+<a href="#3328" id="3328">3328</a>
+<a href="#3329" id="3329">3329</a>
+<a href="#3330" id="3330">3330</a>
+<a href="#3331" id="3331">3331</a>
+<a href="#3332" id="3332">3332</a>
+<a href="#3333" id="3333">3333</a>
+<a href="#3334" id="3334">3334</a>
+<a href="#3335" id="3335">3335</a>
+<a href="#3336" id="3336">3336</a>
+<a href="#3337" id="3337">3337</a>
+<a href="#3338" id="3338">3338</a>
+<a href="#3339" id="3339">3339</a>
+<a href="#3340" id="3340">3340</a>
+<a href="#3341" id="3341">3341</a>
+<a href="#3342" id="3342">3342</a>
+<a href="#3343" id="3343">3343</a>
+<a href="#3344" id="3344">3344</a>
+<a href="#3345" id="3345">3345</a>
+<a href="#3346" id="3346">3346</a>
+<a href="#3347" id="3347">3347</a>
+<a href="#3348" id="3348">3348</a>
+<a href="#3349" id="3349">3349</a>
+<a href="#3350" id="3350">3350</a>
+<a href="#3351" id="3351">3351</a>
+<a href="#3352" id="3352">3352</a>
+<a href="#3353" id="3353">3353</a>
+<a href="#3354" id="3354">3354</a>
+<a href="#3355" id="3355">3355</a>
+<a href="#3356" id="3356">3356</a>
+<a href="#3357" id="3357">3357</a>
+<a href="#3358" id="3358">3358</a>
+<a href="#3359" id="3359">3359</a>
+<a href="#3360" id="3360">3360</a>
+<a href="#3361" id="3361">3361</a>
+<a href="#3362" id="3362">3362</a>
+<a href="#3363" id="3363">3363</a>
+<a href="#3364" id="3364">3364</a>
+<a href="#3365" id="3365">3365</a>
+<a href="#3366" id="3366">3366</a>
+<a href="#3367" id="3367">3367</a>
+<a href="#3368" id="3368">3368</a>
+<a href="#3369" id="3369">3369</a>
+<a href="#3370" id="3370">3370</a>
+<a href="#3371" id="3371">3371</a>
+<a href="#3372" id="3372">3372</a>
+<a href="#3373" id="3373">3373</a>
+<a href="#3374" id="3374">3374</a>
+<a href="#3375" id="3375">3375</a>
+<a href="#3376" id="3376">3376</a>
+<a href="#3377" id="3377">3377</a>
+<a href="#3378" id="3378">3378</a>
+<a href="#3379" id="3379">3379</a>
+<a href="#3380" id="3380">3380</a>
+<a href="#3381" id="3381">3381</a>
+<a href="#3382" id="3382">3382</a>
+<a href="#3383" id="3383">3383</a>
+<a href="#3384" id="3384">3384</a>
+<a href="#3385" id="3385">3385</a>
+<a href="#3386" id="3386">3386</a>
+<a href="#3387" id="3387">3387</a>
+<a href="#3388" id="3388">3388</a>
+<a href="#3389" id="3389">3389</a>
+<a href="#3390" id="3390">3390</a>
+<a href="#3391" id="3391">3391</a>
+<a href="#3392" id="3392">3392</a>
+<a href="#3393" id="3393">3393</a>
+<a href="#3394" id="3394">3394</a>
+<a href="#3395" id="3395">3395</a>
+<a href="#3396" id="3396">3396</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3620,6 +3696,22 @@
 	</span><span class="kw">pub fn </span>refcount(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
 		<span class="self">self</span>.refcount
 	}
+
+	<span class="attr">#[cfg(test)]
+	</span><span class="kw">pub fn </span>new(owner: T::AccountId) -&gt; <span class="self">Self </span>{
+		CodeInfo {
+			owner,
+			deposit: Default::default(),
+			refcount: <span class="number">0</span>,
+			code_len: <span class="number">0</span>,
+			determinism: Determinism::Enforced,
+		}
+	}
+
+	<span class="doccomment">/// Returns the deposit of the module.
+	</span><span class="kw">pub fn </span>deposit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BalanceOf&lt;T&gt; {
+		<span class="self">self</span>.deposit
+	}
 }
 
 <span class="kw">impl</span>&lt;T: Config&gt; Executable&lt;T&gt; <span class="kw">for </span>WasmBlob&lt;T&gt; {
@@ -3716,6 +3808,10 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>.code_hash
 	}
 
+	<span class="kw">fn </span>code_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>CodeInfo&lt;T&gt; {
+		<span class="kw-2">&amp;</span><span class="self">self</span>.code_info
+	}
+
 	<span class="kw">fn </span>code_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
 		<span class="self">self</span>.code.len() <span class="kw">as </span>u32
 	}
@@ -3747,7 +3843,10 @@
 	<span class="kw">use </span>std::{
 		borrow::BorrowMut,
 		cell::RefCell,
-		collections::hash_map::{Entry, HashMap},
+		collections::{
+			hash_map::{Entry, HashMap},
+			HashSet,
+		},
 	};
 
 	<span class="attr">#[derive(Debug, PartialEq, Eq)]
@@ -3801,6 +3900,7 @@
 		sr25519_verify: RefCell&lt;Vec&lt;([u8; <span class="number">64</span>], Vec&lt;u8&gt;, [u8; <span class="number">32</span>])&gt;&gt;,
 		code_hashes: Vec&lt;CodeHash&lt;Test&gt;&gt;,
 		caller: Origin&lt;Test&gt;,
+		delegate_dependencies: RefCell&lt;HashSet&lt;CodeHash&lt;Test&gt;&gt;&gt;,
 	}
 
 	<span class="doccomment">/// The call is mocked and just returns this hardcoded value.
@@ -3826,6 +3926,7 @@
 				ecdsa_recover: Default::default(),
 				caller: Default::default(),
 				sr25519_verify: Default::default(),
+				delegate_dependencies: Default::default(),
 			}
 		}
 	}
@@ -4011,6 +4112,22 @@
 		<span class="kw">fn </span>nonce(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u64 {
 			<span class="number">995
 		</span>}
+
+		<span class="kw">fn </span>add_delegate_dependency(
+			<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+			code: CodeHash&lt;<span class="self">Self</span>::T&gt;,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;(), DispatchError&gt; {
+			<span class="self">self</span>.delegate_dependencies.borrow_mut().insert(code);
+			<span class="prelude-val">Ok</span>(())
+		}
+
+		<span class="kw">fn </span>remove_delegate_dependency(
+			<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+			code: <span class="kw-2">&amp;</span>CodeHash&lt;<span class="self">Self</span>::T&gt;,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;(), DispatchError&gt; {
+			<span class="self">self</span>.delegate_dependencies.borrow_mut().remove(code);
+			<span class="prelude-val">Ok</span>(())
+		}
 	}
 
 	<span class="doccomment">/// Execute the supplied code.
@@ -6636,6 +6753,41 @@
 			execute(CODE_RANDOM_3, <span class="macro">vec!</span>[], MockExt::default()),
 			&lt;Error&lt;Test&gt;&gt;::CodeRejected,
 		);
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>add_remove_delegate_dependency() {
+		<span class="kw">const </span>CODE_ADD_REMOVE_DELEGATE_DEPENDENCY: <span class="kw-2">&amp;</span>str = <span class="string">r#&quot;
+(module
+	(import &quot;seal0&quot; &quot;add_delegate_dependency&quot; (func $add_delegate_dependency (param i32)))
+	(import &quot;seal0&quot; &quot;remove_delegate_dependency&quot; (func $remove_delegate_dependency (param i32)))
+	(import &quot;env&quot; &quot;memory&quot; (memory 1 1))
+	(func (export &quot;call&quot;)
+		(call $add_delegate_dependency (i32.const 0))
+		(call $add_delegate_dependency (i32.const 32))
+		(call $remove_delegate_dependency (i32.const 32))
+	)
+	(func (export &quot;deploy&quot;))
+
+	;;  hash1 (32 bytes)
+	(data (i32.const 0)
+		&quot;\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01&quot;
+		&quot;\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01\01&quot;
+	)
+
+	;;  hash2 (32 bytes)
+	(data (i32.const 32)
+		&quot;\02\02\02\02\02\02\02\02\02\02\02\02\02\02\02\02&quot;
+		&quot;\02\02\02\02\02\02\02\02\02\02\02\02\02\02\02\02&quot;
+	)
+)
+&quot;#</span>;
+		<span class="kw">let </span><span class="kw-2">mut </span>mock_ext = MockExt::default();
+		<span class="macro">assert_ok!</span>(execute(<span class="kw-2">&amp;</span>CODE_ADD_REMOVE_DELEGATE_DEPENDENCY, <span class="macro">vec!</span>[], <span class="kw-2">&amp;mut </span>mock_ext));
+		<span class="kw">let </span>delegate_dependencies: Vec&lt;<span class="kw">_</span>&gt; =
+			mock_ext.delegate_dependencies.into_inner().into_iter().collect();
+		<span class="macro">assert_eq!</span>(delegate_dependencies.len(), <span class="number">1</span>);
+		<span class="macro">assert_eq!</span>(delegate_dependencies[<span class="number">0</span>].as_bytes(), [<span class="number">1</span>; <span class="number">32</span>]);
 	}
 }
 </code></pre></div></section></main></body></html>
