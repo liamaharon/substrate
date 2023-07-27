@@ -454,7 +454,7 @@
 
 <span class="doccomment">/// Verify a justification of a block
 </span><span class="attr">#[async_trait::async_trait]
-</span><span class="kw">pub trait </span>Verifier&lt;B: BlockT&gt;: Send + Sync {
+</span><span class="kw">pub trait </span>Verifier&lt;B: BlockT&gt;: Send {
 	<span class="doccomment">/// Verify the given block data and return the `BlockImportParams` to
 	/// continue the block import process.
 	</span><span class="kw">async fn </span>verify(

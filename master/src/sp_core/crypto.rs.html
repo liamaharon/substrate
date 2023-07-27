@@ -1986,7 +1986,7 @@
 }
 
 <span class="doccomment">/// Trait suitable for typical cryptographic key public type.
-</span><span class="kw">pub trait </span>Public: ByteArray + Derive + CryptoType + PartialEq + Eq + Clone + Send + Sync {}
+</span><span class="kw">pub trait </span>Public: CryptoType + ByteArray + Derive + PartialEq + Eq + Clone + Send {}
 
 <span class="doccomment">/// An opaque 32-byte cryptographic identifier.
 </span><span class="attr">#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, TypeInfo)]
@@ -2334,7 +2334,7 @@
 ///
 /// For now it just specifies how to create a key from a phrase and derivation path.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;full_crypto&quot;</span>)]
-</span><span class="kw">pub trait </span>Pair: CryptoType + Sized + Clone + Send + Sync + <span class="lifetime">&#39;static </span>{
+</span><span class="kw">pub trait </span>Pair: CryptoType + Sized {
 	<span class="doccomment">/// The type which is used to encode a public key.
 	</span><span class="kw">type </span>Public: Public + Hash;
 

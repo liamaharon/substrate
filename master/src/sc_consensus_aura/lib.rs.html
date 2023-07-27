@@ -879,7 +879,6 @@
 <a href="#879" id="879">879</a>
 <a href="#880" id="880">880</a>
 <a href="#881" id="881">881</a>
-<a href="#882" id="882">882</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -912,11 +911,10 @@
 //!
 //! NOTE: Aura itself is designed to be generic over the crypto used.
 </span><span class="attr">#![forbid(missing_docs, unsafe_code)]
-</span><span class="kw">use </span>std::{fmt::Debug, hash::Hash, marker::PhantomData, pin::Pin, sync::Arc};
+</span><span class="kw">use </span>std::{fmt::Debug, marker::PhantomData, pin::Pin, sync::Arc};
 
+<span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
-
-<span class="kw">use </span>codec::{Codec, Decode, Encode};
 
 <span class="kw">use </span>sc_client_api::{backend::AuxStore, BlockOf};
 <span class="kw">use </span>sc_consensus::{BlockImport, BlockImportParams, ForkChoiceStrategy, StateAction};
@@ -930,7 +928,7 @@
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_consensus::{BlockOrigin, Environment, Error <span class="kw">as </span>ConsensusError, Proposer, SelectChain};
 <span class="kw">use </span>sp_consensus_slots::Slot;
-<span class="kw">use </span>sp_core::crypto::{Pair, Public};
+<span class="kw">use </span>sp_core::crypto::Pair;
 <span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
 <span class="kw">use </span>sp_keystore::KeystorePtr;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header, Member, NumberFor};
@@ -1054,9 +1052,9 @@
 	}: StartAuraParams&lt;C, SC, I, PF, SO, L, CIDP, BS, NumberFor&lt;B&gt;&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw">impl </span>Future&lt;Output = ()&gt;, ConsensusError&gt;
 <span class="kw">where
-	</span>P: Pair + Send + Sync,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Hash + Member + Encode + Decode,
+	</span>P: Pair,
+	P::Public: AppPublic + Member,
+	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Member + Codec,
 	B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt; + BlockOf + AuxStore + HeaderBackend&lt;B&gt; + Send + Sync,
 	C::Api: AuraApi&lt;B, AuthorityId&lt;P&gt;&gt;,
@@ -1163,9 +1161,9 @@
 	C::Api: AuraApi&lt;B, AuthorityId&lt;P&gt;&gt;,
 	PF: Environment&lt;B, Error = Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	PF::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
-	P: Pair + Send + Sync,
-	P::Public: AppPublic + Hash + Member + Encode + Decode,
-	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Hash + Member + Encode + Decode,
+	P: Pair,
+	P::Public: AppPublic + Member,
+	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Member + Codec,
 	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	Error: std::error::Error + Send + From&lt;ConsensusError&gt; + <span class="lifetime">&#39;static</span>,
 	SO: SyncOracle + Send + Sync + Clone,
@@ -1185,7 +1183,7 @@
 		block_proposal_slot_portion,
 		max_block_proposal_slot_portion,
 		compatibility_mode,
-		_key_type: PhantomData::&lt;P&gt;,
+		_phantom: PhantomData::&lt;<span class="kw">fn</span>() -&gt; P&gt;,
 	}
 }
 
@@ -1202,7 +1200,7 @@
 	max_block_proposal_slot_portion: <span class="prelude-ty">Option</span>&lt;SlotProportion&gt;,
 	telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 	compatibility_mode: CompatibilityMode&lt;N&gt;,
-	_key_type: PhantomData&lt;P&gt;,
+	_phantom: PhantomData&lt;<span class="kw">fn</span>() -&gt; P&gt;,
 }
 
 <span class="attr">#[async_trait::async_trait]
@@ -1215,9 +1213,9 @@
 	E: Environment&lt;B, Error = Error&gt; + Send + Sync,
 	E::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
 	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	P: Pair + Send + Sync,
-	P::Public: AppPublic + Public + Member + Encode + Decode + Hash,
-	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Member + Encode + Decode + Hash + Debug,
+	P: Pair,
+	P::Public: AppPublic + Member,
+	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Member + Codec,
 	SO: SyncOracle + Send + Clone + Sync,
 	L: sc_consensus::JustificationSyncLink&lt;B&gt;,
 	BS: BackoffAuthoringBlocksStrategy&lt;NumberFor&lt;B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -1688,10 +1686,10 @@
 			force_authoring: <span class="bool-val">false</span>,
 			backoff_authoring_blocks: <span class="prelude-val">Some</span>(BackoffAuthoringOnFinalizedHeadLagging::default()),
 			telemetry: <span class="prelude-val">None</span>,
-			_key_type: PhantomData::&lt;AuthorityPair&gt;,
 			block_proposal_slot_portion: SlotProportion::new(<span class="number">0.5</span>),
 			max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
 			compatibility_mode: Default::default(),
+			_phantom: PhantomData::&lt;<span class="kw">fn</span>() -&gt; AuthorityPair&gt;,
 		};
 
 		<span class="kw">let </span>head = Header::new(
@@ -1738,10 +1736,10 @@
 			force_authoring: <span class="bool-val">false</span>,
 			backoff_authoring_blocks: <span class="prelude-ty">Option</span>::&lt;()&gt;::None,
 			telemetry: <span class="prelude-val">None</span>,
-			_key_type: PhantomData::&lt;AuthorityPair&gt;,
 			block_proposal_slot_portion: SlotProportion::new(<span class="number">0.5</span>),
 			max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
 			compatibility_mode: Default::default(),
+			_phantom: PhantomData::&lt;<span class="kw">fn</span>() -&gt; AuthorityPair&gt;,
 		};
 
 		<span class="kw">let </span>head = client.expect_header(client.info().genesis_hash).unwrap();
