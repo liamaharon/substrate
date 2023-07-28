@@ -376,13 +376,6 @@
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
-<a href="#383" id="383">383</a>
-<a href="#384" id="384">384</a>
-<a href="#385" id="385">385</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -420,7 +413,8 @@
 	<span class="doccomment">/// Deducts up to `value` from reserved balance of `who`. This function cannot fail.
 	///
 	/// As much funds up to `value` will be deducted as possible. If the reserve balance of `who`
-	/// is less than `value`, then a non-zero second item will be returned.
+	/// is less than `value`, then the second item will be equal to the value not able to be
+	/// slashed.
 	</span><span class="kw">fn </span>slash_reserved(
 		who: <span class="kw-2">&amp;</span>AccountId,
 		value: <span class="self">Self</span>::Balance,
@@ -431,9 +425,6 @@
 	///
 	/// This balance is a &#39;reserve&#39; balance that other subsystems use in order to set aside tokens
 	/// that are still &#39;owned&#39; by the account holder, but which are suspendable.
-	///
-	/// When this balance falls below the value of `ExistentialDeposit`, then this &#39;reserve account&#39;
-	/// is deleted: specifically, `ReservedBalance`.
 	///
 	/// `system::AccountNonce` is also deleted if `FreeBalance` is also zero (it also gets
 	/// collapsed to zero if it ever becomes less than `ExistentialDeposit`.
@@ -448,13 +439,8 @@
 	<span class="doccomment">/// Moves up to `value` from reserved balance to free balance. This function cannot fail.
 	///
 	/// As much funds up to `value` will be moved as possible. If the reserve balance of `who`
-	/// is less than `value`, then the remaining amount will be returned.
-	///
-	/// # NOTES
-	///
-	/// - This is different from `reserve`.
-	/// - If the remaining reserved balance is less than `ExistentialDeposit`, it will
-	/// invoke `on_reserved_too_low` and could reap the account.
+	/// is less than `value`, then the remaining amount will be returned. This is different
+	/// behavior than `reserve`.
 	</span><span class="kw">fn </span>unreserve(who: <span class="kw-2">&amp;</span>AccountId, value: <span class="self">Self</span>::Balance) -&gt; <span class="self">Self</span>::Balance;
 
 	<span class="doccomment">/// Moves up to `value` from reserved balance of account `slashed` to balance of account
