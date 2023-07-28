@@ -132,7 +132,6 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -151,7 +150,6 @@
 // limitations under the License.
 
 </span><span class="doccomment">//! Add `delegate_dependencies` to `ContractInfo`.
-//! Use `Identity` instead of `Twox64Concat` for hashing keys of the `ContractInfoOf` storage map
 //! See &lt;https://github.com/paritytech/substrate/pull/14079&gt;.
 
 </span><span class="kw">use crate</span>::{
@@ -209,7 +207,7 @@
 
 <span class="attr">#[storage_alias]
 </span><span class="kw">pub type </span>ContractInfoOf&lt;T: Config&gt; =
-	StorageMap&lt;Pallet&lt;T&gt;, Identity, &lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId, ContractInfo&lt;T&gt;&gt;;
+	StorageMap&lt;Pallet&lt;T&gt;, Twox64Concat, &lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId, ContractInfo&lt;T&gt;&gt;;
 
 <span class="attr">#[derive(Encode, Decode, CloneNoBound, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
