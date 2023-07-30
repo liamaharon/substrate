@@ -230,6 +230,8 @@
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -431,10 +433,11 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>migration_v0_to_v1_works() {
-		new_test_ext().execute_with(|| {
+		ExtBuilder::default().build_and_execute(|| {
 			<span class="comment">// create and insert into the storage an ongoing referendum v0.
 			</span><span class="kw">let </span>status_v0 = create_status_v0();
 			<span class="kw">let </span>ongoing_v0 = v0::ReferendumInfoOf::&lt;T, ()&gt;::Ongoing(status_v0.clone());
+			ReferendumCount::&lt;T, ()&gt;::mutate(|x| x.saturating_inc());
 			v0::ReferendumInfoFor::&lt;T, ()&gt;::insert(<span class="number">2</span>, ongoing_v0);
 			<span class="comment">// create and insert into the storage an approved referendum v0.
 			</span><span class="kw">let </span>approved_v0 = v0::ReferendumInfoOf::&lt;T, ()&gt;::Approved(
@@ -442,6 +445,7 @@
 				Deposit { who: <span class="number">1</span>, amount: <span class="number">10 </span>},
 				<span class="prelude-val">Some</span>(Deposit { who: <span class="number">2</span>, amount: <span class="number">20 </span>}),
 			);
+			ReferendumCount::&lt;T, ()&gt;::mutate(|x| x.saturating_inc());
 			v0::ReferendumInfoFor::&lt;T, ()&gt;::insert(<span class="number">5</span>, approved_v0);
 			<span class="comment">// run migration from v0 to v1.
 			</span>v1::MigrateV0ToV1::&lt;T, ()&gt;::on_runtime_upgrade();

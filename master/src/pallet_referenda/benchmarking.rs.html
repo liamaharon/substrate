@@ -1324,7 +1324,7 @@
 
 	<span class="macro">impl_benchmark_test_suite!</span>(
 		Referenda,
-		<span class="kw">crate</span>::mock::new_test_ext(),
+		<span class="kw">crate</span>::mock::ExtBuilder::default().build(),
 		<span class="kw">crate</span>::mock::Test
 	);
 }
