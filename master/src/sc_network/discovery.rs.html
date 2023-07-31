@@ -1220,13 +1220,6 @@
 <a href="#1220" id="1220">1220</a>
 <a href="#1221" id="1221">1221</a>
 <a href="#1222" id="1222">1222</a>
-<a href="#1223" id="1223">1223</a>
-<a href="#1224" id="1224">1224</a>
-<a href="#1225" id="1225">1225</a>
-<a href="#1226" id="1226">1226</a>
-<a href="#1227" id="1227">1227</a>
-<a href="#1228" id="1228">1228</a>
-<a href="#1229" id="1229">1229</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1478,15 +1471,15 @@
 			discovery_only_if_under_num,
 			mdns: <span class="kw">if </span>enable_mdns {
 				<span class="kw">match </span>TokioMdns::new(mdns::Config::default(), local_peer_id) {
-					<span class="prelude-val">Ok</span>(mdns) =&gt; <span class="prelude-val">Some</span>(mdns),
+					<span class="prelude-val">Ok</span>(mdns) =&gt; Toggle::from(<span class="prelude-val">Some</span>(mdns)),
 					<span class="prelude-val">Err</span>(err) =&gt; {
 						<span class="macro">warn!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Failed to initialize mDNS: {:?}&quot;</span>, err);
-						<span class="prelude-val">None
-					</span>},
+						Toggle::from(<span class="prelude-val">None</span>)
+					},
 				}
 			} <span class="kw">else </span>{
-				<span class="prelude-val">None
-			</span>},
+				Toggle::from(<span class="prelude-val">None</span>)
+			},
 			allow_non_globals_in_dht,
 			known_external_addresses: LruHashSet::new(
 				NonZeroUsize::new(MAX_KNOWN_EXTERNAL_ADDRESSES)
@@ -1509,7 +1502,7 @@
 	/// it&#39;s always enabled in `NetworkWorker::new()`.
 	</span>kademlia: Toggle&lt;Kademlia&lt;MemoryStore&gt;&gt;,
 	<span class="doccomment">/// Discovers nodes on the local network.
-	</span>mdns: <span class="prelude-ty">Option</span>&lt;TokioMdns&gt;,
+	</span>mdns: Toggle&lt;TokioMdns&gt;,
 	<span class="doccomment">/// Stream that fires when we need to perform the next random Kademlia query. `None` if
 	/// random walking is disabled.
 	</span>next_kad_random_query: <span class="prelude-ty">Option</span>&lt;Delay&gt;,
@@ -1797,14 +1790,12 @@
 				effective_role,
 			)<span class="question-mark">?</span>;
 
-			<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>mdns) = <span class="self">self</span>.mdns {
-				list_to_filter.extend(mdns.handle_pending_outbound_connection(
-					connection_id,
-					maybe_peer,
-					addresses,
-					effective_role,
-				)<span class="question-mark">?</span>);
-			}
+			list_to_filter.extend(<span class="self">self</span>.mdns.handle_pending_outbound_connection(
+				connection_id,
+				maybe_peer,
+				addresses,
+				effective_role,
+			)<span class="question-mark">?</span>);
 
 			<span class="kw">if </span>!<span class="self">self</span>.allow_private_ip {
 				list_to_filter.retain(|addr| <span class="kw">match </span>addr.iter().next() {
@@ -1879,9 +1870,7 @@
 			FromSwarm::NewListenAddr(e) =&gt; {
 				<span class="self">self</span>.kademlia.on_swarm_event(FromSwarm::NewListenAddr(e));
 
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>mdns) = <span class="self">self</span>.mdns {
-					mdns.on_swarm_event(FromSwarm::NewListenAddr(e));
-				}
+				<span class="self">self</span>.mdns.on_swarm_event(FromSwarm::NewListenAddr(e));
 			},
 			FromSwarm::ExternalAddrConfirmed(e @ ExternalAddrConfirmed { addr }) =&gt; {
 				<span class="kw">let </span>new_addr = addr.clone().with(Protocol::P2p(<span class="self">self</span>.local_peer_id));
@@ -2142,43 +2131,40 @@
 		}
 
 		<span class="comment">// Poll mDNS.
-		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>mdns) = <span class="self">self</span>.mdns {
-			<span class="kw">while let </span>Poll::Ready(ev) = mdns.poll(cx, params) {
-				<span class="kw">match </span>ev {
-					ToSwarm::GenerateEvent(event) =&gt; <span class="kw">match </span>event {
-						mdns::Event::Discovered(list) =&gt; {
-							<span class="kw">if </span><span class="self">self</span>.num_connections &gt;= <span class="self">self</span>.discovery_only_if_under_num {
-								<span class="kw">continue
-							</span>}
+		</span><span class="kw">while let </span>Poll::Ready(ev) = <span class="self">self</span>.mdns.poll(cx, params) {
+			<span class="kw">match </span>ev {
+				ToSwarm::GenerateEvent(event) =&gt; <span class="kw">match </span>event {
+					mdns::Event::Discovered(list) =&gt; {
+						<span class="kw">if </span><span class="self">self</span>.num_connections &gt;= <span class="self">self</span>.discovery_only_if_under_num {
+							<span class="kw">continue
+						</span>}
 
-							<span class="self">self</span>.pending_events.extend(
-								list.into_iter()
-									.map(|(peer_id, <span class="kw">_</span>)| DiscoveryOut::Discovered(peer_id)),
-							);
-							<span class="kw">if let </span><span class="prelude-val">Some</span>(ev) = <span class="self">self</span>.pending_events.pop_front() {
-								<span class="kw">return </span>Poll::Ready(ToSwarm::GenerateEvent(ev))
-							}
-						},
-						mdns::Event::Expired(<span class="kw">_</span>) =&gt; {},
+						<span class="self">self</span>.pending_events.extend(
+							list.into_iter().map(|(peer_id, <span class="kw">_</span>)| DiscoveryOut::Discovered(peer_id)),
+						);
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(ev) = <span class="self">self</span>.pending_events.pop_front() {
+							<span class="kw">return </span>Poll::Ready(ToSwarm::GenerateEvent(ev))
+						}
 					},
-					ToSwarm::Dial { .. } =&gt; {
-						<span class="macro">unreachable!</span>(<span class="string">&quot;mDNS never dials!&quot;</span>);
-					},
-					ToSwarm::NotifyHandler { event, .. } =&gt; <span class="kw">match </span>event {}, <span class="comment">/* `event` is an */
-					// enum with no
-					// variant
-					</span>ToSwarm::CloseConnection { peer_id, connection } =&gt;
-						<span class="kw">return </span>Poll::Ready(ToSwarm::CloseConnection { peer_id, connection }),
-					ToSwarm::NewExternalAddrCandidate(observed) =&gt;
-						<span class="kw">return </span>Poll::Ready(ToSwarm::NewExternalAddrCandidate(observed)),
-					ToSwarm::ExternalAddrConfirmed(addr) =&gt;
-						<span class="kw">return </span>Poll::Ready(ToSwarm::ExternalAddrConfirmed(addr)),
-					ToSwarm::ExternalAddrExpired(addr) =&gt;
-						<span class="kw">return </span>Poll::Ready(ToSwarm::ExternalAddrExpired(addr)),
-					ToSwarm::ListenOn { opts } =&gt; <span class="kw">return </span>Poll::Ready(ToSwarm::ListenOn { opts }),
-					ToSwarm::RemoveListener { id } =&gt;
-						<span class="kw">return </span>Poll::Ready(ToSwarm::RemoveListener { id }),
-				}
+					mdns::Event::Expired(<span class="kw">_</span>) =&gt; {},
+				},
+				ToSwarm::Dial { .. } =&gt; {
+					<span class="macro">unreachable!</span>(<span class="string">&quot;mDNS never dials!&quot;</span>);
+				},
+				ToSwarm::NotifyHandler { event, .. } =&gt; <span class="kw">match </span>event {}, <span class="comment">/* `event` is an */
+				// enum with no
+				// variant
+				</span>ToSwarm::CloseConnection { peer_id, connection } =&gt;
+					<span class="kw">return </span>Poll::Ready(ToSwarm::CloseConnection { peer_id, connection }),
+				ToSwarm::NewExternalAddrCandidate(observed) =&gt;
+					<span class="kw">return </span>Poll::Ready(ToSwarm::NewExternalAddrCandidate(observed)),
+				ToSwarm::ExternalAddrConfirmed(addr) =&gt;
+					<span class="kw">return </span>Poll::Ready(ToSwarm::ExternalAddrConfirmed(addr)),
+				ToSwarm::ExternalAddrExpired(addr) =&gt;
+					<span class="kw">return </span>Poll::Ready(ToSwarm::ExternalAddrExpired(addr)),
+				ToSwarm::ListenOn { opts } =&gt; <span class="kw">return </span>Poll::Ready(ToSwarm::ListenOn { opts }),
+				ToSwarm::RemoveListener { id } =&gt;
+					<span class="kw">return </span>Poll::Ready(ToSwarm::RemoveListener { id }),
 			}
 		}
 

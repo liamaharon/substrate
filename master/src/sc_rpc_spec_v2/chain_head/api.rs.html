@@ -128,13 +128,6 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -156,7 +149,7 @@
 </span><span class="attr">#![allow(non_snake_case)]
 
 </span><span class="doccomment">//! API trait of the chain head.
-</span><span class="kw">use </span><span class="kw">crate</span>::chain_head::event::{ChainHeadEvent, FollowEvent, NetworkConfig, StorageQuery};
+</span><span class="kw">use </span><span class="kw">crate</span>::chain_head::event::{ChainHeadEvent, FollowEvent, StorageQuery};
 <span class="kw">use </span>jsonrpsee::{core::RpcResult, proc_macros::rpc};
 
 <span class="attr">#[rpc(client, server)]
@@ -189,12 +182,7 @@
 		unsubscribe = <span class="string">&quot;chainHead_unstable_stopBody&quot;</span>,
 		item = ChainHeadEvent&lt;String&gt;,
 	)]
-	</span><span class="kw">fn </span>chain_head_unstable_body(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		follow_subscription: String,
-		hash: Hash,
-		network_config: <span class="prelude-ty">Option</span>&lt;NetworkConfig&gt;,
-	);
+	</span><span class="kw">fn </span>chain_head_unstable_body(<span class="kw-2">&amp;</span><span class="self">self</span>, follow_subscription: String, hash: Hash);
 
 	<span class="doccomment">/// Retrieves the header of a pinned block.
 	///
@@ -239,7 +227,6 @@
 		hash: Hash,
 		items: Vec&lt;StorageQuery&lt;String&gt;&gt;,
 		child_trie: <span class="prelude-ty">Option</span>&lt;String&gt;,
-		network_config: <span class="prelude-ty">Option</span>&lt;NetworkConfig&gt;,
 	);
 
 	<span class="doccomment">/// Call into the Runtime API at a specified block&#39;s state.
@@ -258,7 +245,6 @@
 		hash: Hash,
 		function: String,
 		call_parameters: String,
-		network_config: <span class="prelude-ty">Option</span>&lt;NetworkConfig&gt;,
 	);
 
 	<span class="doccomment">/// Unpin a block reported by the `follow` method.
