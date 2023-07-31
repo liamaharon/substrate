@@ -611,6 +611,22 @@
 <a href="#611" id="611">611</a>
 <a href="#612" id="612">612</a>
 <a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -674,6 +690,7 @@
 <span class="kw">pub mod </span>v11;
 <span class="kw">pub mod </span>v12;
 <span class="kw">pub mod </span>v13;
+<span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/migration_codegen.rs&quot;</span>));
 
 <span class="kw">use crate</span>::{weights::WeightInfo, Config, Error, MigrationInProgress, Pallet, Weight, LOG_TARGET};
 <span class="kw">use </span>codec::{Codec, Decode};
@@ -1135,7 +1152,10 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::tests::{ExtBuilder, Test};
+	<span class="kw">use crate</span>::{
+		migration::codegen::LATEST_MIGRATION_VERSION,
+		tests::{ExtBuilder, Test},
+	};
 
 	<span class="attr">#[derive(Default, Encode, Decode, MaxEncodedLen)]
 	</span><span class="kw">struct </span>MockMigration&lt;<span class="kw">const </span>N: u16&gt; {
@@ -1157,6 +1177,11 @@
 				(IsFinished::No, Weight::from_all(<span class="number">1</span>))
 			}
 		}
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>test_storage_version_matches_last_migration_file() {
+		<span class="macro">assert_eq!</span>(StorageVersion::new(LATEST_MIGRATION_VERSION), <span class="kw">crate</span>::pallet::STORAGE_VERSION);
 	}
 
 	<span class="attr">#[test]
@@ -1197,7 +1222,7 @@
 		<span class="kw">type </span>TestMigration = Migration&lt;Test&gt;;
 
 		ExtBuilder::default().build().execute_with(|| {
-			<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;Test&gt;&gt;(), <span class="number">2</span>);
+			<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;Test&gt;&gt;(), LATEST_MIGRATION_VERSION);
 			<span class="macro">assert_eq!</span>(TestMigration::migrate(Weight::MAX).<span class="number">0</span>, MigrateResult::NoMigrationInProgress)
 		});
 	}
@@ -1206,22 +1231,29 @@
 	</span><span class="kw">fn </span>migration_works() {
 		<span class="kw">type </span>TestMigration = Migration&lt;Test, <span class="bool-val">false</span>&gt;;
 
-		ExtBuilder::default().set_storage_version(<span class="number">0</span>).build().execute_with(|| {
-			<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;Test&gt;&gt;(), <span class="number">0</span>);
-			TestMigration::on_runtime_upgrade();
-			<span class="kw">for </span>(version, status) <span class="kw">in
-				</span>[(<span class="number">1</span>, MigrateResult::InProgress { steps_done: <span class="number">1 </span>}), (<span class="number">2</span>, MigrateResult::Completed)]
-			{
-				<span class="macro">assert_eq!</span>(TestMigration::migrate(Weight::MAX).<span class="number">0</span>, status);
-				<span class="macro">assert_eq!</span>(
-					&lt;Pallet&lt;Test&gt;&gt;::on_chain_storage_version(),
-					StorageVersion::new(version)
-				);
-			}
+		ExtBuilder::default()
+			.set_storage_version(LATEST_MIGRATION_VERSION - <span class="number">2</span>)
+			.build()
+			.execute_with(|| {
+				<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;Test&gt;&gt;(), LATEST_MIGRATION_VERSION - <span class="number">2</span>);
+				TestMigration::on_runtime_upgrade();
+				<span class="kw">for </span>(version, status) <span class="kw">in </span>[
+					(LATEST_MIGRATION_VERSION - <span class="number">1</span>, MigrateResult::InProgress { steps_done: <span class="number">1 </span>}),
+					(LATEST_MIGRATION_VERSION, MigrateResult::Completed),
+				] {
+					<span class="macro">assert_eq!</span>(TestMigration::migrate(Weight::MAX).<span class="number">0</span>, status);
+					<span class="macro">assert_eq!</span>(
+						&lt;Pallet&lt;Test&gt;&gt;::on_chain_storage_version(),
+						StorageVersion::new(version)
+					);
+				}
 
-			<span class="macro">assert_eq!</span>(TestMigration::migrate(Weight::MAX).<span class="number">0</span>, MigrateResult::NoMigrationInProgress);
-			<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;Test&gt;&gt;(), <span class="number">2</span>);
-		});
+				<span class="macro">assert_eq!</span>(
+					TestMigration::migrate(Weight::MAX).<span class="number">0</span>,
+					MigrateResult::NoMigrationInProgress
+				);
+				<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;Test&gt;&gt;(), LATEST_MIGRATION_VERSION);
+			});
 	}
 }
 </code></pre></div></section></main></body></html>

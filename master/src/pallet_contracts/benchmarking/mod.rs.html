@@ -2654,6 +2654,11 @@
 <a href="#2654" id="2654">2654</a>
 <a href="#2655" id="2655">2655</a>
 <a href="#2656" id="2656">2656</a>
+<a href="#2657" id="2657">2657</a>
+<a href="#2658" id="2658">2658</a>
+<a href="#2659" id="2659">2659</a>
+<a href="#2660" id="2660">2660</a>
+<a href="#2661" id="2661">2661</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2686,7 +2691,7 @@
 };
 <span class="kw">use crate</span>::{
 	exec::{AccountIdOf, Key},
-	migration::{v09, v10, v11, v12, v13, MigrationStep},
+	migration::{codegen::LATEST_MIGRATION_VERSION, v09, v10, v11, v12, v13, MigrationStep},
 	wasm::CallFlags,
 	Pallet <span class="kw">as </span>Contracts, <span class="kw-2">*</span>,
 };
@@ -2929,29 +2934,32 @@
 	<span class="comment">// This benchmarks the weight of executing Migration::migrate to execute a noop migration.
 	</span><span class="attr">#[pov_mode = Measured]
 	</span>migration_noop {
-		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), <span class="number">2</span>);
+		<span class="kw">let </span>version = LATEST_MIGRATION_VERSION;
+		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), version);
 	}:  {
 		Migration::&lt;T&gt;::migrate(Weight::MAX)
 	} verify {
-		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), <span class="number">2</span>);
+		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), version);
 	}
 
 	<span class="comment">// This benchmarks the weight of dispatching migrate to execute 1 `NoopMigraton`
 	</span><span class="attr">#[pov_mode = Measured]
 	</span>migrate {
-		StorageVersion::new(<span class="number">0</span>).put::&lt;Pallet&lt;T&gt;&gt;();
+		<span class="kw">let </span>latest_version = LATEST_MIGRATION_VERSION;
+		StorageVersion::new(latest_version - <span class="number">2</span>).put::&lt;Pallet&lt;T&gt;&gt;();
 		&lt;Migration::&lt;T, <span class="bool-val">false</span>&gt; <span class="kw">as </span>frame_support::traits::OnRuntimeUpgrade&gt;::on_runtime_upgrade();
 		<span class="kw">let </span>caller: T::AccountId = whitelisted_caller();
 		<span class="kw">let </span>origin = RawOrigin::Signed(caller.clone());
 	}: <span class="kw">_</span>(origin, Weight::MAX)
 	verify {
-		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), <span class="number">1</span>);
+		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), latest_version - <span class="number">1</span>);
 	}
 
 	<span class="comment">// This benchmarks the weight of running on_runtime_upgrade when there are no migration in progress.
 	</span><span class="attr">#[pov_mode = Measured]
 	</span>on_runtime_upgrade_noop {
-		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), <span class="number">2</span>);
+		<span class="kw">let </span>latest_version = LATEST_MIGRATION_VERSION;
+		<span class="macro">assert_eq!</span>(StorageVersion::get::&lt;Pallet&lt;T&gt;&gt;(), latest_version);
 	}:  {
 		&lt;Migration::&lt;T, <span class="bool-val">false</span>&gt; <span class="kw">as </span>frame_support::traits::OnRuntimeUpgrade&gt;::on_runtime_upgrade()
 	} verify {
@@ -2961,7 +2969,8 @@
 	<span class="comment">// This benchmarks the weight of running on_runtime_upgrade when there is a migration in progress.
 	</span><span class="attr">#[pov_mode = Measured]
 	</span>on_runtime_upgrade_in_progress {
-		StorageVersion::new(<span class="number">0</span>).put::&lt;Pallet&lt;T&gt;&gt;();
+		<span class="kw">let </span>latest_version = LATEST_MIGRATION_VERSION;
+		StorageVersion::new(latest_version - <span class="number">2</span>).put::&lt;Pallet&lt;T&gt;&gt;();
 		<span class="kw">let </span>v = <span class="macro">vec!</span>[<span class="number">42u8</span>].try_into().ok();
 		MigrationInProgress::&lt;T&gt;::set(v.clone());
 	}:  {
@@ -2974,7 +2983,8 @@
 	<span class="comment">// This benchmarks the weight of running on_runtime_upgrade when there is a migration to process.
 	</span><span class="attr">#[pov_mode = Measured]
 	</span>on_runtime_upgrade {
-		StorageVersion::new(<span class="number">0</span>).put::&lt;Pallet&lt;T&gt;&gt;();
+		<span class="kw">let </span>latest_version = LATEST_MIGRATION_VERSION;
+		StorageVersion::new(latest_version - <span class="number">2</span>).put::&lt;Pallet&lt;T&gt;&gt;();
 	}:  {
 		&lt;Migration::&lt;T, <span class="bool-val">false</span>&gt; <span class="kw">as </span>frame_support::traits::OnRuntimeUpgrade&gt;::on_runtime_upgrade()
 	} verify {
