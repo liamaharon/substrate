@@ -1776,8 +1776,6 @@
 <a href="#1776" id="1776">1776</a>
 <a href="#1777" id="1777">1777</a>
 <a href="#1778" id="1778">1778</a>
-<a href="#1779" id="1779">1779</a>
-<a href="#1780" id="1780">1780</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1884,9 +1882,9 @@
 	<span class="doccomment">/// Number of peers we&#39;re connected to.
 	</span>num_connected: Arc&lt;AtomicUsize&gt;,
 	<span class="doccomment">/// The local external addresses.
-	</span>external_addresses: Arc&lt;Mutex&lt;Vec&lt;Multiaddr&gt;&gt;&gt;,
+	</span>external_addresses: Arc&lt;Mutex&lt;HashSet&lt;Multiaddr&gt;&gt;&gt;,
 	<span class="doccomment">/// Listen addresses. Do **NOT** include a trailing `/p2p/` with our `PeerId`.
-	</span>listen_addresses: Arc&lt;Mutex&lt;Vec&lt;Multiaddr&gt;&gt;&gt;,
+	</span>listen_addresses: Arc&lt;Mutex&lt;HashSet&lt;Multiaddr&gt;&gt;&gt;,
 	<span class="doccomment">/// Local copy of the `PeerId` of the local node.
 	</span>local_peer_id: PeerId,
 	<span class="doccomment">/// The `KeyPair` that defines the `PeerId` of the local node.
@@ -2081,6 +2079,7 @@
 		})<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>num_connected = Arc::new(AtomicUsize::new(<span class="number">0</span>));
+		<span class="kw">let </span>external_addresses = Arc::new(Mutex::new(HashSet::new()));
 
 		<span class="comment">// Build the swarm.
 		</span><span class="kw">let </span>(<span class="kw-2">mut </span>swarm, bandwidth): (Swarm&lt;Behaviour&lt;B&gt;&gt;, <span class="kw">_</span>) = {
@@ -2134,6 +2133,7 @@
 						.with_max_established_incoming(<span class="prelude-val">Some</span>(
 							<span class="kw">crate</span>::MAX_CONNECTIONS_ESTABLISHED_INCOMING,
 						)),
+					external_addresses.clone(),
 				);
 
 				<span class="kw">match </span>result {
@@ -2192,13 +2192,12 @@
 			Swarm::&lt;Behaviour&lt;B&gt;&gt;::add_external_address(<span class="kw-2">&amp;mut </span>swarm, addr.clone());
 		}
 
-		<span class="kw">let </span>external_addresses = Arc::new(Mutex::new(Vec::new()));
-		<span class="kw">let </span>listen_addresses = Arc::new(Mutex::new(Vec::new()));
+		<span class="kw">let </span>listen_addresses = Arc::new(Mutex::new(HashSet::new()));
 		<span class="kw">let </span>peers_notifications_sinks = Arc::new(Mutex::new(HashMap::new()));
 
 		<span class="kw">let </span>service = Arc::new(NetworkService {
 			bandwidth,
-			external_addresses: external_addresses.clone(),
+			external_addresses,
 			listen_addresses: listen_addresses.clone(),
 			num_connected: num_connected.clone(),
 			peerset: peerset_handle,
@@ -2214,7 +2213,6 @@
 		});
 
 		<span class="prelude-val">Ok</span>(NetworkWorker {
-			external_addresses,
 			listen_addresses,
 			num_connected,
 			network_service: swarm,
@@ -2474,12 +2472,12 @@
 {
 	<span class="doccomment">/// Returns the local external addresses.
 	</span><span class="kw">fn </span>external_addresses(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;Multiaddr&gt; {
-		<span class="self">self</span>.external_addresses.lock().clone()
+		<span class="self">self</span>.external_addresses.lock().iter().cloned().collect()
 	}
 
 	<span class="doccomment">/// Returns the listener addresses (without trailing `/p2p/` with our `PeerId`).
 	</span><span class="kw">fn </span>listen_addresses(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;Multiaddr&gt; {
-		<span class="self">self</span>.listen_addresses.lock().clone()
+		<span class="self">self</span>.listen_addresses.lock().iter().cloned().collect()
 	}
 
 	<span class="doccomment">/// Returns the local Peer ID.
@@ -2903,9 +2901,7 @@
 	H: ExHashT,
 {
 	<span class="doccomment">/// Updated by the `NetworkWorker` and loaded by the `NetworkService`.
-	</span>external_addresses: Arc&lt;Mutex&lt;Vec&lt;Multiaddr&gt;&gt;&gt;,
-	<span class="doccomment">/// Updated by the `NetworkWorker` and loaded by the `NetworkService`.
-	</span>listen_addresses: Arc&lt;Mutex&lt;Vec&lt;Multiaddr&gt;&gt;&gt;,
+	</span>listen_addresses: Arc&lt;Mutex&lt;HashSet&lt;Multiaddr&gt;&gt;&gt;,
 	<span class="doccomment">/// Updated by the `NetworkWorker` and loaded by the `NetworkService`.
 	</span>num_connected: Arc&lt;AtomicUsize&gt;,
 	<span class="doccomment">/// The network service that can be extracted and shared through the codebase.
@@ -2962,18 +2958,10 @@
 			},
 		};
 
-		<span class="comment">// Update the variables shared with the `NetworkService`.
+		<span class="comment">// Update the `num_connected` count shared with the `NetworkService`.
 		</span><span class="kw">let </span>num_connected_peers =
 			<span class="self">self</span>.network_service.behaviour_mut().user_protocol_mut().num_connected_peers();
 		<span class="self">self</span>.num_connected.store(num_connected_peers, Ordering::Relaxed);
-		{
-			<span class="kw">let </span>external_addresses = <span class="self">self</span>.network_service.external_addresses().cloned().collect();
-			<span class="kw-2">*</span><span class="self">self</span>.external_addresses.lock() = external_addresses;
-
-			<span class="kw">let </span>listen_addresses =
-				<span class="self">self</span>.network_service.listeners().map(ToOwned::to_owned).collect();
-			<span class="kw-2">*</span><span class="self">self</span>.listen_addresses.lock() = listen_addresses;
-		}
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(buckets) = <span class="self">self</span>.network_service.behaviour_mut().num_entries_per_kbucket() {
@@ -3382,12 +3370,14 @@
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 					metrics.listeners_local_addresses.inc();
 				}
+				<span class="self">self</span>.listen_addresses.lock().insert(address.clone());
 			},
 			SwarmEvent::ExpiredListenAddr { address, .. } =&gt; {
 				<span class="macro">info!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;📪 No longer listening on {}&quot;</span>, address);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 					metrics.listeners_local_addresses.dec();
 				}
+				<span class="self">self</span>.listen_addresses.lock().remove(<span class="kw-2">&amp;</span>address);
 			},
 			SwarmEvent::OutgoingConnectionError { connection_id, peer_id, error } =&gt; {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(peer_id) = peer_id {
@@ -3492,6 +3482,12 @@
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="self">self</span>.metrics.as_ref() {
 					metrics.listeners_local_addresses.sub(addresses.len() <span class="kw">as </span>u64);
 				}
+				<span class="kw">let </span><span class="kw-2">mut </span>listen_addresses = <span class="self">self</span>.listen_addresses.lock();
+				<span class="kw">for </span>addr <span class="kw">in </span><span class="kw-2">&amp;</span>addresses {
+					listen_addresses.remove(addr);
+				}
+				drop(listen_addresses);
+
 				<span class="kw">let </span>addrs =
 					addresses.into_iter().map(|a| a.to_string()).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;().join(<span class="string">&quot;, &quot;</span>);
 				<span class="kw">match </span>reason {

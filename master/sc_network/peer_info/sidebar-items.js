@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PeerInfoEvent"],"struct":["Node","PeerInfoBehaviour"]};
+window.SIDEBAR_ITEMS = {"enum":["PeerInfoEvent"],"struct":["ExternalAddresses","Node","PeerInfoBehaviour"]};
