@@ -40,8 +40,8 @@ production. Enabling dev mode has the following effects:</p>
 <li>Weights no longer need to be specified on every <code>#[pallet::call]</code> declaration. By default, dev
 mode pallets will assume a weight of zero (<code>0</code>) if a weight is not specified. This is
 equivalent to specifying <code>#[weight(0)]</code> on all calls that do not specify a weight.</li>
-<li>Call index no longer needs to be specified on every <code>#[pallet::call]</code> declaration. By default,
-dev mode pallets will assume a call index based on the order of the call.</li>
+<li>Call indices no longer need to be specified on every <code>#[pallet::call]</code> declaration. By
+default, dev mode pallets will assume a call index based on the order of the call.</li>
 <li>All storages are marked as unbounded, meaning you do not need to implement <code>MaxEncodedLen</code> on
 storage types. This is equivalent to specifying <code>#[pallet::unbounded]</code> on all storage type
 definitions.</li>
