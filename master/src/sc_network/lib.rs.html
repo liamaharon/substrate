@@ -296,6 +296,8 @@
 <a href="#296" id="296">296</a>
 <a href="#297" id="297">297</a>
 <a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -541,11 +543,11 @@
 //! More precise usage details are still being worked on and will likely change in the future.
 
 </span><span class="kw">mod </span>behaviour;
-<span class="kw">mod </span>peer_store;
-<span class="kw">mod </span>peerset;
 <span class="kw">mod </span>protocol;
-<span class="kw">mod </span>protocol_controller;
 <span class="kw">mod </span>service;
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>mock;
 
 <span class="kw">pub mod </span>config;
 <span class="kw">pub mod </span>discovery;
@@ -553,6 +555,8 @@
 <span class="kw">pub mod </span>event;
 <span class="kw">pub mod </span>network_state;
 <span class="kw">pub mod </span>peer_info;
+<span class="kw">pub mod </span>peer_store;
+<span class="kw">pub mod </span>protocol_controller;
 <span class="kw">pub mod </span>request_responses;
 <span class="kw">pub mod </span>transport;
 <span class="kw">pub mod </span>types;

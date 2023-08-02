@@ -776,6 +776,15 @@
 <a href="#776" id="776">776</a>
 <a href="#777" id="777">777</a>
 <a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -810,6 +819,7 @@
 
 <span class="kw">pub use </span>libp2p::{identity::Keypair, multiaddr, Multiaddr, PeerId};
 
+<span class="kw">use </span><span class="kw">crate</span>::peer_store::PeerStoreHandle;
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>prometheus_endpoint::Registry;
 <span class="kw">use </span>zeroize::Zeroize;
@@ -1047,6 +1057,11 @@
 			<span class="string">&quot;deny&quot; </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Deny),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 		}
+	}
+
+	<span class="doccomment">/// If we are in &quot;reserved-only&quot; peer mode.
+	</span><span class="kw">pub fn </span>is_reserved_only(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+		<span class="macro">matches!</span>(<span class="self">self</span>, NonReservedPeerMode::Deny)
 	}
 }
 
@@ -1451,6 +1466,9 @@
 
 	<span class="doccomment">/// Network layer configuration.
 	</span><span class="kw">pub </span>network_config: FullNetworkConfiguration,
+
+	<span class="doccomment">/// Peer store with known nodes, peer reputations, etc.
+	</span><span class="kw">pub </span>peer_store: PeerStoreHandle,
 
 	<span class="doccomment">/// Legacy name of the protocol to use on the wire. Should be different for each chain.
 	</span><span class="kw">pub </span>protocol_id: ProtocolId,

@@ -97,6 +97,12 @@
 <a href="#97" id="97">97</a>
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -186,6 +192,12 @@
 		<span class="kw">let </span>result = <span class="self">self</span>.add_peers_to_reserved_set(protocol, iter::once(addr).collect());
 		<span class="kw">if let </span><span class="prelude-val">Err</span>(err) = result {
 			<span class="macro">log::error!</span>(target: <span class="string">&quot;gossip&quot;</span>, <span class="string">&quot;add_set_reserved failed: {}&quot;</span>, err);
+		}
+	}
+	<span class="kw">fn </span>remove_set_reserved(<span class="kw-2">&amp;</span><span class="self">self</span>, who: PeerId, protocol: ProtocolName) {
+		<span class="kw">let </span>result = <span class="self">self</span>.remove_peers_from_reserved_set(protocol, iter::once(who).collect());
+		<span class="kw">if let </span><span class="prelude-val">Err</span>(err) = result {
+			<span class="macro">log::error!</span>(target: <span class="string">&quot;gossip&quot;</span>, <span class="string">&quot;remove_set_reserved failed: {}&quot;</span>, err);
 		}
 	}
 }

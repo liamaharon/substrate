@@ -168,7 +168,7 @@ var sourcesIndex = JSON.parse('{\
 "sc_executor_wasmtime":["",[],["host.rs","imports.rs","instance_wrapper.rs","lib.rs","runtime.rs","util.rs"]],\
 "sc_informant":["",[],["display.rs","lib.rs"]],\
 "sc_keystore":["",[],["lib.rs","local.rs"]],\
-"sc_network":["",[["protocol",[["notifications",[["upgrade",[],["collec.rs","notifications.rs"]]],["behaviour.rs","handler.rs","upgrade.rs"]]],["message.rs","notifications.rs"]],["service",[],["metrics.rs","out_events.rs","signature.rs","traits.rs"]]],["behaviour.rs","config.rs","discovery.rs","error.rs","event.rs","lib.rs","network_state.rs","peer_info.rs","peer_store.rs","peerset.rs","protocol.rs","protocol_controller.rs","request_responses.rs","service.rs","transport.rs","types.rs","utils.rs"]],\
+"sc_network":["",[["protocol",[["notifications",[["upgrade",[],["collec.rs","notifications.rs"]]],["behaviour.rs","handler.rs","upgrade.rs"]]],["message.rs","notifications.rs"]],["service",[],["metrics.rs","out_events.rs","signature.rs","traits.rs"]]],["behaviour.rs","config.rs","discovery.rs","error.rs","event.rs","lib.rs","network_state.rs","peer_info.rs","peer_store.rs","protocol.rs","protocol_controller.rs","request_responses.rs","service.rs","transport.rs","types.rs","utils.rs"]],\
 "sc_network_bitswap":["",[],["lib.rs","schema.rs"]],\
 "sc_network_common":["",[["sync",[],["message.rs","metrics.rs","warp.rs"]]],["lib.rs","message.rs","role.rs","sync.rs","types.rs"]],\
 "sc_network_gossip":["",[],["bridge.rs","lib.rs","state_machine.rs","validator.rs"]],\

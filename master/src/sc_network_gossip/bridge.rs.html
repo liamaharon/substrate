@@ -820,6 +820,9 @@
 <a href="#820" id="820">820</a>
 <a href="#821" id="821">821</a>
 <a href="#822" id="822">822</a>
+<a href="#823" id="823">823</a>
+<a href="#824" id="824">824</a>
+<a href="#825" id="825">825</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1060,10 +1063,7 @@
 							SyncEvent::PeerConnected(remote) =&gt;
 								this.network.add_set_reserved(remote, this.protocol.clone()),
 							SyncEvent::PeerDisconnected(remote) =&gt;
-								this.network.remove_peers_from_reserved_set(
-									this.protocol.clone(),
-									<span class="macro">vec!</span>[remote],
-								),
+								this.network.remove_set_reserved(remote, this.protocol.clone()),
 						},
 						<span class="comment">// The sync event stream closed. Do the same for [`GossipValidator`].
 						</span>Poll::Ready(<span class="prelude-val">None</span>) =&gt; {
@@ -1236,7 +1236,13 @@
 			<span class="macro">unimplemented!</span>();
 		}
 
-		<span class="kw">fn </span>remove_peers_from_reserved_set(<span class="kw-2">&amp;</span><span class="self">self</span>, _protocol: ProtocolName, _peers: Vec&lt;PeerId&gt;) {}
+		<span class="kw">fn </span>remove_peers_from_reserved_set(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			_protocol: ProtocolName,
+			_peers: Vec&lt;PeerId&gt;,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+			<span class="macro">unimplemented!</span>();
+		}
 
 		<span class="kw">fn </span>sync_num_connected(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
 			<span class="macro">unimplemented!</span>();

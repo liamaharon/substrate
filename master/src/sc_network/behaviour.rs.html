@@ -389,7 +389,7 @@
 	discovery::{DiscoveryBehaviour, DiscoveryConfig, DiscoveryOut},
 	event::DhtEvent,
 	peer_info,
-	peerset::PeersetHandle,
+	peer_store::PeerStoreHandle,
 	protocol::{CustomMessageOutcome, NotificationsSink, Protocol},
 	request_responses::{<span class="self">self</span>, IfDisconnected, ProtocolConfig, RequestFailure},
 	types::ProtocolName,
@@ -542,7 +542,7 @@
 		local_public_key: PublicKey,
 		disco_config: DiscoveryConfig,
 		request_response_protocols: Vec&lt;ProtocolConfig&gt;,
-		peerset: PeersetHandle,
+		peer_store_handle: PeerStoreHandle,
 		connection_limits: ConnectionLimits,
 		external_addresses: Arc&lt;Mutex&lt;HashSet&lt;Multiaddr&gt;&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, request_responses::RegisterError&gt; {
@@ -557,7 +557,7 @@
 			connection_limits: libp2p::connection_limits::Behaviour::new(connection_limits),
 			request_responses: request_responses::RequestResponsesBehaviour::new(
 				request_response_protocols.into_iter(),
-				peerset,
+				Box::new(peer_store_handle),
 			)<span class="question-mark">?</span>,
 		})
 	}

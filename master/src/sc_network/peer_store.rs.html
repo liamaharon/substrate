@@ -405,6 +405,12 @@
 <a href="#405" id="405">405</a>
 <a href="#406" id="406">406</a>
 <a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -422,6 +428,9 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
+
+</span><span class="doccomment">//! [`PeerStore`] manages peer reputations and provides connection candidates to
+//! [`crate::protocol_controller::ProtocolController`].
 
 </span><span class="kw">use </span>libp2p::PeerId;
 <span class="kw">use </span>log::trace;
@@ -456,7 +465,8 @@
 /// remove it, once the reputation value reaches 0.
 </span><span class="kw">const </span>FORGET_AFTER: Duration = Duration::from_secs(<span class="number">3600</span>);
 
-<span class="kw">pub trait </span>PeerStoreProvider: Debug + Send {
+<span class="doccomment">/// Trait providing peer reputation management and connection candidates.
+</span><span class="kw">pub trait </span>PeerStoreProvider: Debug + Send {
 	<span class="doccomment">/// Check whether the peer is banned.
 	</span><span class="kw">fn </span>is_banned(<span class="kw-2">&amp;</span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId) -&gt; bool;
 
@@ -476,7 +486,8 @@
 	</span><span class="kw">fn </span>outgoing_candidates(<span class="kw-2">&amp;</span><span class="self">self</span>, count: usize, ignored: HashSet&lt;<span class="kw-2">&amp;</span>PeerId&gt;) -&gt; Vec&lt;PeerId&gt;;
 }
 
-<span class="attr">#[derive(Debug, Clone)]
+<span class="doccomment">/// Actual implementation of peer reputations and connection candidates provider.
+</span><span class="attr">#[derive(Debug, Clone)]
 </span><span class="kw">pub struct </span>PeerStoreHandle {
 	inner: Arc&lt;Mutex&lt;PeerStoreInner&gt;&gt;,
 }
@@ -696,7 +707,8 @@
 	}
 }
 
-<span class="attr">#[derive(Debug)]
+<span class="doccomment">/// Worker part of [`PeerStoreHandle`]
+</span><span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>PeerStore {
 	inner: Arc&lt;Mutex&lt;PeerStoreInner&gt;&gt;,
 }

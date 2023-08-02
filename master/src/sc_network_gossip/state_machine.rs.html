@@ -835,6 +835,12 @@
 <a href="#835" id="835">835</a>
 <a href="#836" id="836">836</a>
 <a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
+<a href="#839" id="839">839</a>
+<a href="#840" id="840">840</a>
+<a href="#841" id="841">841</a>
+<a href="#842" id="842">842</a>
+<a href="#843" id="843">843</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1477,7 +1483,13 @@
 			<span class="macro">unimplemented!</span>();
 		}
 
-		<span class="kw">fn </span>remove_peers_from_reserved_set(<span class="kw-2">&amp;</span><span class="self">self</span>, _protocol: ProtocolName, _peers: Vec&lt;PeerId&gt;) {}
+		<span class="kw">fn </span>remove_peers_from_reserved_set(
+			<span class="kw-2">&amp;</span><span class="self">self</span>,
+			_protocol: ProtocolName,
+			_peers: Vec&lt;PeerId&gt;,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
+			<span class="macro">unimplemented!</span>();
+		}
 
 		<span class="kw">fn </span>sync_num_connected(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
 			<span class="macro">unimplemented!</span>();

@@ -1218,6 +1218,16 @@
 <a href="#1218" id="1218">1218</a>
 <a href="#1219" id="1219">1219</a>
 <a href="#1220" id="1220">1220</a>
+<a href="#1221" id="1221">1221</a>
+<a href="#1222" id="1222">1222</a>
+<a href="#1223" id="1223">1223</a>
+<a href="#1224" id="1224">1224</a>
+<a href="#1225" id="1225">1225</a>
+<a href="#1226" id="1226">1226</a>
+<a href="#1227" id="1227">1227</a>
+<a href="#1228" id="1228">1228</a>
+<a href="#1229" id="1229">1229</a>
+<a href="#1230" id="1230">1230</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1239,6 +1249,8 @@
 
 #[cfg(test)]
 </span><span class="kw">mod </span>block_import;
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>fuzz;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>service;
 <span class="attr">#[cfg(test)]
@@ -1273,6 +1285,7 @@
 		FullNetworkConfiguration, MultiaddrWithPeerId, NetworkConfiguration, NonDefaultSetConfig,
 		NonReservedPeerMode, ProtocolId, Role, SyncMode, TransportConfig,
 	},
+	peer_store::PeerStore,
 	request_responses::ProtocolConfig <span class="kw">as </span>RequestResponseConfig,
 	types::ProtocolName,
 	Multiaddr, NetworkBlock, NetworkService, NetworkStateInfo, NetworkSyncForkRequest,
@@ -2135,6 +2148,12 @@
 			});
 		}
 
+		<span class="kw">let </span>peer_store = PeerStore::new(
+			network_config.boot_nodes.iter().map(|bootnode| bootnode.peer_id).collect(),
+		);
+		<span class="kw">let </span>peer_store_handle = peer_store.handle();
+		<span class="self">self</span>.spawn_task(peer_store.run().boxed());
+
 		<span class="kw">let </span>genesis_hash =
 			client.hash(Zero::zero()).ok().flatten().expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>);
 		<span class="kw">let </span>network = NetworkWorker::new(sc_network::config::Params {
@@ -2143,6 +2162,7 @@
 				tokio::spawn(f);
 			}),
 			network_config: full_net_config,
+			peer_store: peer_store_handle,
 			genesis_hash,
 			protocol_id,
 			fork_id,

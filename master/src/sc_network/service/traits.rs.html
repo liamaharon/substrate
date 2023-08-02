@@ -599,6 +599,18 @@
 <a href="#599" id="599">599</a>
 <a href="#600" id="600">600</a>
 <a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 //
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -789,7 +801,8 @@
 	/// this step if the peer set is in reserved only mode.
 	///
 	/// Returns an `Err` if one of the given addresses is invalid or contains an
-	/// invalid peer ID (which includes the local peer ID).
+	/// invalid peer ID (which includes the local peer ID), or if `protocol` does not
+	/// refer to a known protocol.
 	</span><span class="kw">fn </span>set_reserved_peers(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		protocol: ProtocolName,
@@ -802,7 +815,8 @@
 	/// consist of only `/p2p/&lt;peerid&gt;`.
 	///
 	/// Returns an `Err` if one of the given addresses is invalid or contains an
-	/// invalid peer ID (which includes the local peer ID).
+	/// invalid peer ID (which includes the local peer ID), or if `protocol` does not
+	/// refer to a know protocol.
 	</span><span class="kw">fn </span>add_peers_to_reserved_set(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		protocol: ProtocolName,
@@ -810,7 +824,13 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt;;
 
 	<span class="doccomment">/// Remove peers from a peer set.
-	</span><span class="kw">fn </span>remove_peers_from_reserved_set(<span class="kw-2">&amp;</span><span class="self">self</span>, protocol: ProtocolName, peers: Vec&lt;PeerId&gt;);
+	///
+	/// Returns `Err` if `protocol` does not refer to a known protocol.
+	</span><span class="kw">fn </span>remove_peers_from_reserved_set(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		protocol: ProtocolName,
+		peers: Vec&lt;PeerId&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt;;
 
 	<span class="doccomment">/// Returns the number of peers in the sync peer set we&#39;re connected to.
 	</span><span class="kw">fn </span>sync_num_connected(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize;
@@ -878,7 +898,11 @@
 		T::add_peers_to_reserved_set(<span class="self">self</span>, protocol, peers)
 	}
 
-	<span class="kw">fn </span>remove_peers_from_reserved_set(<span class="kw-2">&amp;</span><span class="self">self</span>, protocol: ProtocolName, peers: Vec&lt;PeerId&gt;) {
+	<span class="kw">fn </span>remove_peers_from_reserved_set(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		protocol: ProtocolName,
+		peers: Vec&lt;PeerId&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
 		T::remove_peers_from_reserved_set(<span class="self">self</span>, protocol, peers)
 	}
 

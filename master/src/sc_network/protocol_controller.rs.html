@@ -1970,6 +1970,52 @@
 <a href="#1970" id="1970">1970</a>
 <a href="#1971" id="1971">1971</a>
 <a href="#1972" id="1972">1972</a>
+<a href="#1973" id="1973">1973</a>
+<a href="#1974" id="1974">1974</a>
+<a href="#1975" id="1975">1975</a>
+<a href="#1976" id="1976">1976</a>
+<a href="#1977" id="1977">1977</a>
+<a href="#1978" id="1978">1978</a>
+<a href="#1979" id="1979">1979</a>
+<a href="#1980" id="1980">1980</a>
+<a href="#1981" id="1981">1981</a>
+<a href="#1982" id="1982">1982</a>
+<a href="#1983" id="1983">1983</a>
+<a href="#1984" id="1984">1984</a>
+<a href="#1985" id="1985">1985</a>
+<a href="#1986" id="1986">1986</a>
+<a href="#1987" id="1987">1987</a>
+<a href="#1988" id="1988">1988</a>
+<a href="#1989" id="1989">1989</a>
+<a href="#1990" id="1990">1990</a>
+<a href="#1991" id="1991">1991</a>
+<a href="#1992" id="1992">1992</a>
+<a href="#1993" id="1993">1993</a>
+<a href="#1994" id="1994">1994</a>
+<a href="#1995" id="1995">1995</a>
+<a href="#1996" id="1996">1996</a>
+<a href="#1997" id="1997">1997</a>
+<a href="#1998" id="1998">1998</a>
+<a href="#1999" id="1999">1999</a>
+<a href="#2000" id="2000">2000</a>
+<a href="#2001" id="2001">2001</a>
+<a href="#2002" id="2002">2002</a>
+<a href="#2003" id="2003">2003</a>
+<a href="#2004" id="2004">2004</a>
+<a href="#2005" id="2005">2005</a>
+<a href="#2006" id="2006">2006</a>
+<a href="#2007" id="2007">2007</a>
+<a href="#2008" id="2008">2008</a>
+<a href="#2009" id="2009">2009</a>
+<a href="#2010" id="2010">2010</a>
+<a href="#2011" id="2011">2011</a>
+<a href="#2012" id="2012">2012</a>
+<a href="#2013" id="2013">2013</a>
+<a href="#2014" id="2014">2014</a>
+<a href="#2015" id="2015">2015</a>
+<a href="#2016" id="2016">2016</a>
+<a href="#2017" id="2017">2017</a>
+<a href="#2018" id="2018">2018</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2024,13 +2070,93 @@
 };
 <span class="kw">use </span>wasm_timer::Delay;
 
-<span class="kw">use crate</span>::{
-	peer_store::PeerStoreProvider,
-	peerset::{IncomingIndex, Message, SetConfig, SetId},
-};
+<span class="kw">use </span><span class="kw">crate</span>::peer_store::PeerStoreProvider;
 
 <span class="doccomment">/// Log target for this file.
 </span><span class="kw">pub const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;peerset&quot;</span>;
+
+<span class="doccomment">/// `Notifications` protocol index. For historical reasons it&#39;s called `SetId`, because it
+/// used to refer to a set of peers in a peerset for this protocol.
+///
+/// Can be constructed using the `From&lt;usize&gt;` trait implementation based on the index of the
+/// protocol in `Notifications`.
+</span><span class="attr">#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+</span><span class="kw">pub struct </span>SetId(usize);
+
+<span class="kw">impl </span>SetId {
+	<span class="doccomment">/// Const conversion function for initialization of hardcoded peerset indices.
+	</span><span class="kw">pub const fn </span>from(id: usize) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(id)
+	}
+}
+
+<span class="kw">impl </span>From&lt;usize&gt; <span class="kw">for </span>SetId {
+	<span class="kw">fn </span>from(id: usize) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(id)
+	}
+}
+
+<span class="kw">impl </span>From&lt;SetId&gt; <span class="kw">for </span>usize {
+	<span class="kw">fn </span>from(id: SetId) -&gt; <span class="self">Self </span>{
+		id.<span class="number">0
+	</span>}
+}
+
+<span class="doccomment">/// Configuration for a set of nodes for a specific protocol.
+</span><span class="attr">#[derive(Debug)]
+</span><span class="kw">pub struct </span>ProtoSetConfig {
+	<span class="doccomment">/// Maximum number of incoming links to peers.
+	</span><span class="kw">pub </span>in_peers: u32,
+
+	<span class="doccomment">/// Maximum number of outgoing links to peers.
+	</span><span class="kw">pub </span>out_peers: u32,
+
+	<span class="doccomment">/// Lists of nodes we should always be connected to.
+	///
+	/// &gt; **Note**: Keep in mind that the networking has to know an address for these nodes,
+	/// &gt;			otherwise it will not be able to connect to them.
+	</span><span class="kw">pub </span>reserved_nodes: HashSet&lt;PeerId&gt;,
+
+	<span class="doccomment">/// If true, we only accept nodes in [`ProtoSetConfig::reserved_nodes`].
+	</span><span class="kw">pub </span>reserved_only: bool,
+}
+
+<span class="doccomment">/// Message that is sent by [`ProtocolController`] to `Notifications`.
+</span><span class="attr">#[derive(Debug, PartialEq)]
+</span><span class="kw">pub enum </span>Message {
+	<span class="doccomment">/// Request to open a connection to the given peer. From the point of view of the
+	/// `ProtocolController`, we are immediately connected.
+	</span>Connect {
+		<span class="doccomment">/// Set id to connect on.
+		</span>set_id: SetId,
+		<span class="doccomment">/// Peer to connect to.
+		</span>peer_id: PeerId,
+	},
+
+	<span class="doccomment">/// Drop the connection to the given peer, or cancel the connection attempt after a `Connect`.
+	</span>Drop {
+		<span class="doccomment">/// Set id to disconnect on.
+		</span>set_id: SetId,
+		<span class="doccomment">/// Peer to disconnect from.
+		</span>peer_id: PeerId,
+	},
+
+	<span class="doccomment">/// Equivalent to `Connect` for the peer corresponding to this incoming index.
+	</span>Accept(IncomingIndex),
+
+	<span class="doccomment">/// Equivalent to `Drop` for the peer corresponding to this incoming index.
+	</span>Reject(IncomingIndex),
+}
+
+<span class="doccomment">/// Opaque identifier for an incoming connection. Allocated by the network.
+</span><span class="attr">#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+</span><span class="kw">pub struct </span>IncomingIndex(<span class="kw">pub </span>u64);
+
+<span class="kw">impl </span>From&lt;u64&gt; <span class="kw">for </span>IncomingIndex {
+	<span class="kw">fn </span>from(val: u64) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>(val)
+	}
+}
 
 <span class="doccomment">/// External API actions.
 </span><span class="attr">#[derive(Debug)]
@@ -2151,8 +2277,7 @@
 	}
 }
 
-<span class="doccomment">/// Side of [`ProtocolHandle`] responsible for all the logic. Currently all instances are
-/// owned by [`crate::Peerset`], but they should eventually be moved to corresponding protocols.
+<span class="doccomment">/// Worker side of [`ProtocolHandle`] responsible for all the logic.
 </span><span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>ProtocolController {
 	<span class="doccomment">/// Set id to use when sending connect/drop requests to `Notifications`.
@@ -2189,7 +2314,7 @@
 	<span class="doccomment">/// Construct new [`ProtocolController`].
 	</span><span class="kw">pub fn </span>new(
 		set_id: SetId,
-		config: SetConfig,
+		config: ProtoSetConfig,
 		to_notifications: TracingUnboundedSender&lt;Message&gt;,
 		peer_store: Box&lt;<span class="kw">dyn </span>PeerStoreProvider&gt;,
 	) -&gt; (ProtocolHandle, ProtocolController) {
@@ -2730,12 +2855,8 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use super</span>::{Direction, PeerState, ProtocolController, ProtocolHandle};
-	<span class="kw">use crate</span>::{
-		peer_store::PeerStoreProvider,
-		peerset::{IncomingIndex, Message, SetConfig, SetId},
-		ReputationChange,
-	};
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use crate</span>::{peer_store::PeerStoreProvider, ReputationChange};
 	<span class="kw">use </span>libp2p::PeerId;
 	<span class="kw">use </span>sc_utils::mpsc::{tracing_unbounded, TryRecvError};
 	<span class="kw">use </span>std::collections::HashSet;
@@ -2760,10 +2881,9 @@
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
 		<span class="comment">// Add first reserved node via config.
-		</span><span class="kw">let </span>config = SetConfig {
+		</span><span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			out_peers: <span class="number">0</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: std::iter::once(reserved1).collect(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -2823,10 +2943,9 @@
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
 		<span class="comment">// Add first reserved node via config.
-		</span><span class="kw">let </span>config = SetConfig {
+		</span><span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			out_peers: <span class="number">0</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: std::iter::once(reserved1).collect(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -2875,10 +2994,9 @@
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
 		<span class="comment">// Add first reserved node via config.
-		</span><span class="kw">let </span>config = SetConfig {
+		</span><span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			out_peers: <span class="number">0</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: std::iter::once(reserved1).collect(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -2934,11 +3052,10 @@
 		<span class="kw">let </span>peer2 = PeerId::random();
 		<span class="kw">let </span>candidates = <span class="macro">vec!</span>[peer1, peer2];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			<span class="comment">// Less slots than candidates.
 			</span>out_peers: <span class="number">2</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -2986,13 +3103,8 @@
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[regular1, regular2];
 		<span class="kw">let </span>reserved_nodes = [reserved1, reserved2].iter().cloned().collect();
 
-		<span class="kw">let </span>config = SetConfig {
-			in_peers: <span class="number">10</span>,
-			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
-			reserved_nodes,
-			reserved_only: <span class="bool-val">false</span>,
-		};
+		<span class="kw">let </span>config =
+			ProtoSetConfig { in_peers: <span class="number">10</span>, out_peers: <span class="number">10</span>, reserved_nodes, reserved_only: <span class="bool-val">false </span>};
 		<span class="kw">let </span>(tx, <span class="kw-2">mut </span>rx) = tracing_unbounded(<span class="string">&quot;mpsc_test_to_notifications&quot;</span>, <span class="number">100</span>);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>peer_store = MockPeerStoreHandle::new();
@@ -3027,11 +3139,10 @@
 		<span class="kw">let </span>candidates1 = <span class="macro">vec!</span>[peer1, peer2];
 		<span class="kw">let </span>candidates2 = <span class="macro">vec!</span>[peer3];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			<span class="comment">// Less slots than candidates.
 			</span>out_peers: <span class="number">2</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3098,11 +3209,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>in_reserved_only_mode_no_peers_are_requested_from_peer_store_and_connected() {
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			<span class="comment">// Make sure we have slots available.
 			</span>out_peers: <span class="number">2</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -3125,11 +3235,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>in_reserved_only_mode_no_regular_peers_are_accepted() {
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			<span class="comment">// Make sure we have slots available.
 			</span>in_peers: <span class="number">2</span>,
 			out_peers: <span class="number">0</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -3163,11 +3272,10 @@
 		<span class="kw">let </span>peer2 = PeerId::random();
 		<span class="kw">let </span>candidates = <span class="macro">vec!</span>[peer1, peer2];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">0</span>,
 			<span class="comment">// Make sure we have slots available.
 			</span>out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -3211,10 +3319,9 @@
 		<span class="kw">let </span>regular2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[regular1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: [reserved1, reserved2].iter().cloned().collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3272,10 +3379,9 @@
 		<span class="kw">let </span>reserved1 = PeerId::random();
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: [reserved1, reserved2].iter().cloned().collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3305,10 +3411,9 @@
 		<span class="kw">let </span>reserved1 = PeerId::random();
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: [reserved1, reserved2].iter().cloned().collect(),
 			reserved_only: <span class="bool-val">true</span>,
 		};
@@ -3352,10 +3457,9 @@
 		<span class="kw">let </span>peer1 = PeerId::random();
 		<span class="kw">let </span>peer2 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: [peer1, peer2].iter().cloned().collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3399,10 +3503,9 @@
 		<span class="kw">let </span>peer2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[peer1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3442,10 +3545,9 @@
 		<span class="kw">let </span>peer2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[peer1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3502,10 +3604,9 @@
 		<span class="kw">let </span>reserved1 = PeerId::random();
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: [reserved1, reserved2].iter().cloned().collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3559,10 +3660,9 @@
 		<span class="kw">let </span>peer2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[peer1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3612,10 +3712,9 @@
 		<span class="kw">let </span>reserved1 = PeerId::random();
 		<span class="kw">let </span>reserved2 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: [reserved1, reserved2].iter().cloned().collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3673,10 +3772,9 @@
 		<span class="kw">let </span>regular2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[regular1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3726,10 +3824,9 @@
 		<span class="kw">let </span>regular2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[regular1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3780,10 +3877,9 @@
 		<span class="kw">let </span>regular2 = PeerId::random();
 		<span class="kw">let </span>outgoing_candidates = <span class="macro">vec!</span>[regular1];
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">1</span>,
 			out_peers: <span class="number">1</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3834,10 +3930,9 @@
 		<span class="kw">let </span>peer1 = PeerId::random();
 		<span class="kw">let </span>peer2 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">1</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3865,10 +3960,9 @@
 	</span><span class="kw">fn </span>banned_regular_incoming_node_is_rejected() {
 		<span class="kw">let </span>peer1 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: HashSet::new(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3891,10 +3985,9 @@
 	</span><span class="kw">fn </span>banned_reserved_incoming_node_is_rejected() {
 		<span class="kw">let </span>reserved1 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: std::iter::once(reserved1).collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};
@@ -3918,10 +4011,9 @@
 	</span><span class="kw">fn </span>we_dont_connect_to_banned_reserved_node() {
 		<span class="kw">let </span>reserved1 = PeerId::random();
 
-		<span class="kw">let </span>config = SetConfig {
+		<span class="kw">let </span>config = ProtoSetConfig {
 			in_peers: <span class="number">10</span>,
 			out_peers: <span class="number">10</span>,
-			bootnodes: Vec::new(),
 			reserved_nodes: std::iter::once(reserved1).collect(),
 			reserved_only: <span class="bool-val">false</span>,
 		};

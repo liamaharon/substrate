@@ -4547,6 +4547,7 @@
 <a href="#4547" id="4547">4547</a>
 <a href="#4548" id="4548">4548</a>
 <a href="#4549" id="4549">4549</a>
+<a href="#4550" id="4550">4550</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -4566,16 +4567,16 @@
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
 </span><span class="kw">use crate</span>::{
-	peerset::DropReason,
 	protocol::notifications::handler::{
 		<span class="self">self</span>, NotificationsSink, NotifsHandler, NotifsHandlerIn, NotifsHandlerOut,
 	},
+	protocol_controller::{<span class="self">self</span>, IncomingIndex, Message, SetId},
 	types::ProtocolName,
 };
 
 <span class="kw">use </span>bytes::BytesMut;
 <span class="kw">use </span>fnv::FnvHashMap;
-<span class="kw">use </span>futures::{channel::oneshot, prelude::<span class="kw-2">*</span>};
+<span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>libp2p::{
 	core::{ConnectedPoint, Endpoint, Multiaddr},
 	swarm::{
@@ -4588,6 +4589,7 @@
 <span class="kw">use </span>log::{debug, error, info, trace, warn};
 <span class="kw">use </span>parking_lot::RwLock;
 <span class="kw">use </span>rand::distributions::{Distribution <span class="kw">as _</span>, Uniform};
+<span class="kw">use </span>sc_utils::mpsc::TracingUnboundedReceiver;
 <span class="kw">use </span>smallvec::SmallVec;
 <span class="kw">use </span>std::{
 	cmp,
@@ -4654,11 +4656,14 @@
 	<span class="doccomment">/// Notification protocols. Entries never change after initialization.
 	</span>notif_protocols: Vec&lt;handler::ProtocolConfig&gt;,
 
+	<span class="doccomment">/// Protocol controllers are responsible for peer connections management.
+	</span>protocol_controller_handles: Vec&lt;protocol_controller::ProtocolHandle&gt;,
+
 	<span class="doccomment">/// Receiver for instructions about who to connect to or disconnect from.
-	</span>peerset: <span class="kw">crate</span>::peerset::Peerset,
+	</span>from_protocol_controllers: TracingUnboundedReceiver&lt;Message&gt;,
 
 	<span class="doccomment">/// List of peers in our state.
-	</span>peers: FnvHashMap&lt;(PeerId, <span class="kw">crate</span>::peerset::SetId), PeerState&gt;,
+	</span>peers: FnvHashMap&lt;(PeerId, SetId), PeerState&gt;,
 
 	<span class="doccomment">/// The elements in `peers` occasionally contain `Delay` objects that we would normally have
 	/// to be polled one by one. In order to avoid doing so, as an optimization, every `Delay` is
@@ -4667,9 +4672,8 @@
 	///
 	/// By design, we never remove elements from this list. Elements are removed only when the
 	/// `Delay` triggers. As such, this stream may produce obsolete elements.
-	</span>delays: stream::FuturesUnordered&lt;
-		Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = (DelayId, PeerId, <span class="kw">crate</span>::peerset::SetId)&gt; + Send&gt;&gt;,
-	&gt;,
+	</span>delays:
+		stream::FuturesUnordered&lt;Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = (DelayId, PeerId, SetId)&gt; + Send&gt;&gt;&gt;,
 
 	<span class="doccomment">/// [`DelayId`] to assign to the next delay.
 	</span>next_delay_id: DelayId,
@@ -4680,7 +4684,7 @@
 
 	<span class="doccomment">/// We generate indices to identify incoming connections. This is the next value for the index
 	/// to use when a connection is incoming.
-	</span>next_incoming_index: <span class="kw">crate</span>::peerset::IncomingIndex,
+	</span>next_incoming_index: IncomingIndex,
 
 	<span class="doccomment">/// Events to produce from `poll()`.
 	</span>events: VecDeque&lt;ToSwarm&lt;NotificationsOut, NotifsHandlerIn&gt;&gt;,
@@ -4779,7 +4783,7 @@
 		</span>backoff_until: <span class="prelude-ty">Option</span>&lt;Instant&gt;,
 
 		<span class="doccomment">/// Incoming index tracking this connection.
-		</span>incoming_index: <span class="kw">crate</span>::peerset::IncomingIndex,
+		</span>incoming_index: IncomingIndex,
 
 		<span class="doccomment">/// List of connections with this peer, and their state.
 		</span>connections: SmallVec&lt;[(ConnectionId, ConnectionState); <span class="kw">crate</span>::MAX_CONNECTIONS_PER_PEER]&gt;,
@@ -4843,12 +4847,12 @@
 	<span class="doccomment">/// Id of the remote peer of the incoming substream.
 	</span>peer_id: PeerId,
 	<span class="doccomment">/// Id of the set the incoming substream would belong to.
-	</span>set_id: <span class="kw">crate</span>::peerset::SetId,
+	</span>set_id: SetId,
 	<span class="doccomment">/// If true, this &quot;incoming&quot; still corresponds to an actual connection. If false, then the
 	/// connection corresponding to it has been closed or replaced already.
 	</span>alive: bool,
 	<span class="doccomment">/// Id that the we sent to the peerset.
-	</span>incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex,
+	</span>incoming_id: IncomingIndex,
 }
 
 <span class="doccomment">/// Event that can be emitted by the `Notifications`.
@@ -4859,7 +4863,7 @@
 		<span class="doccomment">/// Id of the peer we are connected to.
 		</span>peer_id: PeerId,
 		<span class="doccomment">/// Peerset set ID the substream is tied to.
-		</span>set_id: <span class="kw">crate</span>::peerset::SetId,
+		</span>set_id: SetId,
 		<span class="doccomment">/// If `Some`, a fallback protocol name has been used rather the main protocol name.
 		/// Always matches one of the fallback names passed at initialization.
 		</span>negotiated_fallback: <span class="prelude-ty">Option</span>&lt;ProtocolName&gt;,
@@ -4881,7 +4885,7 @@
 		<span class="doccomment">/// Id of the peer we are connected to.
 		</span>peer_id: PeerId,
 		<span class="doccomment">/// Peerset set ID the substream is tied to.
-		</span>set_id: <span class="kw">crate</span>::peerset::SetId,
+		</span>set_id: SetId,
 		<span class="doccomment">/// Replacement for the previous [`NotificationsSink`].
 		</span>notifications_sink: NotificationsSink,
 	},
@@ -4892,7 +4896,7 @@
 		<span class="doccomment">/// Id of the peer we were connected to.
 		</span>peer_id: PeerId,
 		<span class="doccomment">/// Peerset set ID the substream was tied to.
-		</span>set_id: <span class="kw">crate</span>::peerset::SetId,
+		</span>set_id: SetId,
 	},
 
 	<span class="doccomment">/// Receives a message on a custom protocol substream.
@@ -4902,7 +4906,7 @@
 		<span class="doccomment">/// Id of the peer the message came from.
 		</span>peer_id: PeerId,
 		<span class="doccomment">/// Peerset set ID the substream is tied to.
-		</span>set_id: <span class="kw">crate</span>::peerset::SetId,
+		</span>set_id: SetId,
 		<span class="doccomment">/// Message that has been received.
 		</span>message: BytesMut,
 	},
@@ -4911,7 +4915,8 @@
 <span class="kw">impl </span>Notifications {
 	<span class="doccomment">/// Creates a `CustomProtos`.
 	</span><span class="kw">pub fn </span>new(
-		peerset: <span class="kw">crate</span>::peerset::Peerset,
+		protocol_controller_handles: Vec&lt;protocol_controller::ProtocolHandle&gt;,
+		from_protocol_controllers: TracingUnboundedReceiver&lt;Message&gt;,
 		notif_protocols: <span class="kw">impl </span>Iterator&lt;Item = ProtocolConfig&gt;,
 	) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>notif_protocols = notif_protocols
@@ -4927,12 +4932,13 @@
 
 		<span class="self">Self </span>{
 			notif_protocols,
-			peerset,
+			protocol_controller_handles,
+			from_protocol_controllers,
 			peers: FnvHashMap::default(),
 			delays: Default::default(),
 			next_delay_id: DelayId(<span class="number">0</span>),
 			incoming: SmallVec::new(),
-			next_incoming_index: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>),
+			next_incoming_index: IncomingIndex(<span class="number">0</span>),
 			events: VecDeque::new(),
 		}
 	}
@@ -4940,7 +4946,7 @@
 	<span class="doccomment">/// Modifies the handshake of the given notifications protocol.
 	</span><span class="kw">pub fn </span>set_notif_protocol_handshake(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		set_id: <span class="kw">crate</span>::peerset::SetId,
+		set_id: SetId,
 		handshake_message: <span class="kw">impl </span>Into&lt;Vec&lt;u8&gt;&gt;,
 	) {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = <span class="self">self</span>.notif_protocols.get_mut(usize::from(set_id)) {
@@ -4951,29 +4957,24 @@
 		}
 	}
 
-	<span class="doccomment">/// Returns the number of discovered nodes that we keep in memory.
-	</span><span class="kw">pub fn </span>num_discovered_peers(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
-		<span class="self">self</span>.peerset.num_discovered_peers()
-	}
-
 	<span class="doccomment">/// Returns the list of all the peers we have an open channel to.
 	</span><span class="kw">pub fn </span>open_peers(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span>PeerId&gt; {
 		<span class="self">self</span>.peers.iter().filter(|(<span class="kw">_</span>, state)| state.is_open()).map(|((id, <span class="kw">_</span>), <span class="kw">_</span>)| id)
 	}
 
 	<span class="doccomment">/// Returns true if we have an open substream to the given peer.
-	</span><span class="kw">pub fn </span>is_open(<span class="kw-2">&amp;</span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId, set_id: <span class="kw">crate</span>::peerset::SetId) -&gt; bool {
+	</span><span class="kw">pub fn </span>is_open(<span class="kw-2">&amp;</span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId, set_id: SetId) -&gt; bool {
 		<span class="self">self</span>.peers.get(<span class="kw-2">&amp;</span>(<span class="kw-2">*</span>peer_id, set_id)).map(|p| p.is_open()).unwrap_or(<span class="bool-val">false</span>)
 	}
 
 	<span class="doccomment">/// Disconnects the given peer if we are connected to it.
-	</span><span class="kw">pub fn </span>disconnect_peer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId, set_id: <span class="kw">crate</span>::peerset::SetId) {
+	</span><span class="kw">pub fn </span>disconnect_peer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId, set_id: SetId) {
 		<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;External API =&gt; Disconnect({}, {:?})&quot;</span>, peer_id, set_id);
 		<span class="self">self</span>.disconnect_peer_inner(peer_id, set_id);
 	}
 
 	<span class="doccomment">/// Inner implementation of `disconnect_peer`.
-	</span><span class="kw">fn </span>disconnect_peer_inner(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId, set_id: <span class="kw">crate</span>::peerset::SetId) {
+	</span><span class="kw">fn </span>disconnect_peer_inner(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: <span class="kw-2">&amp;</span>PeerId, set_id: SetId) {
 		<span class="kw">let </span><span class="kw-2">mut </span>entry = <span class="kw">if let </span>Entry::Occupied(entry) = <span class="self">self</span>.peers.entry((<span class="kw-2">*</span>peer_id, set_id)) {
 			entry
 		} <span class="kw">else </span>{
@@ -4990,7 +4991,7 @@
 			<span class="comment">// DisabledPendingEnable =&gt; Disabled.
 			</span>PeerState::DisabledPendingEnable { connections, timer_deadline, timer: <span class="kw">_ </span>} =&gt; {
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-				<span class="self">self</span>.peerset.dropped(set_id, <span class="kw-2">*</span>peer_id, DropReason::Unknown);
+				<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)].dropped(<span class="kw-2">*</span>peer_id);
 				<span class="kw-2">*</span>entry.into_mut() =
 					PeerState::Disabled { connections, backoff_until: <span class="prelude-val">Some</span>(timer_deadline) }
 			},
@@ -5000,7 +5001,7 @@
 			// If relevant, the external API is instantly notified.
 			</span>PeerState::Enabled { <span class="kw-2">mut </span>connections } =&gt; {
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-				<span class="self">self</span>.peerset.dropped(set_id, <span class="kw-2">*</span>peer_id, DropReason::Unknown);
+				<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)].dropped(<span class="kw-2">*</span>peer_id);
 
 				<span class="kw">if </span>connections.iter().any(|(<span class="kw">_</span>, s)| <span class="macro">matches!</span>(s, ConnectionState::Open(<span class="kw">_</span>))) {
 					<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;External API &lt;= Closed({}, {:?})&quot;</span>, peer_id, set_id);
@@ -5087,22 +5088,8 @@
 		}
 	}
 
-	<span class="doccomment">/// Returns the list of reserved peers.
-	</span><span class="kw">pub fn </span>reserved_peers(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		set_id: <span class="kw">crate</span>::peerset::SetId,
-		pending_response: oneshot::Sender&lt;Vec&lt;PeerId&gt;&gt;,
-	) {
-		<span class="self">self</span>.peerset.reserved_peers(set_id, pending_response);
-	}
-
-	<span class="doccomment">/// Returns the state of the peerset manager, for debugging purposes.
-	</span><span class="kw">pub fn </span>peerset_debug_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; serde_json::Value {
-		<span class="self">self</span>.peerset.debug_info()
-	}
-
 	<span class="doccomment">/// Function that is called when the peerset wants us to connect to a peer.
-	</span><span class="kw">fn </span>peerset_report_connect(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: PeerId, set_id: <span class="kw">crate</span>::peerset::SetId) {
+	</span><span class="kw">fn </span>peerset_report_connect(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: PeerId, set_id: SetId) {
 		<span class="comment">// If `PeerId` is unknown to us, insert an entry, start dialing, and return early.
 		</span><span class="kw">let </span><span class="kw-2">mut </span>occ_entry = <span class="kw">match </span><span class="self">self</span>.peers.entry((peer_id, set_id)) {
 			Entry::Occupied(entry) =&gt; entry,
@@ -5280,7 +5267,7 @@
 	}
 
 	<span class="doccomment">/// Function that is called when the peerset wants us to disconnect from a peer.
-	</span><span class="kw">fn </span>peerset_report_disconnect(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: PeerId, set_id: <span class="kw">crate</span>::peerset::SetId) {
+	</span><span class="kw">fn </span>peerset_report_disconnect(<span class="kw-2">&amp;mut </span><span class="self">self</span>, peer_id: PeerId, set_id: SetId) {
 		<span class="kw">let </span><span class="kw-2">mut </span>entry = <span class="kw">match </span><span class="self">self</span>.peers.entry((peer_id, set_id)) {
 			Entry::Occupied(entry) =&gt; entry,
 			Entry::Vacant(entry) =&gt; {
@@ -5388,7 +5375,7 @@
 
 	<span class="doccomment">/// Function that is called when the peerset wants us to accept a connection
 	/// request from a peer.
-	</span><span class="kw">fn </span>peerset_report_accept(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <span class="kw">crate</span>::peerset::IncomingIndex) {
+	</span><span class="kw">fn </span>peerset_report_accept(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: IncomingIndex) {
 		<span class="kw">let </span>incoming = <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = <span class="self">self</span>.incoming.iter().position(|i| i.incoming_id == index)
 		{
 			<span class="self">self</span>.incoming.remove(pos)
@@ -5406,7 +5393,8 @@
 				<span class="kw">_ </span>=&gt; {
 					<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>,
 						incoming.peer_id, incoming.set_id);
-					<span class="self">self</span>.peerset.dropped(incoming.set_id, incoming.peer_id, DropReason::Unknown);
+					<span class="self">self</span>.protocol_controller_handles[usize::from(incoming.set_id)]
+						.dropped(incoming.peer_id);
 				},
 			}
 			<span class="kw">return
@@ -5474,7 +5462,7 @@
 	}
 
 	<span class="doccomment">/// Function that is called when the peerset wants us to reject an incoming peer.
-	</span><span class="kw">fn </span>peerset_report_reject(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: <span class="kw">crate</span>::peerset::IncomingIndex) {
+	</span><span class="kw">fn </span>peerset_report_reject(<span class="kw-2">&amp;mut </span><span class="self">self</span>, index: IncomingIndex) {
 		<span class="kw">let </span>incoming = <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = <span class="self">self</span>.incoming.iter().position(|i| i.incoming_id == index)
 		{
 			<span class="self">self</span>.incoming.remove(pos)
@@ -5608,7 +5596,7 @@
 				connection_id,
 				..
 			}) =&gt; {
-				<span class="kw">for </span>set_id <span class="kw">in </span>(<span class="number">0</span>..<span class="self">self</span>.notif_protocols.len()).map(<span class="kw">crate</span>::peerset::SetId::from) {
+				<span class="kw">for </span>set_id <span class="kw">in </span>(<span class="number">0</span>..<span class="self">self</span>.notif_protocols.len()).map(SetId::from) {
 					<span class="kw">match </span><span class="self">self</span>.peers.entry((peer_id, set_id)).or_insert(PeerState::Poisoned) {
 						<span class="comment">// Requested | PendingRequest =&gt; Enabled
 						</span>st @ <span class="kw-2">&amp;mut </span>PeerState::Requested |
@@ -5662,7 +5650,7 @@
 				}
 			},
 			FromSwarm::ConnectionClosed(ConnectionClosed { peer_id, connection_id, .. }) =&gt; {
-				<span class="kw">for </span>set_id <span class="kw">in </span>(<span class="number">0</span>..<span class="self">self</span>.notif_protocols.len()).map(<span class="kw">crate</span>::peerset::SetId::from) {
+				<span class="kw">for </span>set_id <span class="kw">in </span>(<span class="number">0</span>..<span class="self">self</span>.notif_protocols.len()).map(SetId::from) {
 					<span class="kw">let </span><span class="kw-2">mut </span>entry = <span class="kw">if let </span>Entry::Occupied(entry) =
 						<span class="self">self</span>.peers.entry((peer_id, set_id))
 					{
@@ -5744,7 +5732,8 @@
 
 							<span class="kw">if </span>connections.is_empty() {
 								<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-								<span class="self">self</span>.peerset.dropped(set_id, peer_id, DropReason::Unknown);
+								<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)]
+									.dropped(peer_id);
 								<span class="kw-2">*</span>entry.get_mut() = PeerState::Backoff { timer, timer_deadline };
 							} <span class="kw">else </span>{
 								<span class="kw-2">*</span>entry.get_mut() = PeerState::DisabledPendingEnable {
@@ -5898,7 +5887,8 @@
 
 							<span class="kw">if </span>connections.is_empty() {
 								<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-								<span class="self">self</span>.peerset.dropped(set_id, peer_id, DropReason::Unknown);
+								<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)]
+									.dropped(peer_id);
 								<span class="kw">let </span>ban_dur = Uniform::new(<span class="number">5</span>, <span class="number">10</span>).sample(<span class="kw-2">&amp;mut </span>rand::thread_rng());
 
 								<span class="kw">let </span>delay_id = <span class="self">self</span>.next_delay_id;
@@ -5920,7 +5910,8 @@
 								<span class="macro">matches!</span>(s, ConnectionState::Opening | ConnectionState::Open(<span class="kw">_</span>))
 							}) {
 								<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-								<span class="self">self</span>.peerset.dropped(set_id, peer_id, DropReason::Unknown);
+								<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)]
+									.dropped(peer_id);
 
 								<span class="kw-2">*</span>entry.get_mut() =
 									PeerState::Disabled { connections, backoff_until: <span class="prelude-val">None </span>};
@@ -5955,7 +5946,7 @@
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(peer_id) = peer_id {
 					<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Libp2p =&gt; Dial failure for {:?}&quot;</span>, peer_id);
 
-					<span class="kw">for </span>set_id <span class="kw">in </span>(<span class="number">0</span>..<span class="self">self</span>.notif_protocols.len()).map(<span class="kw">crate</span>::peerset::SetId::from) {
+					<span class="kw">for </span>set_id <span class="kw">in </span>(<span class="number">0</span>..<span class="self">self</span>.notif_protocols.len()).map(SetId::from) {
 						<span class="kw">if let </span>Entry::Occupied(<span class="kw-2">mut </span>entry) = <span class="self">self</span>.peers.entry((peer_id, set_id)) {
 							<span class="kw">match </span>mem::replace(entry.get_mut(), PeerState::Poisoned) {
 								<span class="comment">// The peer is not in our list.
@@ -5968,7 +5959,8 @@
 								</span>st @ PeerState::Requested |
 								st @ PeerState::PendingRequest { .. } =&gt; {
 									<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-									<span class="self">self</span>.peerset.dropped(set_id, peer_id, DropReason::Unknown);
+									<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)]
+										.dropped(peer_id);
 
 									<span class="kw">let </span>now = Instant::now();
 									<span class="kw">let </span>ban_duration = <span class="kw">match </span>st {
@@ -6035,7 +6027,7 @@
 	) {
 		<span class="kw">match </span>event {
 			NotifsHandlerOut::OpenDesiredByRemote { protocol_index } =&gt; {
-				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
+				<span class="kw">let </span>set_id = SetId::from(protocol_index);
 
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>,
 					<span class="string">&quot;Handler({:?}, {:?}]) =&gt; OpenDesiredByRemote({:?})&quot;</span>,
@@ -6141,7 +6133,8 @@
 
 								<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Incoming({}, {:?}, {:?}).&quot;</span>,
 									peer_id, set_id, incoming_id);
-								<span class="self">self</span>.peerset.incoming(set_id, peer_id, incoming_id);
+								<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)]
+									.incoming_connection(peer_id, incoming_id);
 								<span class="self">self</span>.incoming.push(IncomingPeer {
 									peer_id,
 									set_id,
@@ -6225,7 +6218,7 @@
 			},
 
 			NotifsHandlerOut::CloseDesired { protocol_index } =&gt; {
-				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
+				<span class="kw">let </span>set_id = SetId::from(protocol_index);
 
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>,
 					<span class="string">&quot;Handler({}, {:?}) =&gt; CloseDesired({:?})&quot;</span>,
@@ -6297,7 +6290,8 @@
 								.any(|(<span class="kw">_</span>, s)| <span class="macro">matches!</span>(s, ConnectionState::Opening))
 							{
 								<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({}, {:?})&quot;</span>, peer_id, set_id);
-								<span class="self">self</span>.peerset.dropped(set_id, peer_id, DropReason::Refused);
+								<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)]
+									.dropped(peer_id);
 								<span class="kw-2">*</span>entry.into_mut() =
 									PeerState::Disabled { connections, backoff_until: <span class="prelude-val">None </span>};
 							} <span class="kw">else </span>{
@@ -6325,7 +6319,7 @@
 			},
 
 			NotifsHandlerOut::CloseResult { protocol_index } =&gt; {
-				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
+				<span class="kw">let </span>set_id = SetId::from(protocol_index);
 
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>,
 					<span class="string">&quot;Handler({}, {:?}) =&gt; CloseResult({:?})&quot;</span>,
@@ -6365,7 +6359,7 @@
 				inbound,
 				..
 			} =&gt; {
-				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
+				<span class="kw">let </span>set_id = SetId::from(protocol_index);
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>,
 					<span class="string">&quot;Handler({}, {:?}) =&gt; OpenResultOk({:?})&quot;</span>,
 					peer_id, connection_id, set_id);
@@ -6432,7 +6426,7 @@
 			},
 
 			NotifsHandlerOut::OpenResultErr { protocol_index } =&gt; {
-				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
+				<span class="kw">let </span>set_id = SetId::from(protocol_index);
 				<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>,
 					<span class="string">&quot;Handler({:?}, {:?}) =&gt; OpenResultErr({:?})&quot;</span>,
 					peer_id, connection_id, set_id);
@@ -6473,7 +6467,7 @@
 							<span class="macro">matches!</span>(s, ConnectionState::Opening | ConnectionState::Open(<span class="kw">_</span>))
 						}) {
 							<span class="macro">trace!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;PSM &lt;= Dropped({:?}, {:?})&quot;</span>, peer_id, set_id);
-							<span class="self">self</span>.peerset.dropped(set_id, peer_id, DropReason::Refused);
+							<span class="self">self</span>.protocol_controller_handles[usize::from(set_id)].dropped(peer_id);
 
 							<span class="kw">let </span>ban_dur = Uniform::new(<span class="number">5</span>, <span class="number">10</span>).sample(<span class="kw-2">&amp;mut </span>rand::thread_rng());
 							<span class="kw-2">*</span>entry.into_mut() = PeerState::Disabled {
@@ -6521,7 +6515,7 @@
 			},
 
 			NotifsHandlerOut::Notification { protocol_index, message } =&gt; {
-				<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(protocol_index);
+				<span class="kw">let </span>set_id = SetId::from(protocol_index);
 				<span class="kw">if </span><span class="self">self</span>.is_open(<span class="kw-2">&amp;</span>peer_id, set_id) {
 					<span class="macro">trace!</span>(
 						target: <span class="string">&quot;sub-libp2p&quot;</span>,
@@ -6563,24 +6557,26 @@
 			<span class="kw">return </span>Poll::Ready(event)
 		}
 
-		<span class="comment">// Poll for instructions from the peerset.
-		// Note that the peerset is a *best effort* crate, and we have to use defensive programming.
+		<span class="comment">// Poll for instructions from the protocol controllers.
 		</span><span class="kw">loop </span>{
-			<span class="kw">match </span>futures::Stream::poll_next(Pin::new(<span class="kw-2">&amp;mut </span><span class="self">self</span>.peerset), cx) {
-				Poll::Ready(<span class="prelude-val">Some</span>(<span class="kw">crate</span>::peerset::Message::Accept(index))) =&gt; {
+			<span class="kw">match </span>futures::Stream::poll_next(Pin::new(<span class="kw-2">&amp;mut </span><span class="self">self</span>.from_protocol_controllers), cx) {
+				Poll::Ready(<span class="prelude-val">Some</span>(Message::Accept(index))) =&gt; {
 					<span class="self">self</span>.peerset_report_accept(index);
 				},
-				Poll::Ready(<span class="prelude-val">Some</span>(<span class="kw">crate</span>::peerset::Message::Reject(index))) =&gt; {
+				Poll::Ready(<span class="prelude-val">Some</span>(Message::Reject(index))) =&gt; {
 					<span class="self">self</span>.peerset_report_reject(index);
 				},
-				Poll::Ready(<span class="prelude-val">Some</span>(<span class="kw">crate</span>::peerset::Message::Connect { peer_id, set_id, .. })) =&gt; {
+				Poll::Ready(<span class="prelude-val">Some</span>(Message::Connect { peer_id, set_id, .. })) =&gt; {
 					<span class="self">self</span>.peerset_report_connect(peer_id, set_id);
 				},
-				Poll::Ready(<span class="prelude-val">Some</span>(<span class="kw">crate</span>::peerset::Message::Drop { peer_id, set_id, .. })) =&gt; {
+				Poll::Ready(<span class="prelude-val">Some</span>(Message::Drop { peer_id, set_id, .. })) =&gt; {
 					<span class="self">self</span>.peerset_report_disconnect(peer_id, set_id);
 				},
 				Poll::Ready(<span class="prelude-val">None</span>) =&gt; {
-					<span class="macro">error!</span>(target: <span class="string">&quot;sub-libp2p&quot;</span>, <span class="string">&quot;Peerset receiver stream has returned None&quot;</span>);
+					<span class="macro">error!</span>(
+						target: <span class="string">&quot;sub-libp2p&quot;</span>,
+						<span class="string">&quot;Protocol controllers receiver stream has returned `None`. Ignore this error if the node is shutting down.&quot;</span>,
+					);
 					<span class="kw">break
 				</span>},
 				Poll::Pending =&gt; <span class="kw">break</span>,
@@ -6657,7 +6653,12 @@
 #[allow(deprecated)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use crate</span>::{peerset::IncomingIndex, protocol::notifications::handler::tests::<span class="kw-2">*</span>};
+	<span class="kw">use crate</span>::{
+		mock::MockPeerStore,
+		protocol::notifications::handler::tests::<span class="kw-2">*</span>,
+		protocol_controller::{IncomingIndex, ProtoSetConfig, ProtocolController},
+	};
+	<span class="kw">use </span>sc_utils::mpsc::tracing_unbounded;
 	<span class="kw">use </span>std::{collections::HashSet, iter};
 
 	<span class="kw">impl </span>PartialEq <span class="kw">for </span>ConnectionState {
@@ -6686,24 +6687,26 @@
 		}
 	}
 
-	<span class="kw">fn </span>development_notifs() -&gt; (Notifications, <span class="kw">crate</span>::peerset::PeersetHandle) {
-		<span class="kw">let </span>(peerset, peerset_handle) = {
-			<span class="kw">let </span><span class="kw-2">mut </span>sets = Vec::with_capacity(<span class="number">1</span>);
+	<span class="kw">fn </span>development_notifs() -&gt; (Notifications, ProtocolController) {
+		<span class="kw">let </span>(to_notifications, from_controller) =
+			tracing_unbounded(<span class="string">&quot;test_controller_to_notifications&quot;</span>, <span class="number">10_000</span>);
 
-			sets.push(<span class="kw">crate</span>::peerset::SetConfig {
+		<span class="kw">let </span>(handle, controller) = ProtocolController::new(
+			SetId::from(<span class="number">0</span>),
+			ProtoSetConfig {
 				in_peers: <span class="number">25</span>,
 				out_peers: <span class="number">25</span>,
-				bootnodes: Vec::new(),
 				reserved_nodes: HashSet::new(),
 				reserved_only: <span class="bool-val">false</span>,
-			});
-
-			<span class="kw">crate</span>::peerset::Peerset::from_config(<span class="kw">crate</span>::peerset::PeersetConfig { sets })
-		};
+			},
+			to_notifications,
+			Box::new(MockPeerStore {}),
+		);
 
 		(
 			Notifications::new(
-				peerset,
+				<span class="macro">vec!</span>[handle],
+				from_controller,
 				iter::once(ProtocolConfig {
 					name: <span class="string">&quot;/foo&quot;</span>.into(),
 					fallback_names: Vec::new(),
@@ -6711,13 +6714,13 @@
 					max_notification_size: u64::MAX,
 				}),
 			),
-			peerset_handle,
+			controller,
 		)
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>update_handshake() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 
 		<span class="kw">let </span>inner = notif.notif_protocols.get_mut(<span class="number">0</span>).unwrap().handshake.read().clone();
 		<span class="macro">assert_eq!</span>(inner, <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]);
@@ -6732,14 +6735,14 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>update_unknown_handshake() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 
 		notif.set_notif_protocol_handshake(<span class="number">1337</span>.into(), <span class="macro">vec!</span>[<span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>]);
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>disconnect_backoff_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 
 		<span class="kw">let </span>peer = PeerId::random();
 		notif.peers.insert(
@@ -6756,7 +6759,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>disconnect_pending_request() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 
 		notif.peers.insert(
@@ -6773,7 +6776,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>disconnect_requested_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 
 		<span class="kw">let </span>peer = PeerId::random();
 		notif.peers.insert((peer, <span class="number">0</span>.into()), PeerState::Requested);
@@ -6784,7 +6787,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>disconnect_disabled_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		notif.peers.insert(
 			(peer, <span class="number">0</span>.into()),
@@ -6800,7 +6803,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>remote_opens_connection_and_substream() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -6844,13 +6847,13 @@
 
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming.pop(),
-			<span class="prelude-val">Some</span>(IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. }),
+			<span class="prelude-val">Some</span>(IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. }),
 		));
 	}
 
 	<span class="attr">#[tokio::test]
-	</span><span class="kw">async fn </span>disconnect_remote_substream_before_handled_by_peerset() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+	</span><span class="kw">async fn </span>disconnect_remote_substream_before_handled_by_controller() {
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -6886,8 +6889,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_report_connect_backoff() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -6951,10 +6954,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_connect_incoming() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -6987,8 +6990,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_disconnect_disable_pending_enable() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -7034,10 +7037,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_disconnect_enabled() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7070,9 +7073,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_disconnect_requested() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 
 		<span class="comment">// Set peer into `Requested` state.
 		</span>notif.peerset_report_connect(peer, set_id);
@@ -7085,8 +7088,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_disconnect_pending_request() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -7138,10 +7141,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_accept_peer_not_alive() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7168,28 +7171,28 @@
 
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming[<span class="number">0</span>],
-			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. },
+			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. },
 		));
 
 		notif.disconnect_peer(<span class="kw-2">&amp;</span>peer, set_id);
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(notif.peers.get(<span class="kw-2">&amp;</span>(peer, set_id)), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>PeerState::Disabled { .. })));
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming[<span class="number">0</span>],
-			IncomingPeer { alive: <span class="bool-val">false</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. },
+			IncomingPeer { alive: <span class="bool-val">false</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. },
 		));
 
-		notif.peerset_report_accept(<span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>));
+		notif.peerset_report_accept(IncomingIndex(<span class="number">0</span>));
 		<span class="macro">assert_eq!</span>(notif.incoming.len(), <span class="number">0</span>);
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(notif.peers.get(<span class="kw-2">&amp;</span>(peer, set_id)), <span class="prelude-val">Some</span>(PeerState::Disabled { .. })));
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>secondary_connection_peer_state_incoming() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7240,10 +7243,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>close_connection_for_disabled_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7274,10 +7277,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>close_connection_for_incoming_peer_one_connection() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7313,17 +7316,17 @@
 		<span class="macro">assert!</span>(notif.peers.get(<span class="kw-2">&amp;</span>(peer, set_id)).is_none());
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming[<span class="number">0</span>],
-			IncomingPeer { alive: <span class="bool-val">false</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. },
+			IncomingPeer { alive: <span class="bool-val">false</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. },
 		));
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>close_connection_for_incoming_peer_two_connections() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">1</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7388,10 +7391,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>connection_and_substream_open() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7419,7 +7422,7 @@
 
 		<span class="comment">// We rely on the implementation detail that incoming indices are counted
 		// from 0 to not mock the `Peerset`.
-		</span>notif.peerset_report_accept(<span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>));
+		</span>notif.peerset_report_accept(IncomingIndex(<span class="number">0</span>));
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(notif.peers.get(<span class="kw-2">&amp;</span>(peer, set_id)), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>PeerState::Enabled { .. })));
 
 		<span class="comment">// open new substream
@@ -7442,11 +7445,11 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>connection_closed_sink_replaced() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7508,7 +7511,6 @@
 
 		<span class="comment">// check peer information
 		</span><span class="macro">assert_eq!</span>(notif.open_peers().collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(), <span class="macro">vec!</span>[<span class="kw-2">&amp;</span>peer],);
-		<span class="macro">assert_eq!</span>(notif.num_discovered_peers(), <span class="number">0usize</span>);
 
 		<span class="comment">// close the other connection and verify that notification replacement event is emitted
 		</span>notif.on_swarm_event(FromSwarm::ConnectionClosed(
@@ -7537,9 +7539,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>dial_failure_for_requested_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 
 		<span class="comment">// Set peer into `Requested` state.
 		</span>notif.peerset_report_connect(peer, set_id);
@@ -7560,10 +7562,10 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>write_notification() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7609,8 +7611,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_report_connect_backoff_expired() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -7657,9 +7659,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_report_disconnect_disabled() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
@@ -7683,8 +7685,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerset_report_disconnect_backoff() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -7729,8 +7731,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peer_is_backed_off_if_both_connections_get_closed_while_peer_is_disabled_with_back_off() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
@@ -7802,9 +7804,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>inject_connection_closed_incoming_with_backoff() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
@@ -7853,11 +7855,11 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>two_connections_inactive_connection_gets_closed_peer_state_is_still_incoming() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7908,11 +7910,11 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>two_connections_active_connection_gets_closed_peer_state_is_disabled() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -7966,11 +7968,11 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>inject_connection_closed_for_active_connection() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8034,8 +8036,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>inject_dial_failure_for_pending_request() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -8097,9 +8099,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>peerstate_incoming_open_desired_by_remote() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>conn1 = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>conn2 = ConnectionId::new_unchecked(<span class="number">1</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -8151,9 +8153,9 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>remove_backoff_peer_after_timeout() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
@@ -8229,10 +8231,10 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>reschedule_disabled_pending_enable_when_connection_not_closed() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8347,10 +8349,10 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_connect_with_enabled_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8397,8 +8399,8 @@
 	<span class="attr">#[test]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_connect_with_disabled_pending_enable_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -8443,9 +8445,9 @@
 	<span class="attr">#[test]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_connect_with_requested_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 
 		<span class="comment">// Set peer into `Requested` state.
 		</span>notif.peerset_report_connect(peer, set_id);
@@ -8459,8 +8461,8 @@
 	<span class="attr">#[test]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_connect_with_pending_requested() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -8516,9 +8518,9 @@
 	<span class="attr">#[test]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_connect_with_incoming_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
@@ -8551,9 +8553,9 @@
 	<span class="attr">#[test]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_disconnect_with_incoming_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
@@ -8587,10 +8589,10 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_accept_incoming_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8617,21 +8619,21 @@
 
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming[<span class="number">0</span>],
-			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. },
+			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. },
 		));
 
 		notif.peers.remove(<span class="kw-2">&amp;</span>(peer, set_id));
-		notif.peerset_report_accept(<span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>));
+		notif.peerset_report_accept(IncomingIndex(<span class="number">0</span>));
 	}
 
 	<span class="attr">#[test]
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>peerset_report_accept_not_incoming_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8659,7 +8661,7 @@
 
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming[<span class="number">0</span>],
-			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. },
+			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. },
 		));
 
 		notif.peerset_report_connect(peer, set_id);
@@ -8670,14 +8672,14 @@
 
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(notif.peers.get(<span class="kw-2">&amp;</span>(peer, set_id)), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>PeerState::Enabled { .. })));
 		notif.incoming[<span class="number">0</span>].alive = <span class="bool-val">true</span>;
-		notif.peerset_report_accept(<span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>));
+		notif.peerset_report_accept(IncomingIndex(<span class="number">0</span>));
 	}
 
 	<span class="attr">#[test]
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_connection_closed_non_existent_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>endpoint = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
@@ -8697,9 +8699,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>disconnect_non_existent_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 
 		notif.peerset_report_disconnect(peer, set_id);
 
@@ -8709,7 +8711,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>accept_non_existent_connection() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 
 		notif.peerset_report_accept(<span class="number">0</span>.into());
 
@@ -8719,7 +8721,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>reject_non_existent_connection() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 
 		notif.peerset_report_reject(<span class="number">0</span>.into());
 
@@ -8729,10 +8731,10 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>reject_non_active_connection() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8767,10 +8769,10 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>reject_non_existent_peer_but_alive_connection() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8796,7 +8798,7 @@
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(notif.peers.get(<span class="kw-2">&amp;</span>(peer, set_id)), <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>PeerState::Incoming { .. })));
 		<span class="macro">assert!</span>(<span class="macro">std::matches!</span>(
 			notif.incoming[<span class="number">0</span>],
-			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: <span class="kw">crate</span>::peerset::IncomingIndex(<span class="number">0</span>), .. },
+			IncomingPeer { alive: <span class="bool-val">true</span>, incoming_id: IncomingIndex(<span class="number">0</span>), .. },
 		));
 
 		notif.peers.remove(<span class="kw-2">&amp;</span>(peer, set_id));
@@ -8807,10 +8809,10 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_non_existent_connection_closed_for_incoming_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8850,8 +8852,8 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_non_existent_connection_closed_for_disabled_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -8885,8 +8887,8 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_non_existent_connection_closed_for_disabled_pending_enable() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -8936,10 +8938,10 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_connection_closed_for_incoming_peer_state_mismatch() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -8980,10 +8982,10 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_connection_closed_for_enabled_state_mismatch() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
 			send_back_addr: Multiaddr::empty(),
@@ -9027,8 +9029,8 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>inject_connection_closed_for_backoff_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
-		<span class="kw">let </span>set_id = <span class="kw">crate</span>::peerset::SetId::from(<span class="number">0</span>);
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
+		<span class="kw">let </span>set_id = SetId::from(<span class="number">0</span>);
 		<span class="kw">let </span>peer = PeerId::random();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
@@ -9081,7 +9083,7 @@
 	#[should_panic]
 	#[cfg(debug_assertions)]
 	</span><span class="kw">fn </span>open_result_ok_non_existent_peer() {
-		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _peerset) = development_notifs();
+		<span class="kw">let </span>(<span class="kw-2">mut </span>notif, _controller) = development_notifs();
 		<span class="kw">let </span>conn = ConnectionId::new_unchecked(<span class="number">0</span>);
 		<span class="kw">let </span>connected = ConnectedPoint::Listener {
 			local_addr: Multiaddr::empty(),
