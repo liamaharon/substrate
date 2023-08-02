@@ -1633,6 +1633,19 @@
 <a href="#1633" id="1633">1633</a>
 <a href="#1634" id="1634">1634</a>
 <a href="#1635" id="1635">1635</a>
+<a href="#1636" id="1636">1636</a>
+<a href="#1637" id="1637">1637</a>
+<a href="#1638" id="1638">1638</a>
+<a href="#1639" id="1639">1639</a>
+<a href="#1640" id="1640">1640</a>
+<a href="#1641" id="1641">1641</a>
+<a href="#1642" id="1642">1642</a>
+<a href="#1643" id="1643">1643</a>
+<a href="#1644" id="1644">1644</a>
+<a href="#1645" id="1645">1645</a>
+<a href="#1646" id="1646">1646</a>
+<a href="#1647" id="1647">1647</a>
+<a href="#1648" id="1648">1648</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1660,10 +1673,10 @@
 //!
 //! ## Overview
 //!
-//! This module extends accounts based on the [`Currency`] trait to have smart-contract
-//! functionality. It can be used with other modules that implement accounts based on [`Currency`].
-//! These &quot;smart-contract accounts&quot; have the ability to instantiate smart-contracts and make calls
-//! to other contract and non-contract accounts.
+//! This module extends accounts based on the [`frame_support::traits::fungible`] traits to have
+//! smart-contract functionality. It can be used with other modules that implement accounts based on
+//! the [`frame_support::traits::fungible`] traits. These &quot;smart-contract accounts&quot; have the ability
+//! to instantiate smart-contracts and make calls to other contract and non-contract accounts.
 //!
 //! The smart-contract code is stored once, and later retrievable via its hash.
 //! This means that multiple smart-contracts can be instantiated from the same hash, without
@@ -1752,8 +1765,8 @@
 	ensure,
 	error::BadOrigin,
 	traits::{
-		tokens::fungible::Inspect, ConstU32, Contains, Currency, Get, Randomness,
-		ReservableCurrency, Time,
+		fungible::{Inspect, Mutate, MutateHold},
+		ConstU32, Contains, Get, Randomness, Time,
 	},
 	weights::Weight,
 	BoundedVec, RuntimeDebugNoBound,
@@ -1768,7 +1781,6 @@
 <span class="kw">use </span>smallvec::Array;
 <span class="kw">use </span>sp_runtime::traits::{Convert, Hash, Saturating, StaticLookup, Zero};
 <span class="kw">use </span>sp_std::{fmt::Debug, prelude::<span class="kw-2">*</span>};
-<span class="kw">pub use </span>weights::WeightInfo;
 
 <span class="kw">pub use crate</span>::{
 	address::{AddressGenerator, DefaultAddressGenerator},
@@ -1778,6 +1790,7 @@
 	schedule::{HostFnWeights, InstructionWeights, Limits, Schedule},
 	wasm::Determinism,
 };
+<span class="kw">pub use </span>weights::WeightInfo;
 
 <span class="attr">#[cfg(doc)]
 </span><span class="kw">pub use </span><span class="kw">crate</span>::wasm::api_doc;
@@ -1785,7 +1798,7 @@
 <span class="kw">type </span>CodeHash&lt;T&gt; = &lt;T <span class="kw">as </span>frame_system::Config&gt;::Hash;
 <span class="kw">type </span>TrieId = BoundedVec&lt;u8, ConstU32&lt;<span class="number">128</span>&gt;&gt;;
 <span class="kw">type </span>BalanceOf&lt;T&gt; =
-	&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance;
+	&lt;&lt;T <span class="kw">as </span>Config&gt;::Currency <span class="kw">as </span>Inspect&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;&gt;::Balance;
 <span class="kw">type </span>CodeVec&lt;T&gt; = BoundedVec&lt;u8, &lt;T <span class="kw">as </span>Config&gt;::MaxCodeLen&gt;;
 <span class="kw">type </span>AccountIdLookupOf&lt;T&gt; = &lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::Lookup <span class="kw">as </span>StaticLookup&gt;::Source;
 <span class="kw">type </span>DebugBufferVec&lt;T&gt; = BoundedVec&lt;u8, &lt;T <span class="kw">as </span>Config&gt;::MaxDebugBufferLen&gt;;
@@ -1821,7 +1834,7 @@
 	<span class="kw">use </span>sp_runtime::Perbill;
 
 	<span class="doccomment">/// The current storage version.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">13</span>);
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">14</span>);
 
 	<span class="attr">#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -1842,9 +1855,10 @@
 		/// to supply a dummy implementation for this type (because it is never used).
 		</span><span class="kw">type </span>Randomness: Randomness&lt;<span class="self">Self</span>::Hash, BlockNumberFor&lt;<span class="self">Self</span>&gt;&gt;;
 
-		<span class="doccomment">/// The currency in which fees are paid and contract balances are held.
-		</span><span class="kw">type </span>Currency: ReservableCurrency&lt;<span class="self">Self</span>::AccountId&gt; <span class="comment">// TODO: Move to fungible traits
-			</span>+ Inspect&lt;<span class="self">Self</span>::AccountId, Balance = BalanceOf&lt;<span class="self">Self</span>&gt;&gt;;
+		<span class="doccomment">/// The fungible in which fees are paid and contract balances are held.
+		</span><span class="kw">type </span>Currency: Inspect&lt;<span class="self">Self</span>::AccountId&gt;
+			+ Mutate&lt;<span class="self">Self</span>::AccountId&gt;
+			+ MutateHold&lt;<span class="self">Self</span>::AccountId, Reason = <span class="self">Self</span>::RuntimeHoldReason&gt;;
 
 		<span class="doccomment">/// The overarching event type.
 		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
@@ -1964,20 +1978,25 @@
 		</span><span class="attr">#[pallet::constant]
 		</span><span class="kw">type </span>MaxDebugBufferLen: Get&lt;u32&gt;;
 
+		<span class="doccomment">/// Overarching hold reason.
+		</span><span class="kw">type </span>RuntimeHoldReason: From&lt;HoldReason&gt;;
+
 		<span class="doccomment">/// The sequence of migration steps that will be applied during a migration.
 		///
 		/// # Examples
 		/// ```
 		/// use pallet_contracts::migration::{v10, v11};
 		/// # struct Runtime {};
-		/// type Migrations = (v10::Migration&lt;Runtime&gt;, v11::Migration&lt;Runtime&gt;);
+		/// # struct Currency {};
+		/// type Migrations = (v10::Migration&lt;Runtime, Currency&gt;, v11::Migration&lt;Runtime&gt;);
 		/// ```
 		///
 		/// If you have a single migration step, you can use a tuple with a single element:
 		/// ```
 		/// use pallet_contracts::migration::v10;
 		/// # struct Runtime {};
-		/// type Migrations = (v10::Migration&lt;Runtime&gt;,);
+		/// # struct Currency {};
+		/// type Migrations = (v10::Migration&lt;Runtime, Currency&gt;,);
 		/// ```
 		</span><span class="kw">type </span>Migrations: MigrateSequence;
 	}
@@ -2467,7 +2486,7 @@
 		},
 
 		<span class="doccomment">/// Code with the specified hash has been stored.
-		</span>CodeStored { code_hash: T::Hash },
+		</span>CodeStored { code_hash: T::Hash, deposit_held: BalanceOf&lt;T&gt;, uploader: T::AccountId },
 
 		<span class="doccomment">/// A custom event emitted by the contract.
 		</span>ContractEmitted {
@@ -2479,7 +2498,7 @@
 		},
 
 		<span class="doccomment">/// A code with the specified hash was removed.
-		</span>CodeRemoved { code_hash: T::Hash },
+		</span>CodeRemoved { code_hash: T::Hash, deposit_released: BalanceOf&lt;T&gt;, remover: T::AccountId },
 
 		<span class="doccomment">/// A contract&#39;s code was updated.
 		</span>ContractCodeUpdated {
@@ -2612,6 +2631,13 @@
 		</span>DelegateDependencyAlreadyExists,
 		<span class="doccomment">/// Can not add a delegate dependency to the code hash of the contract itself.
 		</span>CannotAddSelfAsDelegateDependency,
+	}
+
+	<span class="doccomment">/// A reason for the pallet contracts placing a hold on funds.
+	</span><span class="attr">#[pallet::composite_enum]
+	</span><span class="kw">pub enum </span>HoldReason {
+		<span class="doccomment">/// The Pallet has reserved it for storing code on-chain.
+		</span>CodeUploadDepositReserve,
 	}
 
 	<span class="doccomment">/// A mapping from a contract&#39;s code hash to its code.

@@ -67,7 +67,7 @@ therefore ensure the account is already in the appropriate state prior to callin
 ) -&gt; <a class="primitive" href="https://doc.rust-lang.org/1.70.0/std/primitive.bool.html">bool</a></h4></section></summary><div class="docblock"><p>Check to see if some <code>amount</code> of funds of <code>who</code> may be placed on hold for the given
 <code>reason</code>. Reasons why this may not be true:</p>
 <ul>
-<li>The implementor supports only a limited number of concurrernt holds on an account which is
+<li>The implementor supports only a limited number of concurrent holds on an account which is
 the possible values of <code>reason</code>;</li>
 <li>The main balance of the account is less than <code>amount</code>;</li>
 <li>Removing <code>amount</code> from the main balance would kill the account and remove the only

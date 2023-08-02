@@ -627,6 +627,8 @@
 <a href="#627" id="627">627</a>
 <a href="#628" id="628">628</a>
 <a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -662,7 +664,8 @@
 //! ```
 //! use pallet_contracts::migration::{v10, v11};
 //! # pub enum Runtime {};
-//! type Migrations = (v10::Migration&lt;Runtime&gt;, v11::Migration&lt;Runtime&gt;);
+//! # struct Currency;
+//! type Migrations = (v10::Migration&lt;Runtime, Currency&gt;, v11::Migration&lt;Runtime&gt;);
 //! ```
 //!
 //! ## Notes:
@@ -690,6 +693,7 @@
 <span class="kw">pub mod </span>v11;
 <span class="kw">pub mod </span>v12;
 <span class="kw">pub mod </span>v13;
+<span class="kw">pub mod </span>v14;
 <span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/migration_codegen.rs&quot;</span>));
 
 <span class="kw">use crate</span>::{weights::WeightInfo, Config, Error, MigrationInProgress, Pallet, Weight, LOG_TARGET};

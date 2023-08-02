@@ -673,6 +673,13 @@
 <a href="#673" id="673">673</a>
 <a href="#674" id="674">674</a>
 <a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -709,7 +716,7 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;full_crypto&quot;</span>)]
 </span><span class="kw">use </span>w3f_bls::{DoublePublicKeyScheme, Keypair, Message, SecretKey};
 
-<span class="kw">use </span>sp_runtime_interface::pass_by::PassByInner;
+<span class="kw">use </span>sp_runtime_interface::pass_by::{<span class="self">self</span>, PassBy, PassByInner};
 <span class="kw">use </span>sp_std::{convert::TryFrom, marker::PhantomData, ops::Deref};
 
 <span class="doccomment">/// BLS-377 specialized types
@@ -838,6 +845,10 @@
 	<span class="kw">fn </span>from_inner(inner: <span class="self">Self</span>::Inner) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{ inner, _phantom: PhantomData }
 	}
+}
+
+<span class="kw">impl</span>&lt;T&gt; PassBy <span class="kw">for </span>Public&lt;T&gt; {
+	<span class="kw">type </span>PassBy = pass_by::Inner&lt;<span class="self">Self</span>, [u8; PUBLIC_KEY_SERIALIZED_SIZE]&gt;;
 }
 
 <span class="kw">impl</span>&lt;T&gt; AsRef&lt;[u8; PUBLIC_KEY_SERIALIZED_SIZE]&gt; <span class="kw">for </span>Public&lt;T&gt; {
@@ -1189,7 +1200,6 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::crypto::DEV_PHRASE;
 	<span class="kw">use </span>bls377::{Pair, Signature};
-	<span class="kw">use </span>hex_literal::hex;
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>default_phrase_should_be_used() {
@@ -1204,7 +1214,9 @@
 	<span class="comment">// Only passes if the seed = (seed mod ScalarField)
 	</span><span class="attr">#[test]
 	</span><span class="kw">fn </span>seed_and_derive_should_work() {
-		<span class="kw">let </span>seed = <span class="macro">hex!</span>(<span class="string">&quot;9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f00&quot;</span>);
+		<span class="kw">let </span>seed = array_bytes::hex2array_unchecked(
+			<span class="string">&quot;9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f00&quot;</span>,
+		);
 		<span class="kw">let </span>pair = Pair::from_seed(<span class="kw-2">&amp;</span>seed);
 		<span class="comment">// we are using hash to field so this is not going to work
 		// assert_eq!(pair.seed(), seed);
@@ -1212,25 +1224,27 @@
 		<span class="kw">let </span>derived = pair.derive(path.into_iter(), <span class="prelude-val">None</span>).ok().unwrap().<span class="number">0</span>;
 		<span class="macro">assert_eq!</span>(
 			derived.to_raw_vec(),
-			<span class="macro">hex!</span>(<span class="string">&quot;a4f2269333b3e87c577aa00c4a2cd650b3b30b2e8c286a47c251279ff3a26e0d&quot;</span>)
+			array_bytes::hex2array_unchecked::&lt;<span class="kw">_</span>, <span class="number">32</span>&gt;(
+				<span class="string">&quot;a4f2269333b3e87c577aa00c4a2cd650b3b30b2e8c286a47c251279ff3a26e0d&quot;
+			</span>)
 		);
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_vector_should_work() {
-		<span class="kw">let </span>pair = Pair::from_seed(<span class="kw-2">&amp;</span><span class="macro">hex!</span>(
-			<span class="string">&quot;9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60&quot;
-		</span>));
+		<span class="kw">let </span>pair = Pair::from_seed(<span class="kw-2">&amp;</span>array_bytes::hex2array_unchecked(
+			<span class="string">&quot;9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60&quot;</span>,
+		));
 		<span class="kw">let </span>public = pair.public();
 		<span class="macro">assert_eq!</span>(
 			public,
-			Public::unchecked_from(<span class="macro">hex!</span>(
+			Public::unchecked_from(array_bytes::hex2array_unchecked(
 				<span class="string">&quot;7a84ca8ce4c37c93c95ecee6a3c0c9a7b9c225093cf2f12dc4f69cbfb847ef9424a18f5755d5a742247d386ff2aabb806bcf160eff31293ea9616976628f77266c8a8cc1d8753be04197bd6cdd8c5c87a148f782c4c1568d599b48833fd539001e580cff64bbc71850605433fcd051f3afc3b74819786f815ffb5272030a8d03e5df61e6183f8fd8ea85f26defa83400&quot;
 			</span>))
 		);
 		<span class="kw">let </span>message = <span class="string">b&quot;&quot;</span>;
 		<span class="kw">let </span>signature =
-	<span class="macro">hex!</span>(<span class="string">&quot;d1e3013161991e142d8751017d4996209c2ff8a9ee160f373733eda3b4b785ba6edce9f45f87104bbe07aa6aa6eb2780aa705efb2c13d3b317d6409d159d23bdc7cdd5c2a832d1551cf49d811d49c901495e527dbd532e3a462335ce2686009104aba7bc11c5b22be78f3198d2727a0b&quot;
+	array_bytes::hex2array_unchecked(<span class="string">&quot;d1e3013161991e142d8751017d4996209c2ff8a9ee160f373733eda3b4b785ba6edce9f45f87104bbe07aa6aa6eb2780aa705efb2c13d3b317d6409d159d23bdc7cdd5c2a832d1551cf49d811d49c901495e527dbd532e3a462335ce2686009104aba7bc11c5b22be78f3198d2727a0b&quot;
 	</span>);
 		<span class="kw">let </span>signature = Signature::unchecked_from(signature);
 		<span class="macro">assert!</span>(pair.sign(<span class="kw-2">&amp;</span>message[..]) == signature);
@@ -1247,13 +1261,13 @@
 		<span class="kw">let </span>public = pair.public();
 		<span class="macro">assert_eq!</span>(
 			public,
-			Public::unchecked_from(<span class="macro">hex!</span>(
+			Public::unchecked_from(array_bytes::hex2array_unchecked(
 				<span class="string">&quot;6dc6be608fab3c6bd894a606be86db346cc170db85c733853a371f3db54ae1b12052c0888d472760c81b537572a26f00db865e5963aef8634f9917571c51b538b564b2a9ceda938c8b930969ee3b832448e08e33a79e9ddd28af419a3ce45300f5dbc768b067781f44f3fe05a19e6b07b1c4196151ec3f8ea37e4f89a8963030d2101e931276bb9ebe1f20102239d780&quot;
 			</span>))
 		);
 		<span class="kw">let </span>message = <span class="string">b&quot;&quot;</span>;
 		<span class="kw">let </span>signature =
-	<span class="macro">hex!</span>(<span class="string">&quot;bbb395bbdee1a35930912034f5fde3b36df2835a0536c865501b0675776a1d5931a3bea2e66eff73b2546c6af2061a8019223e4ebbbed661b2538e0f5823f2c708eb89c406beca8fcb53a5c13dbc7c0c42e4cf2be2942bba96ea29297915a06bd2b1b979c0e2ac8fd4ec684a6b5d110c&quot;
+	array_bytes::hex2array_unchecked(<span class="string">&quot;bbb395bbdee1a35930912034f5fde3b36df2835a0536c865501b0675776a1d5931a3bea2e66eff73b2546c6af2061a8019223e4ebbbed661b2538e0f5823f2c708eb89c406beca8fcb53a5c13dbc7c0c42e4cf2be2942bba96ea29297915a06bd2b1b979c0e2ac8fd4ec684a6b5d110c&quot;
 	</span>);
 		<span class="kw">let </span>expected_signature = Signature::unchecked_from(signature);
 		<span class="macro">println!</span>(<span class="string">&quot;signature is {:?}&quot;</span>, pair.sign(<span class="kw-2">&amp;</span>message[..]));
@@ -1278,12 +1292,12 @@
 		<span class="macro">assert_eq!</span>(
 			public,
 			Public::unchecked_from(
-				<span class="macro">hex!</span>(
+				array_bytes::hex2array_unchecked(
 				<span class="string">&quot;754d2f2bbfa67df54d7e0e951979a18a1e0f45948857752cc2bac6bbb0b1d05e8e48bcc453920bf0c4bbd5993212480112a1fb433f04d74af0a8b700d93dc957ab3207f8d071e948f5aca1a7632c00bdf6d06be05b43e2e6216dccc8a5d55a0071cb2313cfd60b7e9114619cd17c06843b352f0b607a99122f6651df8f02e1ad3697bd208e62af047ddd7b942ba80080&quot;</span>)
 			)
 		);
 		<span class="kw">let </span>message =
-	<span class="macro">hex!</span>(<span class="string">&quot;2f8c6129d816cf51c374bc7f08c3e63ed156cf78aefb4a6550d97b87997977ee00000000000000000200d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a4500000000000000&quot;
+	array_bytes::hex2bytes_unchecked(<span class="string">&quot;2f8c6129d816cf51c374bc7f08c3e63ed156cf78aefb4a6550d97b87997977ee00000000000000000200d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a4500000000000000&quot;
 	</span>);
 		<span class="kw">let </span>signature = pair.sign(<span class="kw-2">&amp;</span>message[..]);
 		<span class="macro">println!</span>(<span class="string">&quot;Correct signature: {:?}&quot;</span>, signature);

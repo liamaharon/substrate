@@ -808,6 +808,7 @@
 <a href="#808" id="808">808</a>
 <a href="#809" id="809">809</a>
 <a href="#810" id="810">810</a>
+<a href="#811" id="811">811</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -851,7 +852,7 @@
 	LOG_TARGET,
 };
 <span class="kw">use </span>sp_consensus_beefy::{
-	crypto::{AuthorityId, Signature},
+	ecdsa_crypto::{AuthorityId, Signature},
 	ValidatorSet, ValidatorSetId, VoteMessage,
 };
 
@@ -1286,9 +1287,10 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::keystore::BeefyKeystore;
 	<span class="kw">use </span>sc_network_test::Block;
+	<span class="kw">use </span>sp_application_crypto::key_types::BEEFY <span class="kw">as </span>BEEFY_KEY_TYPE;
 	<span class="kw">use </span>sp_consensus_beefy::{
-		crypto::Signature, known_payloads, Commitment, Keyring, MmrRootHash, Payload,
-		SignedCommitment, VoteMessage, KEY_TYPE,
+		ecdsa_crypto::Signature, known_payloads, Commitment, Keyring, MmrRootHash, Payload,
+		SignedCommitment, VoteMessage,
 	};
 	<span class="kw">use </span>sp_keystore::{testing::MemoryKeystore, Keystore};
 
@@ -1346,7 +1348,7 @@
 
 	<span class="kw">pub fn </span>sign_commitment&lt;BN: Encode&gt;(who: <span class="kw-2">&amp;</span>Keyring, commitment: <span class="kw-2">&amp;</span>Commitment&lt;BN&gt;) -&gt; Signature {
 		<span class="kw">let </span>store = MemoryKeystore::new();
-		store.ecdsa_generate_new(KEY_TYPE, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>who.to_seed())).unwrap();
+		store.ecdsa_generate_new(BEEFY_KEY_TYPE, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>who.to_seed())).unwrap();
 		<span class="kw">let </span>beefy_keystore: BeefyKeystore = <span class="prelude-val">Some</span>(store.into()).into();
 		beefy_keystore.sign(<span class="kw-2">&amp;</span>who.public(), <span class="kw-2">&amp;</span>commitment.encode()).unwrap()
 	}

@@ -30,7 +30,7 @@
 <p><strong>WARNING</strong>
 Do not use this directly unless you want trouble, since it allows you to alter account balances
 without keeping the issuance up to date. It has no safeguards against accidentally creating
-token imbalances in your system leading to accidental imflation or deflation. It’s really just
+token imbalances in your system leading to accidental inflation or deflation. It’s really just
 for the underlying datatype to implement so the user gets the much safer <code>Balanced</code> trait to
 use.</p>
 </div></details><h2 id="required-methods" class="small-section-header">Required Methods<a href="#required-methods" class="anchor">§</a></h2><div class="methods"><details class="toggle method-toggle" open><summary><section id="tymethod.handle_dust" class="method"><a class="srclink rightside" href="../../../../src/frame_support/traits/tokens/fungibles/regular.rs.html#157">source</a><h4 class="code-header">fn <a href="#tymethod.handle_dust" class="fn">handle_dust</a>(dust: <a class="struct" href="struct.Dust.html" title="struct frame_support::traits::tokens::fungibles::Dust">Dust</a>&lt;AccountId, Self&gt;)</h4></section></summary><div class="docblock"><p>Do something with the dust which has been destroyed from the system. <code>Dust</code> can be converted

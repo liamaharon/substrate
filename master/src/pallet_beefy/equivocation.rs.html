@@ -331,7 +331,7 @@
 };
 <span class="kw">use </span>frame_system::pallet_prelude::BlockNumberFor;
 <span class="kw">use </span>log::{error, info};
-<span class="kw">use </span>sp_consensus_beefy::{EquivocationProof, ValidatorSetId, KEY_TYPE};
+<span class="kw">use </span>sp_consensus_beefy::{EquivocationProof, ValidatorSetId, KEY_TYPE <span class="kw">as </span>BEEFY_KEY_TYPE};
 <span class="kw">use </span>sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionPriority, TransactionSource, TransactionValidity,
@@ -462,7 +462,7 @@
 		<span class="kw">let </span>(equivocation_proof, key_owner_proof) = evidence;
 
 		<span class="comment">// Check the membership proof to extract the offender&#39;s id
-		</span><span class="kw">let </span>key = (KEY_TYPE, equivocation_proof.offender_id().clone());
+		</span><span class="kw">let </span>key = (BEEFY_KEY_TYPE, equivocation_proof.offender_id().clone());
 		<span class="kw">let </span>offender = P::check_proof(key, key_owner_proof).ok_or(InvalidTransaction::BadProof)<span class="question-mark">?</span>;
 
 		<span class="comment">// Check if the offence has already been reported, and if so then we can discard the report.
@@ -496,7 +496,7 @@
 		<span class="kw">let </span>validator_set_count = key_owner_proof.validator_count();
 
 		<span class="comment">// Validate the key ownership proof extracting the id of the offender.
-		</span><span class="kw">let </span>offender = P::check_proof((KEY_TYPE, offender), key_owner_proof)
+		</span><span class="kw">let </span>offender = P::check_proof((BEEFY_KEY_TYPE, offender), key_owner_proof)
 			.ok_or(Error::&lt;T&gt;::InvalidKeyOwnershipProof)<span class="question-mark">?</span>;
 
 		<span class="comment">// Validate equivocation proof (check votes are different and signatures are valid).

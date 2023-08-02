@@ -316,6 +316,36 @@
 <a href="#316" id="316">316</a>
 <a href="#317" id="317">317</a>
 <a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -355,13 +385,20 @@
 <span class="kw">mod </span>old {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
+	<span class="kw">pub type </span>BalanceOf&lt;T, OldCurrency&gt; = &lt;OldCurrency <span class="kw">as </span>frame_support::traits::Currency&lt;
+		&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId,
+	&gt;&gt;::Balance;
+
 	<span class="attr">#[derive(Encode, Decode, scale_info::TypeInfo, MaxEncodedLen)]
 	#[codec(mel_bound())]
-	#[scale_info(skip_type_params(T))]
-	</span><span class="kw">pub struct </span>OwnerInfo&lt;T: Config&gt; {
+	#[scale_info(skip_type_params(T, OldCurrency))]
+	</span><span class="kw">pub struct </span>OwnerInfo&lt;T: Config, OldCurrency&gt;
+	<span class="kw">where
+		</span>OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;,
+	{
 		<span class="kw">pub </span>owner: AccountIdOf&lt;T&gt;,
 		<span class="attr">#[codec(compact)]
-		</span><span class="kw">pub </span>deposit: BalanceOf&lt;T&gt;,
+		</span><span class="kw">pub </span>deposit: BalanceOf&lt;T, OldCurrency&gt;,
 		<span class="attr">#[codec(compact)]
 		</span><span class="kw">pub </span>refcount: u64,
 	}
@@ -381,7 +418,8 @@
 	}
 
 	<span class="attr">#[storage_alias]
-	</span><span class="kw">pub type </span>OwnerInfoOf&lt;T: Config&gt; = StorageMap&lt;Pallet&lt;T&gt;, Identity, CodeHash&lt;T&gt;, OwnerInfo&lt;T&gt;&gt;;
+	</span><span class="kw">pub type </span>OwnerInfoOf&lt;T: Config, OldCurrency&gt; =
+		StorageMap&lt;Pallet&lt;T&gt;, Identity, CodeHash&lt;T&gt;, OwnerInfo&lt;T, OldCurrency&gt;&gt;;
 
 	<span class="attr">#[storage_alias]
 	</span><span class="kw">pub type </span>CodeStorage&lt;T: Config&gt; =
@@ -390,11 +428,14 @@
 
 <span class="attr">#[derive(Encode, Decode, scale_info::TypeInfo, MaxEncodedLen)]
 #[codec(mel_bound())]
-#[scale_info(skip_type_params(T))]
-</span><span class="kw">pub struct </span>CodeInfo&lt;T: Config&gt; {
+#[scale_info(skip_type_params(T, OldCurrency))]
+</span><span class="kw">pub struct </span>CodeInfo&lt;T: Config, OldCurrency&gt;
+<span class="kw">where
+	</span>OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;,
+{
 	owner: AccountIdOf&lt;T&gt;,
 	<span class="attr">#[codec(compact)]
-	</span>deposit: BalanceOf&lt;T&gt;,
+	</span>deposit: old::BalanceOf&lt;T, OldCurrency&gt;,
 	<span class="attr">#[codec(compact)]
 	</span>refcount: u64,
 	determinism: Determinism,
@@ -402,13 +443,17 @@
 }
 
 <span class="attr">#[storage_alias]
-</span><span class="kw">pub type </span>CodeInfoOf&lt;T: Config&gt; = StorageMap&lt;Pallet&lt;T&gt;, Twox64Concat, CodeHash&lt;T&gt;, CodeInfo&lt;T&gt;&gt;;
+</span><span class="kw">pub type </span>CodeInfoOf&lt;T: Config, OldCurrency&gt; =
+	StorageMap&lt;Pallet&lt;T&gt;, Twox64Concat, CodeHash&lt;T&gt;, CodeInfo&lt;T, OldCurrency&gt;&gt;;
 
 <span class="attr">#[storage_alias]
 </span><span class="kw">pub type </span>PristineCode&lt;T: Config&gt; = StorageMap&lt;Pallet&lt;T&gt;, Identity, CodeHash&lt;T&gt;, Vec&lt;u8&gt;&gt;;
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-</span><span class="kw">pub fn </span>store_old_dummy_code&lt;T: Config&gt;(len: usize, account: T::AccountId) {
+</span><span class="kw">pub fn </span>store_old_dummy_code&lt;T: Config, OldCurrency&gt;(len: usize, account: T::AccountId)
+<span class="kw">where
+	</span>OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt; + <span class="lifetime">&#39;static</span>,
+{
 	<span class="kw">use </span>sp_runtime::traits::Hash;
 
 	<span class="kw">let </span>code = <span class="macro">vec!</span>[<span class="number">42u8</span>; len];
@@ -425,15 +470,24 @@
 	old::CodeStorage::&lt;T&gt;::insert(hash, module);
 
 	<span class="kw">let </span>info = old::OwnerInfo { owner: account, deposit: u32::MAX.into(), refcount: u64::MAX };
-	old::OwnerInfoOf::&lt;T&gt;::insert(hash, info);
+	old::OwnerInfoOf::&lt;T, OldCurrency&gt;::insert(hash, info);
 }
 
 <span class="attr">#[derive(Encode, Decode, MaxEncodedLen, DefaultNoBound)]
-</span><span class="kw">pub struct </span>Migration&lt;T: Config&gt; {
+</span><span class="kw">pub struct </span>Migration&lt;T: Config, OldCurrency&gt;
+<span class="kw">where
+	</span>OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;,
+	OldCurrency::Balance: From&lt;BalanceOf&lt;T&gt;&gt;,
+{
 	last_code_hash: <span class="prelude-ty">Option</span>&lt;CodeHash&lt;T&gt;&gt;,
+	_phantom: PhantomData&lt;OldCurrency&gt;,
 }
 
-<span class="kw">impl</span>&lt;T: Config&gt; MigrationStep <span class="kw">for </span>Migration&lt;T&gt; {
+<span class="kw">impl</span>&lt;T: Config, OldCurrency&gt; MigrationStep <span class="kw">for </span>Migration&lt;T, OldCurrency&gt;
+<span class="kw">where
+	</span>OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt; + <span class="lifetime">&#39;static</span>,
+	OldCurrency::Balance: From&lt;BalanceOf&lt;T&gt;&gt;,
+{
 	<span class="kw">const </span>VERSION: u16 = <span class="number">12</span>;
 
 	<span class="kw">fn </span>max_step_weight() -&gt; Weight {
@@ -442,9 +496,11 @@
 
 	<span class="kw">fn </span>step(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; (IsFinished, Weight) {
 		<span class="kw">let </span><span class="kw-2">mut </span>iter = <span class="kw">if let </span><span class="prelude-val">Some</span>(last_key) = <span class="self">self</span>.last_code_hash.take() {
-			old::OwnerInfoOf::&lt;T&gt;::iter_from(old::OwnerInfoOf::&lt;T&gt;::hashed_key_for(last_key))
+			old::OwnerInfoOf::&lt;T, OldCurrency&gt;::iter_from(
+				old::OwnerInfoOf::&lt;T, OldCurrency&gt;::hashed_key_for(last_key),
+			)
 		} <span class="kw">else </span>{
-			old::OwnerInfoOf::&lt;T&gt;::iter()
+			old::OwnerInfoOf::&lt;T, OldCurrency&gt;::iter()
 		};
 		<span class="kw">if let </span><span class="prelude-val">Some</span>((hash, old_info)) = iter.next() {
 			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Migrating OwnerInfo for code_hash {:?}&quot;</span>, hash);
@@ -476,7 +532,8 @@
 			<span class="kw">let </span>bytes_before = module
 				.encoded_size()
 				.saturating_add(code_len)
-				.saturating_add(old::OwnerInfo::&lt;T&gt;::max_encoded_len()) <span class="kw">as </span>u32;
+				.saturating_add(old::OwnerInfo::&lt;T, OldCurrency&gt;::max_encoded_len())
+				<span class="kw">as </span>u32;
 			<span class="kw">let </span>items_before = <span class="number">3u32</span>;
 			<span class="kw">let </span>deposit_expected_before = price_per_byte
 				.saturating_mul(bytes_before.into())
@@ -484,24 +541,25 @@
 			<span class="kw">let </span>ratio = FixedU128::checked_from_rational(old_info.deposit, deposit_expected_before)
 				.unwrap_or_default()
 				.min(FixedU128::from_u32(<span class="number">1</span>));
-			<span class="kw">let </span>bytes_after = code_len.saturating_add(CodeInfo::&lt;T&gt;::max_encoded_len()) <span class="kw">as </span>u32;
+			<span class="kw">let </span>bytes_after =
+				code_len.saturating_add(CodeInfo::&lt;T, OldCurrency&gt;::max_encoded_len()) <span class="kw">as </span>u32;
 			<span class="kw">let </span>items_after = <span class="number">2u32</span>;
 			<span class="kw">let </span>deposit_expected_after = price_per_byte
 				.saturating_mul(bytes_after.into())
 				.saturating_add(price_per_item.saturating_mul(items_after.into()));
 			<span class="kw">let </span>deposit = ratio.saturating_mul_int(deposit_expected_after);
 
-			<span class="kw">let </span>info = CodeInfo::&lt;T&gt; {
+			<span class="kw">let </span>info = CodeInfo::&lt;T, OldCurrency&gt; {
 				determinism: module.determinism,
 				owner: old_info.owner,
-				deposit,
+				deposit: deposit.into(),
 				refcount: old_info.refcount,
 				code_len: code_len <span class="kw">as </span>u32,
 			};
 
 			<span class="kw">let </span>amount = old_info.deposit.saturating_sub(info.deposit);
 			<span class="kw">if </span>!amount.is_zero() {
-				T::Currency::unreserve(<span class="kw-2">&amp;</span>info.owner, amount);
+				OldCurrency::unreserve(<span class="kw-2">&amp;</span>info.owner, amount);
 				<span class="macro">log::debug!</span>(
 					target: LOG_TARGET,
 					<span class="string">&quot;Deposit refunded: {:?} Balance, to: {:?}&quot;</span>,
@@ -516,7 +574,7 @@
 					<span class="kw-2">&amp;</span>old_info.deposit
 				);
 			}
-			CodeInfoOf::&lt;T&gt;::insert(hash, info);
+			CodeInfoOf::&lt;T, OldCurrency&gt;::insert(hash, info);
 
 			<span class="self">self</span>.last_code_hash = <span class="prelude-val">Some</span>(hash);
 
@@ -531,12 +589,12 @@
 	</span><span class="kw">fn </span>pre_upgrade_step() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, TryRuntimeError&gt; {
 		<span class="kw">let </span>len = <span class="number">100</span>;
 		<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Taking sample of {} OwnerInfo(s)&quot;</span>, len);
-		<span class="kw">let </span>sample: Vec&lt;<span class="kw">_</span>&gt; = old::OwnerInfoOf::&lt;T&gt;::iter()
+		<span class="kw">let </span>sample: Vec&lt;<span class="kw">_</span>&gt; = old::OwnerInfoOf::&lt;T, OldCurrency&gt;::iter()
 			.take(len)
 			.map(|(k, v)| {
 				<span class="kw">let </span>module = old::CodeStorage::&lt;T&gt;::get(k)
 					.expect(<span class="string">&quot;No PrefabWasmModule found for code_hash: {:?}&quot;</span>);
-				<span class="kw">let </span>info: CodeInfo&lt;T&gt; = CodeInfo {
+				<span class="kw">let </span>info: CodeInfo&lt;T, OldCurrency&gt; = CodeInfo {
 					determinism: module.determinism,
 					deposit: v.deposit,
 					refcount: v.refcount,
@@ -549,22 +607,24 @@
 
 		<span class="kw">let </span>storage: u32 =
 			old::CodeStorage::&lt;T&gt;::iter().map(|(_k, v)| v.encoded_size() <span class="kw">as </span>u32).sum();
-		<span class="kw">let </span><span class="kw-2">mut </span>deposit: BalanceOf&lt;T&gt; = Default::default();
-		old::OwnerInfoOf::&lt;T&gt;::iter().for_each(|(_k, v)| deposit += v.deposit);
+		<span class="kw">let </span><span class="kw-2">mut </span>deposit: old::BalanceOf&lt;T, OldCurrency&gt; = Default::default();
+		old::OwnerInfoOf::&lt;T, OldCurrency&gt;::iter().for_each(|(_k, v)| deposit += v.deposit);
 
 		<span class="prelude-val">Ok</span>((sample, deposit, storage).encode())
 	}
 
 	<span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span><span class="kw">fn </span>post_upgrade_step(state: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), TryRuntimeError&gt; {
-		<span class="kw">let </span>state = &lt;(Vec&lt;(CodeHash&lt;T&gt;, CodeInfo&lt;T&gt;)&gt;, BalanceOf&lt;T&gt;, u32) <span class="kw">as </span>Decode&gt;::decode(
-			<span class="kw-2">&amp;mut &amp;</span>state[..],
-		)
+		<span class="kw">let </span>state = &lt;(
+			Vec&lt;(CodeHash&lt;T&gt;, CodeInfo&lt;T, OldCurrency&gt;)&gt;,
+			old::BalanceOf&lt;T, OldCurrency&gt;,
+			u32,
+		) <span class="kw">as </span>Decode&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>state[..])
 		.unwrap();
 
 		<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Validating state of {} Codeinfo(s)&quot;</span>, state.<span class="number">0</span>.len());
 		<span class="kw">for </span>(hash, old) <span class="kw">in </span>state.<span class="number">0 </span>{
-			<span class="kw">let </span>info = CodeInfoOf::&lt;T&gt;::get(<span class="kw-2">&amp;</span>hash)
+			<span class="kw">let </span>info = CodeInfoOf::&lt;T, OldCurrency&gt;::get(<span class="kw-2">&amp;</span>hash)
 				.expect(<span class="macro">format!</span>(<span class="string">&quot;CodeInfo for code_hash {:?} not found!&quot;</span>, hash).as_str());
 			<span class="macro">ensure!</span>(info.determinism == old.determinism, <span class="string">&quot;invalid determinism&quot;</span>);
 			<span class="macro">ensure!</span>(info.owner == old.owner, <span class="string">&quot;invalid owner&quot;</span>);
@@ -580,7 +640,7 @@
 		} <span class="kw">else </span>{
 			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;CodeStorage is empty.&quot;</span>);
 		}
-		<span class="kw">if let </span><span class="prelude-val">Some</span>((k, <span class="kw">_</span>)) = old::OwnerInfoOf::&lt;T&gt;::iter().next() {
+		<span class="kw">if let </span><span class="prelude-val">Some</span>((k, <span class="kw">_</span>)) = old::OwnerInfoOf::&lt;T, OldCurrency&gt;::iter().next() {
 			<span class="macro">log::warn!</span>(
 				target: LOG_TARGET,
 				<span class="string">&quot;OwnerInfoOf is still NOT empty, found code_hash: {:?}&quot;</span>,
@@ -590,10 +650,10 @@
 			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;OwnerInfoOf is empty.&quot;</span>);
 		}
 
-		<span class="kw">let </span><span class="kw-2">mut </span>deposit: BalanceOf&lt;T&gt; = Default::default();
+		<span class="kw">let </span><span class="kw-2">mut </span>deposit: old::BalanceOf&lt;T, OldCurrency&gt; = Default::default();
 		<span class="kw">let </span><span class="kw-2">mut </span>items = <span class="number">0u32</span>;
 		<span class="kw">let </span><span class="kw-2">mut </span>storage_info = <span class="number">0u32</span>;
-		CodeInfoOf::&lt;T&gt;::iter().for_each(|(_k, v)| {
+		CodeInfoOf::&lt;T, OldCurrency&gt;::iter().for_each(|(_k, v)| {
 			deposit += v.deposit;
 			items += <span class="number">1</span>;
 			storage_info += v.encoded_size() <span class="kw">as </span>u32;

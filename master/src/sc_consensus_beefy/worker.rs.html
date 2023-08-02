@@ -1701,7 +1701,7 @@
 <span class="kw">use </span>sp_consensus::SyncOracle;
 <span class="kw">use </span>sp_consensus_beefy::{
 	check_equivocation_proof,
-	crypto::{AuthorityId, Signature},
+	ecdsa_crypto::{AuthorityId, Signature},
 	BeefyApi, Commitment, ConsensusLog, EquivocationProof, PayloadProvider, ValidatorSet,
 	VersionedFinalityProof, VoteMessage, BEEFY_ENGINE_ID,
 };
@@ -2008,7 +2008,7 @@
 	P: PayloadProvider&lt;B&gt;,
 	S: SyncOracle,
 	R: ProvideRuntimeApi&lt;B&gt;,
-	R::Api: BeefyApi&lt;B&gt;,
+	R::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	<span class="kw">fn </span>best_grandpa_block(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; NumberFor&lt;B&gt; {
 		<span class="kw-2">*</span><span class="self">self</span>.persisted_state.voting_oracle.best_grandpa_block_header.number()

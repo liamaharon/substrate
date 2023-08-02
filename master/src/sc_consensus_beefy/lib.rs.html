@@ -527,6 +527,7 @@
 <a href="#527" id="527">527</a>
 <a href="#528" id="528">528</a>
 <a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -575,7 +576,8 @@
 };
 <span class="kw">use </span>sp_consensus::{Error <span class="kw">as </span>ConsensusError, SyncOracle};
 <span class="kw">use </span>sp_consensus_beefy::{
-	crypto::AuthorityId, BeefyApi, MmrRootHash, PayloadProvider, ValidatorSet, BEEFY_ENGINE_ID,
+	ecdsa_crypto::AuthorityId, BeefyApi, MmrRootHash, PayloadProvider, ValidatorSet,
+	BEEFY_ENGINE_ID,
 };
 <span class="kw">use </span>sp_keystore::KeystorePtr;
 <span class="kw">use </span>sp_mmr_primitives::MmrApi;
@@ -671,7 +673,7 @@
 		+ Send
 		+ Sync,
 	RuntimeApi: ProvideRuntimeApi&lt;B&gt; + Send + Sync,
-	RuntimeApi::Api: BeefyApi&lt;B&gt;,
+	RuntimeApi::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	<span class="comment">// Voter -&gt; RPC links
 	</span><span class="kw">let </span>(to_rpc_justif_sender, from_voter_justif_stream) =
@@ -753,7 +755,7 @@
 	C: Client&lt;B, BE&gt; + BlockBackend&lt;B&gt;,
 	P: PayloadProvider&lt;B&gt;,
 	R: ProvideRuntimeApi&lt;B&gt;,
-	R::Api: BeefyApi&lt;B&gt; + MmrApi&lt;B, MmrRootHash, NumberFor&lt;B&gt;&gt;,
+	R::Api: BeefyApi&lt;B, AuthorityId&gt; + MmrApi&lt;B, MmrRootHash, NumberFor&lt;B&gt;&gt;,
 	N: GossipNetwork&lt;B&gt; + NetworkRequest + Send + Sync + <span class="lifetime">&#39;static</span>,
 	S: GossipSyncing&lt;B&gt; + SyncOracle + <span class="lifetime">&#39;static</span>,
 {
@@ -868,7 +870,7 @@
 	</span>B: Block,
 	BE: Backend&lt;B&gt;,
 	R: ProvideRuntimeApi&lt;B&gt;,
-	R::Api: BeefyApi&lt;B&gt;,
+	R::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	<span class="comment">// Initialize voter state from AUX DB if compatible.
 	</span><span class="kw">crate</span>::aux_schema::load_persistent(backend)<span class="question-mark">?
@@ -903,7 +905,7 @@
 	</span>B: Block,
 	BE: Backend&lt;B&gt;,
 	R: ProvideRuntimeApi&lt;B&gt;,
-	R::Api: BeefyApi&lt;B&gt;,
+	R::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	<span class="kw">let </span>beefy_genesis = runtime
 		.runtime_api()
@@ -1007,7 +1009,7 @@
 <span class="kw">where
 	</span>B: Block,
 	R: ProvideRuntimeApi&lt;B&gt;,
-	R::Api: BeefyApi&lt;B&gt;,
+	R::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	<span class="macro">info!</span>(target: LOG_TARGET, <span class="string">&quot;🥩 BEEFY gadget waiting for BEEFY pallet to become available...&quot;</span>);
 	<span class="kw">loop </span>{
@@ -1047,7 +1049,7 @@
 <span class="kw">where
 	</span>B: Block,
 	R: ProvideRuntimeApi&lt;B&gt;,
-	R::Api: BeefyApi&lt;B&gt;,
+	R::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	runtime
 		.runtime_api()

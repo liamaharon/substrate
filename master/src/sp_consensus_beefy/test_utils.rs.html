@@ -127,13 +127,13 @@
 
 </span><span class="attr">#![cfg(feature = <span class="string">&quot;std&quot;</span>)]
 
-</span><span class="kw">use crate</span>::{crypto, Commitment, EquivocationProof, Payload, ValidatorSetId, VoteMessage};
+</span><span class="kw">use crate</span>::{ecdsa_crypto, Commitment, EquivocationProof, Payload, ValidatorSetId, VoteMessage};
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>sp_core::{ecdsa, keccak_256, Pair};
 <span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>strum::IntoEnumIterator;
 
-<span class="doccomment">/// Set of test accounts using [`crate::crypto`] types.
+<span class="doccomment">/// Set of test accounts using [`crate::ecdsa_crypto`] types.
 </span><span class="attr">#[allow(missing_docs)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, strum::Display, strum::EnumIter)]
 </span><span class="kw">pub enum </span>Keyring {
@@ -149,19 +149,19 @@
 
 <span class="kw">impl </span>Keyring {
 	<span class="doccomment">/// Sign `msg`.
-	</span><span class="kw">pub fn </span>sign(<span class="self">self</span>, msg: <span class="kw-2">&amp;</span>[u8]) -&gt; crypto::Signature {
+	</span><span class="kw">pub fn </span>sign(<span class="self">self</span>, msg: <span class="kw-2">&amp;</span>[u8]) -&gt; ecdsa_crypto::Signature {
 		<span class="comment">// todo: use custom signature hashing type
 		</span><span class="kw">let </span>msg = keccak_256(msg);
 		ecdsa::Pair::from(<span class="self">self</span>).sign_prehashed(<span class="kw-2">&amp;</span>msg).into()
 	}
 
 	<span class="doccomment">/// Return key pair.
-	</span><span class="kw">pub fn </span>pair(<span class="self">self</span>) -&gt; crypto::Pair {
+	</span><span class="kw">pub fn </span>pair(<span class="self">self</span>) -&gt; ecdsa_crypto::Pair {
 		ecdsa::Pair::from_string(<span class="self">self</span>.to_seed().as_str(), <span class="prelude-val">None</span>).unwrap().into()
 	}
 
 	<span class="doccomment">/// Return public key.
-	</span><span class="kw">pub fn </span>public(<span class="self">self</span>) -&gt; crypto::Public {
+	</span><span class="kw">pub fn </span>public(<span class="self">self</span>) -&gt; ecdsa_crypto::Public {
 		<span class="self">self</span>.pair().public()
 	}
 
@@ -171,19 +171,19 @@
 	}
 
 	<span class="doccomment">/// Get Keyring from public key.
-	</span><span class="kw">pub fn </span>from_public(who: <span class="kw-2">&amp;</span>crypto::Public) -&gt; <span class="prelude-ty">Option</span>&lt;Keyring&gt; {
-		<span class="self">Self</span>::iter().find(|<span class="kw-2">&amp;</span>k| <span class="kw-2">&amp;</span>crypto::Public::from(k) == who)
+	</span><span class="kw">pub fn </span>from_public(who: <span class="kw-2">&amp;</span>ecdsa_crypto::Public) -&gt; <span class="prelude-ty">Option</span>&lt;Keyring&gt; {
+		<span class="self">Self</span>::iter().find(|<span class="kw-2">&amp;</span>k| <span class="kw-2">&amp;</span>ecdsa_crypto::Public::from(k) == who)
 	}
 }
 
 <span class="macro">lazy_static::lazy_static! </span>{
-	<span class="kw">static </span><span class="kw-2">ref </span>PRIVATE_KEYS: HashMap&lt;Keyring, crypto::Pair&gt; =
+	<span class="kw">static </span><span class="kw-2">ref </span>PRIVATE_KEYS: HashMap&lt;Keyring, ecdsa_crypto::Pair&gt; =
 		Keyring::iter().map(|i| (i, i.pair())).collect();
-	<span class="kw">static </span><span class="kw-2">ref </span>PUBLIC_KEYS: HashMap&lt;Keyring, crypto::Public&gt; =
+	<span class="kw">static </span><span class="kw-2">ref </span>PUBLIC_KEYS: HashMap&lt;Keyring, ecdsa_crypto::Public&gt; =
 		PRIVATE_KEYS.iter().map(|(<span class="kw-2">&amp;</span>name, pair)| (name, pair.public())).collect();
 }
 
-<span class="kw">impl </span>From&lt;Keyring&gt; <span class="kw">for </span>crypto::Pair {
+<span class="kw">impl </span>From&lt;Keyring&gt; <span class="kw">for </span>ecdsa_crypto::Pair {
 	<span class="kw">fn </span>from(k: Keyring) -&gt; <span class="self">Self </span>{
 		k.pair()
 	}
@@ -195,7 +195,7 @@
 	}
 }
 
-<span class="kw">impl </span>From&lt;Keyring&gt; <span class="kw">for </span>crypto::Public {
+<span class="kw">impl </span>From&lt;Keyring&gt; <span class="kw">for </span>ecdsa_crypto::Public {
 	<span class="kw">fn </span>from(k: Keyring) -&gt; <span class="self">Self </span>{
 		(<span class="kw-2">*</span>PUBLIC_KEYS).get(<span class="kw-2">&amp;</span>k).cloned().unwrap()
 	}
@@ -205,7 +205,7 @@
 </span><span class="kw">pub fn </span>generate_equivocation_proof(
 	vote1: (u64, Payload, ValidatorSetId, <span class="kw-2">&amp;</span>Keyring),
 	vote2: (u64, Payload, ValidatorSetId, <span class="kw-2">&amp;</span>Keyring),
-) -&gt; EquivocationProof&lt;u64, crypto::Public, crypto::Signature&gt; {
+) -&gt; EquivocationProof&lt;u64, ecdsa_crypto::Public, ecdsa_crypto::Signature&gt; {
 	<span class="kw">let </span>signed_vote = |block_number: u64,
 	                   payload: Payload,
 	                   validator_set_id: ValidatorSetId,

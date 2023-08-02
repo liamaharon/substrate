@@ -520,7 +520,7 @@
 <span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>log::debug;
 <span class="kw">use </span>sp_consensus_beefy::{
-	crypto::{AuthorityId, Signature},
+	ecdsa_crypto::{AuthorityId, Signature},
 	Commitment, EquivocationProof, SignedCommitment, ValidatorSet, ValidatorSetId, VoteMessage,
 };
 <span class="kw">use </span>sp_runtime::traits::{Block, NumberFor};

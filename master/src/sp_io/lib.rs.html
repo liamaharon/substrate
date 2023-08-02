@@ -1897,6 +1897,24 @@
 <a href="#1897" id="1897">1897</a>
 <a href="#1898" id="1898">1898</a>
 <a href="#1899" id="1899">1899</a>
+<a href="#1900" id="1900">1900</a>
+<a href="#1901" id="1901">1901</a>
+<a href="#1902" id="1902">1902</a>
+<a href="#1903" id="1903">1903</a>
+<a href="#1904" id="1904">1904</a>
+<a href="#1905" id="1905">1905</a>
+<a href="#1906" id="1906">1906</a>
+<a href="#1907" id="1907">1907</a>
+<a href="#1908" id="1908">1908</a>
+<a href="#1909" id="1909">1909</a>
+<a href="#1910" id="1910">1910</a>
+<a href="#1911" id="1911">1911</a>
+<a href="#1912" id="1912">1912</a>
+<a href="#1913" id="1913">1913</a>
+<a href="#1914" id="1914">1914</a>
+<a href="#1915" id="1915">1915</a>
+<a href="#1916" id="1916">1916</a>
+<a href="#1917" id="1917">1917</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2001,6 +2019,9 @@
 	storage::StateVersion,
 	LogLevel, LogLevelFilter, OpaquePeerId, H256,
 };
+
+<span class="attr">#[cfg(feature = <span class="string">&quot;bls-experimental&quot;</span>)]
+</span><span class="kw">use </span>sp_core::bls377;
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>sp_trie::{LayoutV0, LayoutV1, TrieConfiguration};
@@ -3084,6 +3105,21 @@
 			.recover_ecdsa(<span class="kw-2">&amp;</span>msg, <span class="kw-2">&amp;</span>sig)
 			.map_err(|<span class="kw">_</span>| EcdsaVerifyError::BadSignature)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(pubkey.serialize())
+	}
+
+	<span class="attr">#[cfg(feature = <span class="string">&quot;bls-experimental&quot;</span>)]
+	</span><span class="doccomment">/// Generate an `bls12-377` key for the given key type using an optional `seed` and
+	/// store it in the keystore.
+	///
+	/// The `seed` needs to be a valid utf8.
+	///
+	/// Returns the public key.
+	</span><span class="kw">fn </span>bls377_generate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: KeyTypeId, seed: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; bls377::Public {
+		<span class="kw">let </span>seed = seed.as_ref().map(|s| std::str::from_utf8(s).expect(<span class="string">&quot;Seed is valid utf8!&quot;</span>));
+		<span class="self">self</span>.extension::&lt;KeystoreExt&gt;()
+			.expect(<span class="string">&quot;No `keystore` associated for the current context!&quot;</span>)
+			.bls377_generate_new(id, seed)
+			.expect(<span class="string">&quot;`bls377_generate` failed&quot;</span>)
 	}
 }
 

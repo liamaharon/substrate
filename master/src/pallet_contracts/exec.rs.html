@@ -3889,6 +3889,8 @@
 <a href="#3889" id="3889">3889</a>
 <a href="#3890" id="3890">3890</a>
 <a href="#3891" id="3891">3891</a>
+<a href="#3892" id="3892">3892</a>
+<a href="#3893" id="3893">3893</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3921,8 +3923,9 @@
 	ensure,
 	storage::{with_transaction, TransactionOutcome},
 	traits::{
-		tokens::{Fortitude::Polite, Preservation::Expendable},
-		Contains, Currency, ExistenceRequirement, OriginTrait, Randomness, Time,
+		fungible::{Inspect, Mutate},
+		tokens::{Fortitude::Polite, Preservation},
+		Contains, OriginTrait, Randomness, Time,
 	},
 	weights::Weight,
 	Blake2_128Concat, BoundedVec, StorageHasher,
@@ -4991,13 +4994,15 @@
 
 	<span class="doccomment">/// Transfer some funds from `from` to `to`.
 	</span><span class="kw">fn </span>transfer(
-		existence_requirement: ExistenceRequirement,
+		preservation: Preservation,
 		from: <span class="kw-2">&amp;</span>T::AccountId,
 		to: <span class="kw-2">&amp;</span>T::AccountId,
 		value: BalanceOf&lt;T&gt;,
 	) -&gt; DispatchResult {
-		T::Currency::transfer(from, to, value, existence_requirement)
-			.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TransferFailed)<span class="question-mark">?</span>;
+		<span class="kw">if </span>!value.is_zero() &amp;&amp; from != to {
+			T::Currency::transfer(from, to, value, preservation)
+				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TransferFailed)<span class="question-mark">?</span>;
+		}
 		<span class="prelude-val">Ok</span>(())
 	}
 
@@ -5021,7 +5026,7 @@
 			Origin::Root <span class="kw">if </span>value.is_zero() =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
 			Origin::Root =&gt; <span class="kw">return </span>DispatchError::RootNotAllowed.into(),
 		};
-		<span class="self">Self</span>::transfer(ExistenceRequirement::KeepAlive, <span class="kw-2">&amp;</span>caller, <span class="kw-2">&amp;</span>frame.account_id, value)
+		<span class="self">Self</span>::transfer(Preservation::Preserve, <span class="kw-2">&amp;</span>caller, <span class="kw-2">&amp;</span>frame.account_id, value)
 	}
 
 	<span class="doccomment">/// Reference to the current (top) frame.
@@ -5169,7 +5174,6 @@
 	}
 
 	<span class="kw">fn </span>terminate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, beneficiary: <span class="kw-2">&amp;</span>AccountIdOf&lt;<span class="self">Self</span>::T&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), DispatchError&gt; {
-		<span class="kw">use </span>frame_support::traits::fungible::Inspect;
 		<span class="kw">if </span><span class="self">self</span>.is_recursive() {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::TerminatedWhileReentrant.into())
 		}
@@ -5177,11 +5181,11 @@
 		<span class="kw">let </span>info = frame.terminate();
 		frame.nested_storage.terminate(<span class="kw-2">&amp;</span>info);
 		System::&lt;T&gt;::dec_consumers(<span class="kw-2">&amp;</span>frame.account_id);
-		T::Currency::transfer(
+		<span class="self">Self</span>::transfer(
+			Preservation::Expendable,
 			<span class="kw-2">&amp;</span>frame.account_id,
 			beneficiary,
-			T::Currency::reducible_balance(<span class="kw-2">&amp;</span>frame.account_id, Expendable, Polite),
-			ExistenceRequirement::AllowDeath,
+			T::Currency::reducible_balance(<span class="kw-2">&amp;</span>frame.account_id, Preservation::Expendable, Polite),
 		)<span class="question-mark">?</span>;
 		info.queue_trie_for_deletion();
 		ContractInfoOf::&lt;T&gt;::remove(<span class="kw-2">&amp;</span>frame.account_id);
@@ -5205,7 +5209,7 @@
 	}
 
 	<span class="kw">fn </span>transfer(<span class="kw-2">&amp;mut </span><span class="self">self</span>, to: <span class="kw-2">&amp;</span>T::AccountId, value: BalanceOf&lt;T&gt;) -&gt; DispatchResult {
-		<span class="self">Self</span>::transfer(ExistenceRequirement::KeepAlive, <span class="kw-2">&amp;</span><span class="self">self</span>.top_frame().account_id, to, value)
+		<span class="self">Self</span>::transfer(Preservation::Preserve, <span class="kw-2">&amp;</span><span class="self">self</span>.top_frame().account_id, to, value)
 	}
 
 	<span class="kw">fn </span>get_storage(<span class="kw-2">&amp;mut </span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>Key&lt;T&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
@@ -5268,7 +5272,7 @@
 	}
 
 	<span class="kw">fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BalanceOf&lt;T&gt; {
-		T::Currency::free_balance(<span class="kw-2">&amp;</span><span class="self">self</span>.top_frame().account_id)
+		T::Currency::balance(<span class="kw-2">&amp;</span><span class="self">self</span>.top_frame().account_id)
 	}
 
 	<span class="kw">fn </span>value_transferred(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; BalanceOf&lt;T&gt; {
@@ -5699,7 +5703,7 @@
 			set_balance(<span class="kw-2">&amp;</span>origin, <span class="number">100</span>);
 			set_balance(<span class="kw-2">&amp;</span>dest, <span class="number">0</span>);
 
-			MockStack::transfer(ExistenceRequirement::KeepAlive, <span class="kw-2">&amp;</span>origin, <span class="kw-2">&amp;</span>dest, <span class="number">55</span>).unwrap();
+			MockStack::transfer(Preservation::Preserve, <span class="kw-2">&amp;</span>origin, <span class="kw-2">&amp;</span>dest, <span class="number">55</span>).unwrap();
 
 			<span class="macro">assert_eq!</span>(get_balance(<span class="kw-2">&amp;</span>origin), <span class="number">45</span>);
 			<span class="macro">assert_eq!</span>(get_balance(<span class="kw-2">&amp;</span>dest), <span class="number">55</span>);
@@ -5837,7 +5841,7 @@
 		ExtBuilder::default().build().execute_with(|| {
 			set_balance(<span class="kw-2">&amp;</span>origin, <span class="number">0</span>);
 
-			<span class="kw">let </span>result = MockStack::transfer(ExistenceRequirement::KeepAlive, <span class="kw-2">&amp;</span>origin, <span class="kw-2">&amp;</span>dest, <span class="number">100</span>);
+			<span class="kw">let </span>result = MockStack::transfer(Preservation::Preserve, <span class="kw-2">&amp;</span>origin, <span class="kw-2">&amp;</span>dest, <span class="number">100</span>);
 
 			<span class="macro">assert_eq!</span>(result, <span class="prelude-val">Err</span>(Error::&lt;Test&gt;::TransferFailed.into()));
 			<span class="macro">assert_eq!</span>(get_balance(<span class="kw-2">&amp;</span>origin), <span class="number">0</span>);

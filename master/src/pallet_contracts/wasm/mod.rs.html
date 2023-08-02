@@ -3394,6 +3394,29 @@
 <a href="#3394" id="3394">3394</a>
 <a href="#3395" id="3395">3395</a>
 <a href="#3396" id="3396">3396</a>
+<a href="#3397" id="3397">3397</a>
+<a href="#3398" id="3398">3398</a>
+<a href="#3399" id="3399">3399</a>
+<a href="#3400" id="3400">3400</a>
+<a href="#3401" id="3401">3401</a>
+<a href="#3402" id="3402">3402</a>
+<a href="#3403" id="3403">3403</a>
+<a href="#3404" id="3404">3404</a>
+<a href="#3405" id="3405">3405</a>
+<a href="#3406" id="3406">3406</a>
+<a href="#3407" id="3407">3407</a>
+<a href="#3408" id="3408">3408</a>
+<a href="#3409" id="3409">3409</a>
+<a href="#3410" id="3410">3410</a>
+<a href="#3411" id="3411">3411</a>
+<a href="#3412" id="3412">3412</a>
+<a href="#3413" id="3413">3413</a>
+<a href="#3414" id="3414">3414</a>
+<a href="#3415" id="3415">3415</a>
+<a href="#3416" id="3416">3416</a>
+<a href="#3417" id="3417">3417</a>
+<a href="#3418" id="3418">3418</a>
+<a href="#3419" id="3419">3419</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3433,14 +3456,14 @@
 	gas::{GasMeter, Token},
 	wasm::prepare::LoadedModule,
 	weights::WeightInfo,
-	AccountIdOf, BadOrigin, BalanceOf, CodeHash, CodeInfoOf, CodeVec, Config, Error, Event, Pallet,
-	PristineCode, Schedule, Weight, LOG_TARGET,
+	AccountIdOf, BadOrigin, BalanceOf, CodeHash, CodeInfoOf, CodeVec, Config, Error, Event,
+	HoldReason, Pallet, PristineCode, Schedule, Weight, LOG_TARGET,
 };
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>frame_support::{
 	dispatch::{DispatchError, DispatchResult},
 	ensure,
-	traits::ReservableCurrency,
+	traits::{fungible::MutateHold, tokens::Precision::BestEffort},
 };
 <span class="kw">use </span>sp_core::Get;
 <span class="kw">use </span>sp_runtime::RuntimeDebug;
@@ -3633,12 +3656,24 @@
 				// the `owner` is always the origin of the current transaction.
 				</span><span class="prelude-val">None </span>=&gt; {
 					<span class="kw">let </span>deposit = <span class="self">self</span>.code_info.deposit;
-					T::Currency::reserve(<span class="kw-2">&amp;</span><span class="self">self</span>.code_info.owner, deposit)
-						.map_err(|<span class="kw">_</span>| &lt;Error&lt;T&gt;&gt;::StorageDepositNotEnoughFunds)<span class="question-mark">?</span>;
+					T::Currency::hold(
+						<span class="kw-2">&amp;</span>HoldReason::CodeUploadDepositReserve.into(),
+						<span class="kw-2">&amp;</span><span class="self">self</span>.code_info.owner,
+						deposit,
+					)
+					.map_err(|<span class="kw">_</span>| &lt;Error&lt;T&gt;&gt;::StorageDepositNotEnoughFunds)<span class="question-mark">?</span>;
+
 					<span class="self">self</span>.code_info.refcount = <span class="number">0</span>;
 					&lt;PristineCode&lt;T&gt;&gt;::insert(code_hash, <span class="kw-2">&amp;</span><span class="self">self</span>.code);
 					<span class="kw-2">*</span>stored_code_info = <span class="prelude-val">Some</span>(<span class="self">self</span>.code_info.clone());
-					&lt;Pallet&lt;T&gt;&gt;::deposit_event(<span class="macro">vec!</span>[code_hash], Event::CodeStored { code_hash });
+					&lt;Pallet&lt;T&gt;&gt;::deposit_event(
+						<span class="macro">vec!</span>[code_hash],
+						Event::CodeStored {
+							code_hash,
+							deposit_held: deposit,
+							uploader: <span class="self">self</span>.code_info.owner.clone(),
+						},
+					);
 					<span class="prelude-val">Ok</span>(deposit)
 				},
 			}
@@ -3651,10 +3686,21 @@
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(code_info) = existing {
 				<span class="macro">ensure!</span>(code_info.refcount == <span class="number">0</span>, &lt;Error&lt;T&gt;&gt;::CodeInUse);
 				<span class="macro">ensure!</span>(<span class="kw-2">&amp;</span>code_info.owner == origin, BadOrigin);
-				T::Currency::unreserve(<span class="kw-2">&amp;</span>code_info.owner, code_info.deposit);
+				<span class="kw">let _ </span>= T::Currency::release(
+					<span class="kw-2">&amp;</span>HoldReason::CodeUploadDepositReserve.into(),
+					<span class="kw-2">&amp;</span>code_info.owner,
+					code_info.deposit,
+					BestEffort,
+				);
+				<span class="kw">let </span>deposit_released = code_info.deposit;
+				<span class="kw">let </span>remover = code_info.owner.clone();
+
 				<span class="kw-2">*</span>existing = <span class="prelude-val">None</span>;
 				&lt;PristineCode&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>code_hash);
-				&lt;Pallet&lt;T&gt;&gt;::deposit_event(<span class="macro">vec!</span>[code_hash], Event::CodeRemoved { code_hash });
+				&lt;Pallet&lt;T&gt;&gt;::deposit_event(
+					<span class="macro">vec!</span>[code_hash],
+					Event::CodeRemoved { code_hash, deposit_released, remover },
+				);
 				<span class="prelude-val">Ok</span>(())
 			} <span class="kw">else </span>{
 				<span class="prelude-val">Err</span>(&lt;Error&lt;T&gt;&gt;::CodeNotFound.into())

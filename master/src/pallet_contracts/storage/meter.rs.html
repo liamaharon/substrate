@@ -866,6 +866,8 @@
 <a href="#866" id="866">866</a>
 <a href="#867" id="867">867</a>
 <a href="#868" id="868">868</a>
+<a href="#869" id="869">869</a>
+<a href="#870" id="870">870</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -894,8 +896,9 @@
 	dispatch::{fmt::Debug, DispatchError},
 	ensure,
 	traits::{
-		tokens::{Fortitude::Polite, Preservation::Protect, WithdrawConsequence},
-		Currency, ExistenceRequirement, Get,
+		fungible::Mutate,
+		tokens::{Fortitude::Polite, Preservation, WithdrawConsequence},
+		Get,
 	},
 	DefaultNoBound, RuntimeDebugNoBound,
 };
@@ -905,7 +908,7 @@
 };
 <span class="kw">use </span>sp_std::{marker::PhantomData, vec::Vec};
 
-<span class="doccomment">/// Deposit that uses the native currency&#39;s balance type.
+<span class="doccomment">/// Deposit that uses the native fungible&#39;s balance type.
 </span><span class="kw">pub type </span>DepositOf&lt;T&gt; = Deposit&lt;BalanceOf&lt;T&gt;&gt;;
 
 <span class="doccomment">/// A production root storage meter that actually charges from its origin.
@@ -957,7 +960,7 @@
 
 <span class="doccomment">/// This [`Ext`] is used for actual on-chain execution when balance needs to be charged.
 ///
-/// It uses [`frame_support::traits::ReservableCurrency`] in order to do accomplish the reserves.
+/// It uses [`frame_support::traits::fungible::Mutate`] in order to do accomplish the reserves.
 </span><span class="kw">pub enum </span>ReservingExt {}
 
 <span class="doccomment">/// Used to implement a type state pattern for the meter.
@@ -1321,7 +1324,7 @@
 		System::&lt;T&gt;::inc_consumers(contract_info.deposit_account())<span class="question-mark">?</span>;
 
 		<span class="comment">// We also need to make sure that the contract&#39;s account itself exists.
-		</span>T::Currency::transfer(origin, contract, ed, ExistenceRequirement::KeepAlive)<span class="question-mark">?</span>;
+		</span>T::Currency::transfer(origin, contract, ed, Preservation::Preserve)<span class="question-mark">?</span>;
 		System::&lt;T&gt;::inc_consumers(contract)<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(deposit)
@@ -1385,7 +1388,7 @@
 		<span class="comment">// We are sending the `min_leftover` and the `min_balance` from the origin
 		// account as part of a contract call. Hence origin needs to have those left over
 		// as free balance after accounting for all deposits.
-		</span><span class="kw">let </span>max = T::Currency::reducible_balance(origin, Protect, Polite)
+		</span><span class="kw">let </span>max = T::Currency::reducible_balance(origin, Preservation::Preserve, Polite)
 			.saturating_sub(min_leftover)
 			.saturating_sub(Pallet::&lt;T&gt;::min_balance());
 		<span class="kw">let </span>default = max.min(T::DefaultDepositLimit::get());
@@ -1405,12 +1408,11 @@
 		terminated: bool,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), DispatchError&gt; {
 		<span class="kw">match </span>amount {
-			Deposit::Charge(amount) =&gt; T::Currency::transfer(
-				origin,
-				deposit_account,
-				<span class="kw-2">*</span>amount,
-				ExistenceRequirement::KeepAlive,
-			),
+			Deposit::Charge(amount) | Deposit::Refund(amount) <span class="kw">if </span>amount.is_zero() =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
+			Deposit::Charge(amount) =&gt; {
+				T::Currency::transfer(origin, deposit_account, <span class="kw-2">*</span>amount, Preservation::Preserve)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(())
+			},
 			Deposit::Refund(amount) =&gt; {
 				<span class="kw">if </span>terminated {
 					System::&lt;T&gt;::dec_consumers(<span class="kw-2">&amp;</span>deposit_account);
@@ -1419,9 +1421,11 @@
 					deposit_account,
 					origin,
 					<span class="kw-2">*</span>amount,
-					<span class="comment">// We can safely use `AllowDeath` because our own consumer prevents an removal.
-					</span>ExistenceRequirement::AllowDeath,
-				)
+					<span class="comment">// We can safely make it `Expendable` because our own consumer prevents a
+					// removal.
+					</span>Preservation::Expendable,
+				)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(())
 			},
 		}
 	}

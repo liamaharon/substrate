@@ -243,6 +243,13 @@
 <a href="#243" id="243">243</a>
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -271,7 +278,7 @@
 //! but we imagine they will be useful for other chains that either want to bridge with Polkadot
 //! or are completely standalone, but heavily inspired by Polkadot.
 
-</span><span class="kw">use crate</span>::{crypto::AuthorityId, ConsensusLog, MmrRootHash, Vec, BEEFY_ENGINE_ID};
+</span><span class="kw">use crate</span>::{ecdsa_crypto::AuthorityId, ConsensusLog, MmrRootHash, Vec, BEEFY_ENGINE_ID};
 <span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="kw">use </span>sp_runtime::{
@@ -347,7 +354,7 @@
 <span class="doccomment">/// Details of a BEEFY authority set.
 </span><span class="attr">#[derive(Debug, Default, PartialEq, Eq, Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(serde::Serialize, serde::Deserialize))]
-</span><span class="kw">pub struct </span>BeefyAuthoritySet&lt;MerkleRoot&gt; {
+</span><span class="kw">pub struct </span>BeefyAuthoritySet&lt;AuthoritySetCommitment&gt; {
 	<span class="doccomment">/// Id of the set.
 	///
 	/// Id is required to correlate BEEFY signed commitments with the validator set.
@@ -360,12 +367,19 @@
 	/// of signatures. We put set length here, so that these clients can verify the minimal
 	/// number of required signatures.
 	</span><span class="kw">pub </span>len: u32,
-	<span class="doccomment">/// Merkle Root Hash built from BEEFY AuthorityIds.
+
+	<span class="doccomment">/// Commitment(s) to BEEFY AuthorityIds.
 	///
 	/// This is used by Light Clients to confirm that the commitments are signed by the correct
 	/// validator set. Light Clients using interactive protocol, might verify only subset of
 	/// signatures, hence don&#39;t require the full list here (will receive inclusion proofs).
-	</span><span class="kw">pub </span>root: MerkleRoot,
+	///
+	/// This could be Merkle Root Hash built from BEEFY ECDSA public keys and/or
+	/// polynomial commitment to the polynomial interpolating BLS public keys
+	/// which is used by APK proof based light clients to verify the validity
+	/// of aggregated BLS keys using APK proofs.
+	/// Multiple commitments can be tupled together.
+	</span><span class="kw">pub </span>keyset_commitment: AuthoritySetCommitment,
 }
 
 <span class="doccomment">/// Details of the next BEEFY authority set.
