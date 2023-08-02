@@ -2212,6 +2212,8 @@
 <a href="#2212" id="2212">2212</a>
 <a href="#2213" id="2213">2213</a>
 <a href="#2214" id="2214">2214</a>
+<a href="#2215" id="2215">2215</a>
+<a href="#2216" id="2216">2216</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2266,16 +2268,18 @@
 {
 }
 
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>i128 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>u128 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>i64 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>u64 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>i32 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>u32 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>i16 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>u16 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>i8 {}
-<span class="kw">impl </span>FixedPointOperand <span class="kw">for </span>u8 {}
+<span class="kw">impl</span>&lt;T&gt; FixedPointOperand <span class="kw">for </span>T <span class="kw">where
+	</span>T: Copy
+		+ Clone
+		+ Bounded
+		+ Zero
+		+ Saturating
+		+ PartialOrd
+		+ UniqueSaturatedInto&lt;u128&gt;
+		+ TryFrom&lt;u128&gt;
+		+ CheckedNeg
+{
+}
 
 <span class="doccomment">/// Something that implements a decimal fixed point number.
 ///

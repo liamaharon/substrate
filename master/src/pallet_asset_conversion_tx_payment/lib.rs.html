@@ -347,12 +347,6 @@
 <a href="#347" id="347">347</a>
 <a href="#348" id="348">348</a>
 <a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -415,7 +409,6 @@
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
-	FixedPointOperand,
 };
 
 <span class="attr">#[cfg(test)]
@@ -520,12 +513,8 @@
 <span class="kw">impl</span>&lt;T: Config&gt; ChargeAssetTxPayment&lt;T&gt;
 <span class="kw">where
 	</span>T::RuntimeCall: Dispatchable&lt;Info = DispatchInfo, PostInfo = PostDispatchInfo&gt;,
-	AssetBalanceOf&lt;T&gt;: Send + Sync + FixedPointOperand,
-	BalanceOf&lt;T&gt;: Send
-		+ Sync
-		+ FixedPointOperand
-		+ Into&lt;ChargeAssetBalanceOf&lt;T&gt;&gt;
-		+ From&lt;ChargeAssetLiquidityOf&lt;T&gt;&gt;,
+	AssetBalanceOf&lt;T&gt;: Send + Sync,
+	BalanceOf&lt;T&gt;: Send + Sync + Into&lt;ChargeAssetBalanceOf&lt;T&gt;&gt; + From&lt;ChargeAssetLiquidityOf&lt;T&gt;&gt;,
 	ChargeAssetIdOf&lt;T&gt;: Send + Sync,
 {
 	<span class="doccomment">/// Utility constructor. Used only in client/factory code.
@@ -589,11 +578,10 @@
 <span class="kw">impl</span>&lt;T: Config&gt; SignedExtension <span class="kw">for </span>ChargeAssetTxPayment&lt;T&gt;
 <span class="kw">where
 	</span>T::RuntimeCall: Dispatchable&lt;Info = DispatchInfo, PostInfo = PostDispatchInfo&gt;,
-	AssetBalanceOf&lt;T&gt;: Send + Sync + FixedPointOperand,
+	AssetBalanceOf&lt;T&gt;: Send + Sync,
 	BalanceOf&lt;T&gt;: Send
 		+ Sync
 		+ From&lt;u64&gt;
-		+ FixedPointOperand
 		+ Into&lt;ChargeAssetBalanceOf&lt;T&gt;&gt;
 		+ Into&lt;ChargeAssetLiquidityOf&lt;T&gt;&gt;
 		+ From&lt;ChargeAssetLiquidityOf&lt;T&gt;&gt;,

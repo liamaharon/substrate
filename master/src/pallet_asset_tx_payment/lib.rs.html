@@ -312,7 +312,6 @@
 <a href="#312" id="312">312</a>
 <a href="#313" id="313">313</a>
 <a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
@@ -371,7 +370,6 @@
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
-	FixedPointOperand,
 };
 
 <span class="attr">#[cfg(test)]
@@ -471,8 +469,8 @@
 <span class="kw">impl</span>&lt;T: Config&gt; ChargeAssetTxPayment&lt;T&gt;
 <span class="kw">where
 	</span>T::RuntimeCall: Dispatchable&lt;Info = DispatchInfo, PostInfo = PostDispatchInfo&gt;,
-	AssetBalanceOf&lt;T&gt;: Send + Sync + FixedPointOperand,
-	BalanceOf&lt;T&gt;: Send + Sync + FixedPointOperand + IsType&lt;ChargeAssetBalanceOf&lt;T&gt;&gt;,
+	AssetBalanceOf&lt;T&gt;: Send + Sync,
+	BalanceOf&lt;T&gt;: Send + Sync + IsType&lt;ChargeAssetBalanceOf&lt;T&gt;&gt;,
 	ChargeAssetIdOf&lt;T&gt;: Send + Sync,
 	Credit&lt;T::AccountId, T::Fungibles&gt;: IsType&lt;ChargeAssetLiquidityOf&lt;T&gt;&gt;,
 {
@@ -528,8 +526,8 @@
 <span class="kw">impl</span>&lt;T: Config&gt; SignedExtension <span class="kw">for </span>ChargeAssetTxPayment&lt;T&gt;
 <span class="kw">where
 	</span>T::RuntimeCall: Dispatchable&lt;Info = DispatchInfo, PostInfo = PostDispatchInfo&gt;,
-	AssetBalanceOf&lt;T&gt;: Send + Sync + FixedPointOperand,
-	BalanceOf&lt;T&gt;: Send + Sync + From&lt;u64&gt; + FixedPointOperand + IsType&lt;ChargeAssetBalanceOf&lt;T&gt;&gt;,
+	AssetBalanceOf&lt;T&gt;: Send + Sync,
+	BalanceOf&lt;T&gt;: Send + Sync + From&lt;u64&gt; + IsType&lt;ChargeAssetBalanceOf&lt;T&gt;&gt;,
 	ChargeAssetIdOf&lt;T&gt;: Send + Sync,
 	Credit&lt;T::AccountId, T::Fungibles&gt;: IsType&lt;ChargeAssetLiquidityOf&lt;T&gt;&gt;,
 {

@@ -236,13 +236,6 @@
 <a href="#236" id="236">236</a>
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -304,11 +297,8 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-</span><span class="kw">use </span>frame_support::traits::{
-	fungible::Inspect,
-	tokens::{Balance, ConversionFromAssetBalance},
-};
-<span class="kw">use </span>sp_runtime::{traits::Zero, FixedPointNumber, FixedPointOperand, FixedU128};
+</span><span class="kw">use </span>frame_support::traits::{fungible::Inspect, tokens::ConversionFromAssetBalance};
+<span class="kw">use </span>sp_runtime::{traits::Zero, FixedPointNumber, FixedU128};
 
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 <span class="kw">pub use </span>weights::WeightInfo;
@@ -356,11 +346,8 @@
 		<span class="doccomment">/// The origin permissioned to update an existiing conversion rate for an asset.
 		</span><span class="kw">type </span>UpdateOrigin: EnsureOrigin&lt;<span class="self">Self</span>::RuntimeOrigin&gt;;
 
-		<span class="doccomment">/// The units in which we record balances.
-		</span><span class="kw">type </span>Balance: Balance + FixedPointOperand;
-
 		<span class="doccomment">/// The currency mechanism for this pallet.
-		</span><span class="kw">type </span>Currency: Inspect&lt;<span class="self">Self</span>::AccountId, Balance = <span class="self">Self</span>::Balance&gt;;
+		</span><span class="kw">type </span>Currency: Inspect&lt;<span class="self">Self</span>::AccountId&gt;;
 
 		<span class="doccomment">/// The type for asset kinds for which the conversion rate to native balance is set.
 		</span><span class="kw">type </span>AssetKind: Parameter + MaxEncodedLen;
@@ -475,7 +462,6 @@
 </span><span class="kw">impl</span>&lt;T&gt; ConversionFromAssetBalance&lt;BalanceOf&lt;T&gt;, AssetKindOf&lt;T&gt;, BalanceOf&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt;
 <span class="kw">where
 	</span>T: Config,
-	BalanceOf&lt;T&gt;: FixedPointOperand + Zero,
 {
 	<span class="kw">type </span>Error = pallet::Error&lt;T&gt;;
 
