@@ -1213,13 +1213,6 @@
 <a href="#1213" id="1213">1213</a>
 <a href="#1214" id="1214">1214</a>
 <a href="#1215" id="1215">1215</a>
-<a href="#1216" id="1216">1216</a>
-<a href="#1217" id="1217">1217</a>
-<a href="#1218" id="1218">1218</a>
-<a href="#1219" id="1219">1219</a>
-<a href="#1220" id="1220">1220</a>
-<a href="#1221" id="1221">1221</a>
-<a href="#1222" id="1222">1222</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1277,6 +1270,7 @@
 <span class="kw">use </span>libp2p::{
 	core::{Endpoint, Multiaddr},
 	kad::{
+		<span class="self">self</span>,
 		record::store::{MemoryStore, RecordStore},
 		GetClosestPeersError, GetRecordOk, Kademlia, KademliaBucketInserts, KademliaConfig,
 		KademliaEvent, QueryId, QueryResult, Quorum, Record, RecordKey,
@@ -1444,6 +1438,9 @@
 
 			<span class="kw">let </span>store = MemoryStore::new(local_peer_id);
 			<span class="kw">let </span><span class="kw-2">mut </span>kad = Kademlia::with_config(local_peer_id, store, config);
+			<span class="comment">// Always set the mode to server, so that any node can accept incoming Kademlia
+			// requests. Otherwise, the connectivity degrades significantly.
+			</span>kad.set_mode(<span class="prelude-val">Some</span>(kad::Mode::Server));
 
 			<span class="kw">for </span>(peer_id, addr) <span class="kw">in </span><span class="kw-2">&amp;</span>permanent_addresses {
 				kad.add_address(peer_id, addr.clone());
@@ -2205,7 +2202,7 @@
 			upgrade,
 		},
 		identity::Keypair,
-		kad, noise,
+		noise,
 		swarm::{Executor, Swarm, SwarmBuilder, SwarmEvent},
 		yamux, Multiaddr,
 	};
@@ -2259,17 +2256,6 @@
 					TokioExecutor(runtime),
 				)
 				.build();
-
-				<span class="comment">// Set the Kademlia mode to server so that it can accept incoming requests.
-				//
-				// Note: the server mode is set automatically when the node learns its external
-				// address, but that does not happen in tests =&gt; hence we set it manually.
-				</span>swarm
-					.behaviour_mut()
-					.kademlia
-					.as_mut()
-					.unwrap()
-					.set_mode(<span class="prelude-val">Some</span>(kad::Mode::Server));
 
 				<span class="kw">let </span>listen_addr: Multiaddr =
 					<span class="macro">format!</span>(<span class="string">&quot;/memory/{}&quot;</span>, rand::random::&lt;u64&gt;()).parse().unwrap();
