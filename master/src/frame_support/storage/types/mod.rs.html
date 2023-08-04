@@ -138,6 +138,8 @@
 <a href="#138" id="138">138</a>
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -163,6 +165,7 @@
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 
 <span class="kw">mod </span>counted_map;
+<span class="kw">mod </span>counted_nmap;
 <span class="kw">mod </span>double_map;
 <span class="kw">mod </span>key;
 <span class="kw">mod </span>map;
@@ -170,6 +173,7 @@
 <span class="kw">mod </span>value;
 
 <span class="kw">pub use </span>counted_map::{CountedStorageMap, CountedStorageMapInstance};
+<span class="kw">pub use </span>counted_nmap::{CountedStorageNMap, CountedStorageNMapInstance};
 <span class="kw">pub use </span>double_map::StorageDoubleMap;
 <span class="kw">pub use </span>key::{
 	EncodeLikeTuple, HasKeyPrefix, HasReversibleKeyPrefix, Key, KeyGenerator,

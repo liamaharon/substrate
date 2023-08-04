@@ -2012,6 +2012,7 @@
 <a href="#2012" id="2012">2012</a>
 <a href="#2013" id="2013">2013</a>
 <a href="#2014" id="2014">2014</a>
+<a href="#2015" id="2015">2015</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3442,6 +3443,7 @@
 	<span class="kw">impl</span>&lt;K, V, S&gt; Sealed <span class="kw">for </span>bounded_btree_map::BoundedBTreeMap&lt;K, V, S&gt; {}
 	<span class="kw">impl</span>&lt;T, S&gt; Sealed <span class="kw">for </span>bounded_btree_set::BoundedBTreeSet&lt;T, S&gt; {}
 	<span class="kw">impl</span>&lt;T: Encode&gt; Sealed <span class="kw">for </span>BTreeSet&lt;T&gt; {}
+	<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, T: EncodeLike&lt;U&gt;, U: Encode&gt; Sealed <span class="kw">for </span>codec::Ref&lt;<span class="lifetime">&#39;a</span>, T, U&gt; {}
 
 	<span class="macro">macro_rules! </span>impl_sealed_for_tuple {
 		($(<span class="macro-nonterminal">$elem</span>:ident),+) =&gt; {
