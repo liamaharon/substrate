@@ -3891,6 +3891,18 @@
 <a href="#3891" id="3891">3891</a>
 <a href="#3892" id="3892">3892</a>
 <a href="#3893" id="3893">3893</a>
+<a href="#3894" id="3894">3894</a>
+<a href="#3895" id="3895">3895</a>
+<a href="#3896" id="3896">3896</a>
+<a href="#3897" id="3897">3897</a>
+<a href="#3898" id="3898">3898</a>
+<a href="#3899" id="3899">3899</a>
+<a href="#3900" id="3900">3900</a>
+<a href="#3901" id="3901">3901</a>
+<a href="#3902" id="3902">3902</a>
+<a href="#3903" id="3903">3903</a>
+<a href="#3904" id="3904">3904</a>
+<a href="#3905" id="3905">3905</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3908,7 +3920,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="kw">use crate</span>::{
+</span><span class="attr">#[cfg(feature = <span class="string">&quot;unsafe-debug&quot;</span>)]
+</span><span class="kw">use </span><span class="kw">crate</span>::unsafe_debug::ExecutionObserver;
+<span class="kw">use crate</span>::{
 	gas::GasMeter,
 	storage::{<span class="self">self</span>, DepositAccount, WriteOutcome},
 	BalanceOf, CodeHash, CodeInfo, CodeInfoOf, Config, ContractInfo, ContractInfoOf,
@@ -4237,7 +4251,7 @@
 }
 
 <span class="doccomment">/// Describes the different functions that can be exported by an [`Executable`].
-</span><span class="attr">#[derive(Clone, Copy, PartialEq)]
+</span><span class="attr">#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 </span><span class="kw">pub enum </span>ExportedFunction {
 	<span class="doccomment">/// The constructor function which is executed on deployment of a contract.
 	</span>Constructor,
@@ -4797,10 +4811,20 @@
 			<span class="comment">// Every non delegate call or instantiate also optionally transfers the balance.
 			</span><span class="self">self</span>.initial_transfer()<span class="question-mark">?</span>;
 
+			<span class="attr">#[cfg(feature = <span class="string">&quot;unsafe-debug&quot;</span>)]
+			</span><span class="kw">let </span>(code_hash, input_clone) = {
+				<span class="kw">let </span>code_hash = <span class="kw-2">*</span>executable.code_hash();
+				T::Debug::before_call(<span class="kw-2">&amp;</span>code_hash, entry_point, <span class="kw-2">&amp;</span>input_data);
+				(code_hash, input_data.clone())
+			};
+
 			<span class="comment">// Call into the Wasm blob.
 			</span><span class="kw">let </span>output = executable
 				.execute(<span class="self">self</span>, <span class="kw-2">&amp;</span>entry_point, input_data)
 				.map_err(|e| ExecError { error: e.error, origin: ErrorOrigin::Callee })<span class="question-mark">?</span>;
+
+			<span class="attr">#[cfg(feature = <span class="string">&quot;unsafe-debug&quot;</span>)]
+			</span>T::Debug::after_call(<span class="kw-2">&amp;</span>code_hash, entry_point, input_clone, <span class="kw-2">&amp;</span>output);
 
 			<span class="comment">// Avoid useless work that would be reverted anyways.
 			</span><span class="kw">if </span>output.did_revert() {

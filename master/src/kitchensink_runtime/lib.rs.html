@@ -2641,6 +2641,8 @@
 <a href="#2641" id="2641">2641</a>
 <a href="#2642" id="2642">2642</a>
 <a href="#2643" id="2643">2643</a>
+<a href="#2644" id="2644">2644</a>
+<a href="#2645" id="2645">2645</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3901,6 +3903,8 @@
 	</span><span class="kw">type </span>Migrations = pallet_contracts::migration::codegen::BenchMigrations;
 	<span class="kw">type </span>MaxDelegateDependencies = ConstU32&lt;<span class="number">32</span>&gt;;
 	<span class="kw">type </span>CodeHashLockupDepositPercent = CodeHashLockupDepositPercent;
+	<span class="attr">#[cfg(feature = <span class="string">&quot;unsafe-debug&quot;</span>)]
+	</span><span class="kw">type </span>Debug = ();
 }
 
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {

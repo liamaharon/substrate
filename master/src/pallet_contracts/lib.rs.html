@@ -1646,6 +1646,15 @@
 <a href="#1646" id="1646">1646</a>
 <a href="#1647" id="1647">1647</a>
 <a href="#1648" id="1648">1648</a>
+<a href="#1649" id="1649">1649</a>
+<a href="#1650" id="1650">1650</a>
+<a href="#1651" id="1651">1651</a>
+<a href="#1652" id="1652">1652</a>
+<a href="#1653" id="1653">1653</a>
+<a href="#1654" id="1654">1654</a>
+<a href="#1655" id="1655">1655</a>
+<a href="#1656" id="1656">1656</a>
+<a href="#1657" id="1657">1657</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1745,6 +1754,7 @@
 
 <span class="kw">pub mod </span>chain_extension;
 <span class="kw">pub mod </span>migration;
+<span class="kw">pub mod </span>unsafe_debug;
 <span class="kw">pub mod </span>weights;
 
 <span class="attr">#[cfg(test)]
@@ -1999,6 +2009,14 @@
 		/// type Migrations = (v10::Migration&lt;Runtime, Currency&gt;,);
 		/// ```
 		</span><span class="kw">type </span>Migrations: MigrateSequence;
+
+		<span class="doccomment">/// Type that provides debug handling for the contract execution process.
+		///
+		/// # Warning
+		///
+		/// Do **not** use it in a production environment or for benchmarking purposes.
+		</span><span class="attr">#[cfg(feature = <span class="string">&quot;unsafe-debug&quot;</span>)]
+		</span><span class="kw">type </span>Debug: unsafe_debug::UnsafeDebug&lt;<span class="self">Self</span>&gt;;
 	}
 
 	<span class="attr">#[pallet::hooks]
