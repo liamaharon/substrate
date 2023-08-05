@@ -175,18 +175,18 @@
 //! ## Examples
 //!
 //! 1. **Appending** some data to the list can happen either by [`Pallet::append_one`]:
-</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;frame/paged-list/src/tests.rs&quot;</span>, append_one_works)]
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, append_one_works)]
 </span><span class="doccomment">//! 2. or by [`Pallet::append_many`]. This should always be preferred to repeated calls to
 //! [`Pallet::append_one`]:
-</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;frame/paged-list/src/tests.rs&quot;</span>, append_many_works)]
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, append_many_works)]
 </span><span class="doccomment">//! 3. If you want to append many values (ie. in a loop), then best use the [`Pallet::appender`]:
-</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;frame/paged-list/src/tests.rs&quot;</span>, appender_works)]
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, appender_works)]
 </span><span class="doccomment">//! 4. **Iterating** over the list can be done with [`Pallet::iter`]. It uses the standard
 //! `Iterator` trait:
-</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;frame/paged-list/src/tests.rs&quot;</span>, iter_works)]
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, iter_works)]
 </span><span class="doccomment">//! 5. **Draining** elements happens through the [`Pallet::drain`] iterator. Note that even
 //! *peeking* a value will already remove it.
-</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;frame/paged-list/src/tests.rs&quot;</span>, drain_works)]
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, drain_works)]
 </span><span class="doccomment">//!
 //! ## Pallet API
 //!
