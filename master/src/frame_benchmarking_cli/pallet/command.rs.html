@@ -760,12 +760,6 @@
 <a href="#760" id="760">760</a>
 <a href="#761" id="761">761</a>
 <a href="#762" id="762">762</a>
-<a href="#763" id="763">763</a>
-<a href="#764" id="764">764</a>
-<a href="#765" id="765">765</a>
-<a href="#766" id="766">766</a>
-<a href="#767" id="767">767</a>
-<a href="#768" id="768">768</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1399,12 +1393,6 @@ not created by a node that was compiled with the flag&quot;</span>;
 				<span class="macro">println!</span>(<span class="string">&quot;Raw Storage Info\n========&quot;</span>);
 				<span class="kw">for </span>comment <span class="kw">in </span>comments {
 					<span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, comment);
-				}
-				<span class="macro">println!</span>();
-
-				<span class="macro">println!</span>(<span class="string">&quot;-- Proof Sizes --\n&quot;</span>);
-				<span class="kw">for </span>result <span class="kw">in </span>batch.db_results.iter() {
-					<span class="macro">println!</span>(<span class="string">&quot;{} bytes&quot;</span>, result.proof_size);
 				}
 				<span class="macro">println!</span>();
 			}
