@@ -1303,7 +1303,6 @@
 <a href="#1303" id="1303">1303</a>
 <a href="#1304" id="1304">1304</a>
 <a href="#1305" id="1305">1305</a>
-<a href="#1306" id="1306">1306</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2022 Parity Technologies (UK) Ltd.
@@ -1787,22 +1786,21 @@
 				} <span class="kw">else </span>{
 					(amount2_desired, amount1_desired, amount2_min, amount1_min)
 				};
-			<span class="kw">let </span>(asset1, asset2) = pool_id.clone();
-
 			<span class="macro">ensure!</span>(
 				amount1_desired &gt; Zero::zero() &amp;&amp; amount2_desired &gt; Zero::zero(),
 				Error::&lt;T&gt;::WrongDesiredAmount
 			);
 
-			<span class="kw">let </span>maybe_pool = Pools::&lt;T&gt;::get(pool_id.clone());
+			<span class="kw">let </span>maybe_pool = Pools::&lt;T&gt;::get(<span class="kw-2">&amp;</span>pool_id);
 			<span class="kw">let </span>pool = maybe_pool.as_ref().ok_or(Error::&lt;T&gt;::PoolNotFound)<span class="question-mark">?</span>;
+			<span class="kw">let </span>pool_account = <span class="self">Self</span>::get_pool_account(<span class="kw-2">&amp;</span>pool_id);
+
+			<span class="kw">let </span>(asset1, asset2) = <span class="kw-2">&amp;</span>pool_id;
+			<span class="kw">let </span>reserve1 = <span class="self">Self</span>::get_balance(<span class="kw-2">&amp;</span>pool_account, asset1)<span class="question-mark">?</span>;
+			<span class="kw">let </span>reserve2 = <span class="self">Self</span>::get_balance(<span class="kw-2">&amp;</span>pool_account, asset2)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>amount1: T::AssetBalance;
 			<span class="kw">let </span>amount2: T::AssetBalance;
-			<span class="kw">let </span>pool_account = <span class="self">Self</span>::get_pool_account(<span class="kw-2">&amp;</span>pool_id);
-			<span class="kw">let </span>reserve1 = <span class="self">Self</span>::get_balance(<span class="kw-2">&amp;</span>pool_account, <span class="kw-2">&amp;</span>asset1)<span class="question-mark">?</span>;
-			<span class="kw">let </span>reserve2 = <span class="self">Self</span>::get_balance(<span class="kw-2">&amp;</span>pool_account, <span class="kw-2">&amp;</span>asset2)<span class="question-mark">?</span>;
-
 			<span class="kw">if </span>reserve1.is_zero() || reserve2.is_zero() {
 				amount1 = amount1_desired;
 				amount2 = amount2_desired;
@@ -1831,13 +1829,13 @@
 				}
 			}
 
-			<span class="self">Self</span>::validate_minimal_amount(amount1.saturating_add(reserve1), <span class="kw-2">&amp;</span>asset1)
+			<span class="self">Self</span>::validate_minimal_amount(amount1.saturating_add(reserve1), asset1)
 				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::AmountOneLessThanMinimal)<span class="question-mark">?</span>;
-			<span class="self">Self</span>::validate_minimal_amount(amount2.saturating_add(reserve2), <span class="kw-2">&amp;</span>asset2)
+			<span class="self">Self</span>::validate_minimal_amount(amount2.saturating_add(reserve2), asset2)
 				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::AmountTwoLessThanMinimal)<span class="question-mark">?</span>;
 
-			<span class="self">Self</span>::transfer(<span class="kw-2">&amp;</span>asset1, <span class="kw-2">&amp;</span>sender, <span class="kw-2">&amp;</span>pool_account, amount1, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
-			<span class="self">Self</span>::transfer(<span class="kw-2">&amp;</span>asset2, <span class="kw-2">&amp;</span>sender, <span class="kw-2">&amp;</span>pool_account, amount2, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::transfer(asset1, <span class="kw-2">&amp;</span>sender, <span class="kw-2">&amp;</span>pool_account, amount1, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::transfer(asset2, <span class="kw-2">&amp;</span>sender, <span class="kw-2">&amp;</span>pool_account, amount2, <span class="bool-val">true</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>total_supply = T::PoolAssets::total_issuance(pool.lp_token.clone());
 
@@ -1902,7 +1900,7 @@
 
 			<span class="macro">ensure!</span>(lp_token_burn &gt; Zero::zero(), Error::&lt;T&gt;::ZeroLiquidity);
 
-			<span class="kw">let </span>maybe_pool = Pools::&lt;T&gt;::get(pool_id.clone());
+			<span class="kw">let </span>maybe_pool = Pools::&lt;T&gt;::get(<span class="kw-2">&amp;</span>pool_id);
 			<span class="kw">let </span>pool = maybe_pool.as_ref().ok_or(Error::&lt;T&gt;::PoolNotFound)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>pool_account = <span class="self">Self</span>::get_pool_account(<span class="kw-2">&amp;</span>pool_id);
