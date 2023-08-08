@@ -120,14 +120,6 @@
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -149,7 +141,7 @@
 </span><span class="attr">#![allow(non_snake_case)]
 
 </span><span class="doccomment">//! API trait of the chain head.
-</span><span class="kw">use </span><span class="kw">crate</span>::chain_head::event::{ChainHeadEvent, FollowEvent, StorageQuery};
+</span><span class="kw">use </span><span class="kw">crate</span>::chain_head::event::{FollowEvent, MethodResponse, StorageQuery};
 <span class="kw">use </span>jsonrpsee::{core::RpcResult, proc_macros::rpc};
 
 <span class="attr">#[rpc(client, server)]
@@ -177,12 +169,12 @@
 	/// # Unstable
 	///
 	/// This method is unstable and subject to change in the future.
-	</span><span class="attr">#[subscription(
-		name = <span class="string">&quot;chainHead_unstable_body&quot;</span>,
-		unsubscribe = <span class="string">&quot;chainHead_unstable_stopBody&quot;</span>,
-		item = ChainHeadEvent&lt;String&gt;,
-	)]
-	</span><span class="kw">fn </span>chain_head_unstable_body(<span class="kw-2">&amp;</span><span class="self">self</span>, follow_subscription: String, hash: Hash);
+	</span><span class="attr">#[method(name = <span class="string">&quot;chainHead_unstable_body&quot;</span>, blocking)]
+	</span><span class="kw">fn </span>chain_head_unstable_body(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		follow_subscription: String,
+		hash: Hash,
+	) -&gt; RpcResult&lt;MethodResponse&gt;;
 
 	<span class="doccomment">/// Retrieves the header of a pinned block.
 	///
@@ -216,36 +208,28 @@
 	/// # Unstable
 	///
 	/// This method is unstable and subject to change in the future.
-	</span><span class="attr">#[subscription(
-		name = <span class="string">&quot;chainHead_unstable_storage&quot;</span>,
-		unsubscribe = <span class="string">&quot;chainHead_unstable_stopStorage&quot;</span>,
-		item = ChainHeadEvent&lt;String&gt;,
-	)]
+	</span><span class="attr">#[method(name = <span class="string">&quot;chainHead_unstable_storage&quot;</span>, blocking)]
 	</span><span class="kw">fn </span>chain_head_unstable_storage(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		follow_subscription: String,
 		hash: Hash,
 		items: Vec&lt;StorageQuery&lt;String&gt;&gt;,
 		child_trie: <span class="prelude-ty">Option</span>&lt;String&gt;,
-	);
+	) -&gt; RpcResult&lt;MethodResponse&gt;;
 
 	<span class="doccomment">/// Call into the Runtime API at a specified block&#39;s state.
 	///
 	/// # Unstable
 	///
 	/// This method is unstable and subject to change in the future.
-	</span><span class="attr">#[subscription(
-		name = <span class="string">&quot;chainHead_unstable_call&quot;</span>,
-		unsubscribe = <span class="string">&quot;chainHead_unstable_stopCall&quot;</span>,
-		item = ChainHeadEvent&lt;String&gt;,
-	)]
+	</span><span class="attr">#[method(name = <span class="string">&quot;chainHead_unstable_call&quot;</span>, blocking)]
 	</span><span class="kw">fn </span>chain_head_unstable_call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		follow_subscription: String,
 		hash: Hash,
 		function: String,
 		call_parameters: String,
-	);
+	) -&gt; RpcResult&lt;MethodResponse&gt;;
 
 	<span class="doccomment">/// Unpin a block reported by the `follow` method.
 	///

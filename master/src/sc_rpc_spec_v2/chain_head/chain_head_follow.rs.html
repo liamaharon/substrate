@@ -608,6 +608,14 @@
 <a href="#608" id="608">608</a>
 <a href="#609" id="609">609</a>
 <a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -634,7 +642,7 @@
 		BestBlockChanged, Finalized, FollowEvent, Initialized, NewBlock, RuntimeEvent,
 		RuntimeVersionEvent,
 	},
-	subscription::{SubscriptionManagement, SubscriptionManagementError},
+	subscription::{InsertedSubscriptionData, SubscriptionManagement, SubscriptionManagementError},
 };
 <span class="kw">use </span>futures::{
 	channel::oneshot,
@@ -690,6 +698,8 @@
 	</span>NewBlock(BlockImportNotification&lt;Block&gt;),
 	<span class="doccomment">/// The finalized block notification obtained from `finality_notification_stream`.
 	</span>Finalized(FinalityNotification&lt;Block&gt;),
+	<span class="doccomment">/// The response of `chainHead` method calls.
+	</span>MethodResponse(FollowEvent&lt;Block::Hash&gt;),
 }
 
 <span class="doccomment">/// The initial blocks that should be reported or ignored by the chainHead.
@@ -1125,6 +1135,7 @@
 					<span class="self">self</span>.handle_import_blocks(notification, <span class="kw-2">&amp;</span>startup_point),
 				NotificationType::Finalized(notification) =&gt;
 					<span class="self">self</span>.handle_finalized_blocks(notification, <span class="kw-2">&amp;mut </span>to_ignore, <span class="kw-2">&amp;</span>startup_point),
+				NotificationType::MethodResponse(notification) =&gt; <span class="prelude-val">Ok</span>(<span class="macro">vec!</span>[notification]),
 			};
 
 			<span class="kw">let </span>events = <span class="kw">match </span>events {
@@ -1182,7 +1193,7 @@
 	</span><span class="kw">pub async fn </span>generate_events(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		<span class="kw-2">mut </span>sink: SubscriptionSink,
-		rx_stop: oneshot::Receiver&lt;()&gt;,
+		sub_data: InsertedSubscriptionData&lt;Block&gt;,
 	) {
 		<span class="comment">// Register for the new block and finalized notifications.
 		</span><span class="kw">let </span>stream_import = <span class="self">self
@@ -1194,6 +1205,10 @@
 			</span>.client
 			.finality_notification_stream()
 			.map(|notification| NotificationType::Finalized(notification));
+
+		<span class="kw">let </span>stream_responses = sub_data
+			.response_receiver
+			.map(|response| NotificationType::MethodResponse(response));
 
 		<span class="kw">let </span>startup_point = StartupPoint::from(<span class="self">self</span>.client.info());
 		<span class="kw">let </span>(initial_events, pruned_forks) = <span class="kw">match </span><span class="self">self</span>.generate_init_events(<span class="kw-2">&amp;</span>startup_point) {
@@ -1212,9 +1227,10 @@
 
 		<span class="kw">let </span>initial = NotificationType::InitialEvents(initial_events);
 		<span class="kw">let </span>merged = tokio_stream::StreamExt::merge(stream_import, stream_finalized);
+		<span class="kw">let </span>merged = tokio_stream::StreamExt::merge(merged, stream_responses);
 		<span class="kw">let </span>stream = stream::once(futures::future::ready(initial)).chain(merged);
 
-		<span class="self">self</span>.submit_events(<span class="kw-2">&amp;</span>startup_point, stream.boxed(), pruned_forks, sink, rx_stop)
+		<span class="self">self</span>.submit_events(<span class="kw-2">&amp;</span>startup_point, stream.boxed(), pruned_forks, sink, sub_data.rx_stop)
 			.<span class="kw">await</span>;
 	}
 }

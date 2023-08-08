@@ -935,6 +935,72 @@
 <a href="#935" id="935">935</a>
 <a href="#936" id="936">936</a>
 <a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
+<a href="#950" id="950">950</a>
+<a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
+<a href="#958" id="958">958</a>
+<a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
+<a href="#964" id="964">964</a>
+<a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
+<a href="#968" id="968">968</a>
+<a href="#969" id="969">969</a>
+<a href="#970" id="970">970</a>
+<a href="#971" id="971">971</a>
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+<a href="#974" id="974">974</a>
+<a href="#975" id="975">975</a>
+<a href="#976" id="976">976</a>
+<a href="#977" id="977">977</a>
+<a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
+<a href="#986" id="986">986</a>
+<a href="#987" id="987">987</a>
+<a href="#988" id="988">988</a>
+<a href="#989" id="989">989</a>
+<a href="#990" id="990">990</a>
+<a href="#991" id="991">991</a>
+<a href="#992" id="992">992</a>
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
+<a href="#995" id="995">995</a>
+<a href="#996" id="996">996</a>
+<a href="#997" id="997">997</a>
+<a href="#998" id="998">998</a>
+<a href="#999" id="999">999</a>
+<a href="#1000" id="1000">1000</a>
+<a href="#1001" id="1001">1001</a>
+<a href="#1002" id="1002">1002</a>
+<a href="#1003" id="1003">1003</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -955,6 +1021,7 @@
 
 </span><span class="kw">use </span>futures::channel::oneshot;
 <span class="kw">use </span>sc_client_api::Backend;
+<span class="kw">use </span>sc_utils::mpsc::{tracing_unbounded, TracingUnboundedReceiver, TracingUnboundedSender};
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="kw">use </span>std::{
 	collections::{hash_map::Entry, HashMap},
@@ -962,7 +1029,10 @@
 	time::{Duration, Instant},
 };
 
-<span class="kw">use </span><span class="kw">crate</span>::chain_head::subscription::SubscriptionManagementError;
+<span class="kw">use </span><span class="kw">crate</span>::chain_head::{subscription::SubscriptionManagementError, FollowEvent};
+
+<span class="doccomment">/// The queue size after which the `sc_utils::mpsc::tracing_unbounded` would produce warnings.
+</span><span class="kw">const </span>QUEUE_SIZE_WARNING: usize = <span class="number">512</span>;
 
 <span class="doccomment">/// The state machine of a block of a single subscription ID.
 ///
@@ -1053,6 +1123,12 @@
 	</span>with_runtime: bool,
 	<span class="doccomment">/// Signals the &quot;Stop&quot; event.
 	</span>tx_stop: <span class="prelude-ty">Option</span>&lt;oneshot::Sender&lt;()&gt;&gt;,
+	<span class="doccomment">/// The sender of message responses to the `chainHead_follow` events.
+	///
+	/// This object is cloned between methods.
+	</span>response_sender: TracingUnboundedSender&lt;FollowEvent&lt;Block::Hash&gt;&gt;,
+	<span class="doccomment">/// The next operation ID.
+	</span>next_operation_id: usize,
 	<span class="doccomment">/// Track the block hashes available for this subscription.
 	///
 	/// This implementation assumes:
@@ -1164,6 +1240,13 @@
 		}
 		timestamp
 	}
+
+	<span class="doccomment">/// Generate the next operation ID for this subscription.
+	</span><span class="kw">fn </span>next_operation_id(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; usize {
+		<span class="kw">let </span>op_id = <span class="self">self</span>.next_operation_id;
+		<span class="self">self</span>.next_operation_id = <span class="self">self</span>.next_operation_id.wrapping_add(<span class="number">1</span>);
+		op_id
+	}
 }
 
 <span class="doccomment">/// Keeps a specific block pinned while the handle is alive.
@@ -1172,6 +1255,8 @@
 </span><span class="kw">pub struct </span>BlockGuard&lt;Block: BlockT, BE: Backend&lt;Block&gt;&gt; {
 	hash: Block::Hash,
 	with_runtime: bool,
+	response_sender: TracingUnboundedSender&lt;FollowEvent&lt;Block::Hash&gt;&gt;,
+	operation_id: String,
 	backend: Arc&lt;BE&gt;,
 }
 
@@ -1188,18 +1273,36 @@
 	</span><span class="kw">fn </span>new(
 		hash: Block::Hash,
 		with_runtime: bool,
+		response_sender: TracingUnboundedSender&lt;FollowEvent&lt;Block::Hash&gt;&gt;,
+		operation_id: usize,
 		backend: Arc&lt;BE&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, SubscriptionManagementError&gt; {
 		backend
 			.pin_block(hash)
 			.map_err(|err| SubscriptionManagementError::Custom(err.to_string()))<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{ hash, with_runtime, backend })
+		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+			hash,
+			with_runtime,
+			response_sender,
+			operation_id: operation_id.to_string(),
+			backend,
+		})
 	}
 
 	<span class="doccomment">/// The `with_runtime` flag of the subscription.
 	</span><span class="kw">pub fn </span>has_runtime(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
 		<span class="self">self</span>.with_runtime
+	}
+
+	<span class="doccomment">/// Send message responses from the `chainHead` methods to `chainHead_follow`.
+	</span><span class="kw">pub fn </span>response_sender(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; TracingUnboundedSender&lt;FollowEvent&lt;Block::Hash&gt;&gt; {
+		<span class="self">self</span>.response_sender.clone()
+	}
+
+	<span class="doccomment">/// The operation ID of this method.
+	</span><span class="kw">pub fn </span>operation_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+		<span class="self">self</span>.operation_id.clone()
 	}
 }
 
@@ -1207,6 +1310,15 @@
 	<span class="kw">fn </span>drop(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
 		<span class="self">self</span>.backend.unpin_block(<span class="self">self</span>.hash);
 	}
+}
+
+<span class="doccomment">/// The data propagated back to the `chainHead_follow` method after
+/// the subscription is successfully inserted.
+</span><span class="kw">pub struct </span>InsertedSubscriptionData&lt;Block: BlockT&gt; {
+	<span class="doccomment">/// Signal that the subscription must stop.
+	</span><span class="kw">pub </span>rx_stop: oneshot::Receiver&lt;()&gt;,
+	<span class="doccomment">/// Receive message responses from the `chainHead` methods.
+	</span><span class="kw">pub </span>response_receiver: TracingUnboundedReceiver&lt;FollowEvent&lt;Block::Hash&gt;&gt;,
 }
 
 <span class="kw">pub struct </span>SubscriptionsInner&lt;Block: BlockT, BE: Backend&lt;Block&gt;&gt; {
@@ -1248,16 +1360,21 @@
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		sub_id: String,
 		with_runtime: bool,
-	) -&gt; <span class="prelude-ty">Option</span>&lt;oneshot::Receiver&lt;()&gt;&gt; {
+	) -&gt; <span class="prelude-ty">Option</span>&lt;InsertedSubscriptionData&lt;Block&gt;&gt; {
 		<span class="kw">if let </span>Entry::Vacant(entry) = <span class="self">self</span>.subs.entry(sub_id) {
 			<span class="kw">let </span>(tx_stop, rx_stop) = oneshot::channel();
+			<span class="kw">let </span>(response_sender, response_receiver) =
+				tracing_unbounded(<span class="string">&quot;chain-head-method-responses&quot;</span>, QUEUE_SIZE_WARNING);
 			<span class="kw">let </span>state = SubscriptionState::&lt;Block&gt; {
 				with_runtime,
 				tx_stop: <span class="prelude-val">Some</span>(tx_stop),
+				response_sender,
+				next_operation_id: <span class="number">0</span>,
 				blocks: Default::default(),
 			};
 			entry.insert(state);
-			<span class="prelude-val">Some</span>(rx_stop)
+
+			<span class="prelude-val">Some</span>(InsertedSubscriptionData { rx_stop, response_receiver })
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>}
@@ -1428,7 +1545,7 @@
 		sub_id: <span class="kw-2">&amp;</span>str,
 		hash: Block::Hash,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockGuard&lt;Block, BE&gt;, SubscriptionManagementError&gt; {
-		<span class="kw">let </span><span class="prelude-val">Some</span>(sub) = <span class="self">self</span>.subs.get(sub_id) <span class="kw">else </span>{
+		<span class="kw">let </span><span class="prelude-val">Some</span>(sub) = <span class="self">self</span>.subs.get_mut(sub_id) <span class="kw">else </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent)
 		};
 
@@ -1436,7 +1553,14 @@
 			<span class="kw">return </span><span class="prelude-val">Err</span>(SubscriptionManagementError::BlockHashAbsent)
 		}
 
-		BlockGuard::new(hash, sub.with_runtime, <span class="self">self</span>.backend.clone())
+		<span class="kw">let </span>operation_id = sub.next_operation_id();
+		BlockGuard::new(
+			hash,
+			sub.with_runtime,
+			sub.response_sender.clone(),
+			operation_id,
+			<span class="self">self</span>.backend.clone(),
+		)
 	}
 }
 
@@ -1541,9 +1665,13 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>sub_state_register_twice() {
+		<span class="kw">let </span>(response_sender, _response_receiver) =
+			tracing_unbounded(<span class="string">&quot;test-chain-head-method-responses&quot;</span>, QUEUE_SIZE_WARNING);
 		<span class="kw">let </span><span class="kw-2">mut </span>sub_state = SubscriptionState::&lt;Block&gt; {
 			with_runtime: <span class="bool-val">false</span>,
 			tx_stop: <span class="prelude-val">None</span>,
+			response_sender,
+			next_operation_id: <span class="number">0</span>,
 			blocks: Default::default(),
 		};
 
@@ -1566,9 +1694,13 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>sub_state_register_unregister() {
+		<span class="kw">let </span>(response_sender, _response_receiver) =
+			tracing_unbounded(<span class="string">&quot;test-chain-head-method-responses&quot;</span>, QUEUE_SIZE_WARNING);
 		<span class="kw">let </span><span class="kw-2">mut </span>sub_state = SubscriptionState::&lt;Block&gt; {
 			with_runtime: <span class="bool-val">false</span>,
 			tx_stop: <span class="prelude-val">None</span>,
+			response_sender,
+			next_operation_id: <span class="number">0</span>,
 			blocks: Default::default(),
 		};
 
@@ -1858,17 +1990,17 @@
 
 		<span class="kw">let </span>id = <span class="string">&quot;abc&quot;</span>.to_string();
 
-		<span class="kw">let </span><span class="kw-2">mut </span>rx_stop = subs.insert_subscription(id.clone(), <span class="bool-val">true</span>).unwrap();
+		<span class="kw">let </span><span class="kw-2">mut </span>sub_data = subs.insert_subscription(id.clone(), <span class="bool-val">true</span>).unwrap();
 
 		<span class="comment">// Check the stop signal was not received.
-		</span><span class="kw">let </span>res = rx_stop.try_recv().unwrap();
+		</span><span class="kw">let </span>res = sub_data.rx_stop.try_recv().unwrap();
 		<span class="macro">assert!</span>(res.is_none());
 
 		<span class="kw">let </span>sub = subs.subs.get_mut(<span class="kw-2">&amp;</span>id).unwrap();
 		sub.stop();
 
 		<span class="comment">// Check the signal was received.
-		</span><span class="kw">let </span>res = rx_stop.try_recv().unwrap();
+		</span><span class="kw">let </span>res = sub_data.rx_stop.try_recv().unwrap();
 		<span class="macro">assert!</span>(res.is_some());
 	}
 }
