@@ -324,6 +324,38 @@
 <a href="#324" id="324">324</a>
 <a href="#325" id="325">325</a>
 <a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -360,6 +392,38 @@
 	time::Duration,
 };
 <span class="kw">use </span>tokio::io::{AsyncBufReadExt, AsyncRead};
+
+<span class="doccomment">/// Similar to [`crate::start_node`] spawns a node, but works in environments where the substrate
+/// binary is not accessible with `cargo_bin(&quot;substrate-node&quot;)`, and allows customising the args
+/// passed in.
+///
+/// Helpful if you need a Substrate dev node running in the background of a project external to
+/// `substrate`.
+///
+/// The downside compared to using [`crate::start_node`] is that this method is blocking rather than
+/// returning a [`Child`]. Therefore, you may want to call this method inside a new thread.
+///
+/// # Example
+/// ```ignore
+/// // Spawn a dev node.
+/// let _ = std::thread::spawn(move || {
+///     match common::start_node_inline(vec![&quot;--dev&quot;, &quot;--rpc-port=12345&quot;]) {
+///         Ok(_) =&gt; {}
+///         Err(e) =&gt; {
+///             panic!(&quot;Node exited with error: {}&quot;, e);
+///         }
+///     }
+/// });
+/// ```
+</span><span class="kw">pub fn </span>start_node_inline(args: Vec&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), sc_service::error::Error&gt; {
+	<span class="kw">use </span>sc_cli::SubstrateCli;
+
+	<span class="comment">// Prepend the args with some dummy value because the first arg is skipped.
+	</span><span class="kw">let </span>cli_call = std::iter::once(<span class="string">&quot;node-template&quot;</span>).chain(args);
+	<span class="kw">let </span>cli = node_cli::Cli::from_iter(cli_call);
+	<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run).unwrap();
+	runner.run_node_until_exit(|config| <span class="kw">async move </span>{ node_cli::service::new_full(config, cli) })
+}
 
 <span class="doccomment">/// Starts a new Substrate node in development mode with a temporary chain.
 ///
