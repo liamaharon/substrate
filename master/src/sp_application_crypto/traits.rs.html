@@ -195,14 +195,6 @@
 <a href="#195" id="195">195</a>
 <a href="#196" id="196">196</a>
 <a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -228,7 +220,7 @@
 <span class="kw">use </span>sp_core::crypto::{CryptoType, CryptoTypeId, IsWrappedBy, KeyTypeId, Public};
 <span class="kw">use </span>sp_std::{fmt::Debug, vec::Vec};
 
-<span class="doccomment">/// An application-specific cryptographic object.
+<span class="doccomment">/// Application-specific cryptographic object.
 ///
 /// Combines all the core types and constants that are defined by a particular
 /// cryptographic scheme when it is used in a specific application domain.
@@ -236,7 +228,7 @@
 /// Typically, the implementers of this trait are its associated types themselves.
 /// This provides a convenient way to access generic information about the scheme
 /// given any of the associated types.
-</span><span class="kw">pub trait </span>AppCrypto: <span class="lifetime">&#39;static </span>+ Send + Sync + Sized + CryptoType + Clone {
+</span><span class="kw">pub trait </span>AppCrypto: <span class="lifetime">&#39;static </span>+ Sized + CryptoType {
 	<span class="doccomment">/// Identifier for application-specific key type.
 	</span><span class="kw">const </span>ID: KeyTypeId;
 
@@ -266,38 +258,30 @@
 <span class="attr">#[cfg(all(not(feature = <span class="string">&quot;std&quot;</span>), not(feature = <span class="string">&quot;full_crypto&quot;</span>)))]
 </span><span class="kw">impl</span>&lt;T&gt; MaybeHash <span class="kw">for </span>T {}
 
-<span class="doccomment">/// A application&#39;s public key.
-</span><span class="kw">pub trait </span>AppPublic:
-	AppCrypto + Public + Ord + PartialOrd + Eq + PartialEq + Debug + MaybeHash + Codec
-{
-	<span class="doccomment">/// The wrapped type which is just a plain instance of `Public`.
-	</span><span class="kw">type </span>Generic: IsWrappedBy&lt;<span class="self">Self</span>&gt;
-		+ Public
-		+ Ord
-		+ PartialOrd
-		+ Eq
-		+ PartialEq
-		+ Debug
-		+ MaybeHash
-		+ Codec;
-}
-
-<span class="doccomment">/// A application&#39;s key pair.
+<span class="doccomment">/// Application-specific key pair.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;full_crypto&quot;</span>)]
-</span><span class="kw">pub trait </span>AppPair: AppCrypto + Pair&lt;Public = &lt;<span class="self">Self </span><span class="kw">as </span>AppCrypto&gt;::Public&gt; {
+</span><span class="kw">pub trait </span>AppPair:
+	AppCrypto + Pair&lt;Public = &lt;<span class="self">Self </span><span class="kw">as </span>AppCrypto&gt;::Public, Signature = &lt;<span class="self">Self </span><span class="kw">as </span>AppCrypto&gt;::Signature&gt;
+{
 	<span class="doccomment">/// The wrapped type which is just a plain instance of `Pair`.
 	</span><span class="kw">type </span>Generic: IsWrappedBy&lt;<span class="self">Self</span>&gt;
 		+ Pair&lt;Public = &lt;&lt;<span class="self">Self </span><span class="kw">as </span>AppCrypto&gt;::Public <span class="kw">as </span>AppPublic&gt;::Generic&gt;
 		+ Pair&lt;Signature = &lt;&lt;<span class="self">Self </span><span class="kw">as </span>AppCrypto&gt;::Signature <span class="kw">as </span>AppSignature&gt;::Generic&gt;;
 }
 
-<span class="doccomment">/// A application&#39;s signature.
-</span><span class="kw">pub trait </span>AppSignature: AppCrypto + Eq + PartialEq + Debug {
+<span class="doccomment">/// Application-specific public key.
+</span><span class="kw">pub trait </span>AppPublic: AppCrypto + Public + Debug + MaybeHash + Codec {
+	<span class="doccomment">/// The wrapped type which is just a plain instance of `Public`.
+	</span><span class="kw">type </span>Generic: IsWrappedBy&lt;<span class="self">Self</span>&gt; + Public + Debug + MaybeHash + Codec;
+}
+
+<span class="doccomment">/// Application-specific signature.
+</span><span class="kw">pub trait </span>AppSignature: AppCrypto + Eq + PartialEq + Debug + Clone {
 	<span class="doccomment">/// The wrapped type which is just a plain instance of `Signature`.
 	</span><span class="kw">type </span>Generic: IsWrappedBy&lt;<span class="self">Self</span>&gt; + Eq + PartialEq + Debug;
 }
 
-<span class="doccomment">/// A runtime interface for a public key.
+<span class="doccomment">/// Runtime interface for a public key.
 </span><span class="kw">pub trait </span>RuntimePublic: Sized {
 	<span class="doccomment">/// The signature that will be generated when signing with the corresponding private key.
 	</span><span class="kw">type </span>Signature: Debug + Eq + PartialEq + Clone;
@@ -328,7 +312,7 @@
 	</span><span class="kw">fn </span>to_raw_vec(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u8&gt;;
 }
 
-<span class="doccomment">/// A runtime interface for an application&#39;s public key.
+<span class="doccomment">/// Runtime interface for an application&#39;s public key.
 </span><span class="kw">pub trait </span>RuntimeAppPublic: Sized {
 	<span class="doccomment">/// An identifier for this application-specific key type.
 	</span><span class="kw">const </span>ID: KeyTypeId;

@@ -1048,7 +1048,7 @@
 	<span class="doccomment">/// Verify a signature on a message.
 	///
 	/// Returns true if the signature is good.
-	</span><span class="kw">fn </span>verify&lt;M: AsRef&lt;[u8]&gt;&gt;(sig: <span class="kw-2">&amp;</span><span class="self">Self</span>::Signature, message: M, public: <span class="kw-2">&amp;</span><span class="self">Self</span>::Public) -&gt; bool {
+	</span><span class="kw">fn </span>verify&lt;M: AsRef&lt;[u8]&gt;&gt;(sig: <span class="kw-2">&amp;</span>Signature, message: M, public: <span class="kw-2">&amp;</span>Public) -&gt; bool {
 		<span class="kw">let </span><span class="prelude-val">Ok</span>(public) = VerificationKey::try_from(public.as_slice()) <span class="kw">else </span>{ <span class="kw">return </span><span class="bool-val">false </span>};
 		<span class="kw">let </span><span class="prelude-val">Ok</span>(signature) = ed25519_zebra::Signature::try_from(sig.as_ref()) <span class="kw">else </span>{ <span class="kw">return </span><span class="bool-val">false </span>};
 		public.verify(<span class="kw-2">&amp;</span>signature, message.as_ref()).is_ok()

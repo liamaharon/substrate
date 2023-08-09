@@ -1651,7 +1651,7 @@
 		<span class="self">self</span>.<span class="number">0</span>.sign(context.bytes(message)).into()
 	}
 
-	<span class="kw">fn </span>verify&lt;M: AsRef&lt;[u8]&gt;&gt;(sig: <span class="kw-2">&amp;</span><span class="self">Self</span>::Signature, message: M, pubkey: <span class="kw-2">&amp;</span><span class="self">Self</span>::Public) -&gt; bool {
+	<span class="kw">fn </span>verify&lt;M: AsRef&lt;[u8]&gt;&gt;(sig: <span class="kw-2">&amp;</span>Signature, message: M, pubkey: <span class="kw-2">&amp;</span>Public) -&gt; bool {
 		<span class="kw">let </span><span class="prelude-val">Ok</span>(signature) = schnorrkel::Signature::from_bytes(sig.as_ref()) <span class="kw">else </span>{ <span class="kw">return </span><span class="bool-val">false </span>};
 		<span class="kw">let </span><span class="prelude-val">Ok</span>(public) = PublicKey::from_bytes(pubkey.as_ref()) <span class="kw">else </span>{ <span class="kw">return </span><span class="bool-val">false </span>};
 		public.verify_simple(SIGNING_CTX, message.as_ref(), <span class="kw-2">&amp;</span>signature).is_ok()
@@ -1715,7 +1715,7 @@
 	<span class="kw">impl </span>VrfTranscript {
 		<span class="doccomment">/// Build a new transcript instance.
 		///
-		/// Each `data` element is a tuple `(domain, message)` composing the transcipt.
+		/// Each `data` element is a tuple `(domain, message)` used to build the transcript.
 		</span><span class="kw">pub fn </span>new(label: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[u8], data: <span class="kw-2">&amp;</span>[(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[u8], <span class="kw-2">&amp;</span>[u8])]) -&gt; <span class="self">Self </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>transcript = merlin::Transcript::new(label);
 			data.iter().for_each(|(l, b)| transcript.append_message(l, b));

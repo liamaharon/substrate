@@ -1218,7 +1218,7 @@
 	}
 
 	<span class="doccomment">/// Verify a signature on a message. Returns true if the signature is good.
-	</span><span class="kw">fn </span>verify&lt;M: AsRef&lt;[u8]&gt;&gt;(sig: <span class="kw-2">&amp;</span><span class="self">Self</span>::Signature, message: M, public: <span class="kw-2">&amp;</span><span class="self">Self</span>::Public) -&gt; bool {
+	</span><span class="kw">fn </span>verify&lt;M: AsRef&lt;[u8]&gt;&gt;(sig: <span class="kw-2">&amp;</span>Signature, message: M, public: <span class="kw-2">&amp;</span>Public) -&gt; bool {
 		sig.recover(message).map(|actual| actual == <span class="kw-2">*</span>public).unwrap_or_default()
 	}
 

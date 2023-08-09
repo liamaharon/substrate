@@ -199,7 +199,7 @@ var sourcesIndex = JSON.parse('{\
 "sc_utils":["",[["notification",[],["registry.rs"]]],["id_sequence.rs","lib.rs","metrics.rs","mpsc.rs","notification.rs","pubsub.rs","status_sinks.rs"]],\
 "sp_api":["",[],["lib.rs"]],\
 "sp_api_proc_macro":["",[],["common.rs","decl_runtime_apis.rs","impl_runtime_apis.rs","lib.rs","mock_impl_runtime_apis.rs","runtime_metadata.rs","utils.rs"]],\
-"sp_application_crypto":["",[],["bls377.rs","bls381.rs","ecdsa.rs","ed25519.rs","lib.rs","sr25519.rs","traits.rs"]],\
+"sp_application_crypto":["",[],["bandersnatch.rs","bls377.rs","bls381.rs","ecdsa.rs","ed25519.rs","lib.rs","sr25519.rs","traits.rs"]],\
 "sp_application_crypto_test":["",[],["lib.rs"]],\
 "sp_arithmetic":["",[],["biguint.rs","fixed_point.rs","helpers_128bit.rs","lib.rs","per_things.rs","rational.rs","traits.rs"]],\
 "sp_authority_discovery":["",[],["lib.rs"]],\
@@ -212,7 +212,7 @@ var sourcesIndex = JSON.parse('{\
 "sp_consensus_grandpa":["",[],["lib.rs"]],\
 "sp_consensus_pow":["",[],["lib.rs"]],\
 "sp_consensus_slots":["",[],["lib.rs"]],\
-"sp_core":["",[["offchain",[],["mod.rs","storage.rs","testing.rs"]]],["bls.rs","crypto.rs","defer.rs","ecdsa.rs","ed25519.rs","hash.rs","hasher.rs","hashing.rs","hexdisplay.rs","lib.rs","sr25519.rs","testing.rs","traits.rs","uint.rs"]],\
+"sp_core":["",[["offchain",[],["mod.rs","storage.rs","testing.rs"]]],["bandersnatch.rs","bls.rs","crypto.rs","defer.rs","ecdsa.rs","ed25519.rs","hash.rs","hasher.rs","hashing.rs","hexdisplay.rs","lib.rs","sr25519.rs","testing.rs","traits.rs","uint.rs"]],\
 "sp_core_hashing":["",[],["lib.rs"]],\
 "sp_core_hashing_proc_macro":["",[],["impls.rs","lib.rs"]],\
 "sp_crypto_ec_utils":["",[],["bls12_377.rs","bls12_381.rs","bw6_761.rs","ed_on_bls12_377.rs","ed_on_bls12_381_bandersnatch.rs","lib.rs","utils.rs"]],\
@@ -222,7 +222,7 @@ var sourcesIndex = JSON.parse('{\
 "sp_genesis_builder":["",[],["lib.rs"]],\
 "sp_inherents":["",[],["client_side.rs","lib.rs"]],\
 "sp_io":["",[],["lib.rs"]],\
-"sp_keyring":["",[],["ed25519.rs","lib.rs","sr25519.rs"]],\
+"sp_keyring":["",[],["bandersnatch.rs","ed25519.rs","lib.rs","sr25519.rs"]],\
 "sp_keystore":["",[],["lib.rs","testing.rs"]],\
 "sp_maybe_compressed_blob":["",[],["lib.rs"]],\
 "sp_metadata_ir":["",[],["lib.rs","types.rs","v14.rs","v15.rs"]],\
