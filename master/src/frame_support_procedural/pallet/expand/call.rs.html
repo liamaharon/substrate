@@ -425,10 +425,6 @@
 <a href="#425" id="425">425</a>
 <a href="#426" id="426">426</a>
 <a href="#427" id="427">427</a>
-<a href="#428" id="428">428</a>
-<a href="#429" id="429">429</a>
-<a href="#430" id="430">430</a>
-<a href="#431" id="431">431</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -781,10 +777,6 @@
 				}
 			}
 		}
-
-		<span class="comment">// Deprecated, but will warn when used
-		</span><span class="attr">#[allow(deprecated)]
-		</span><span class="kw">impl</span>&lt;#type_impl_gen&gt; #frame_support::weights::GetDispatchInfo <span class="kw">for </span>#call_ident&lt;#type_use_gen&gt; #where_clause {}
 
 		<span class="kw">impl</span>&lt;#type_impl_gen&gt; #frame_support::dispatch::GetCallName <span class="kw">for </span>#call_ident&lt;#type_use_gen&gt;
 			#where_clause

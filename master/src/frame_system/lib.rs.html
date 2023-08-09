@@ -3096,7 +3096,7 @@
 		<span class="kw">let </span>phase = ExecutionPhase::&lt;T&gt;::get().unwrap_or_default();
 		<span class="kw">let </span>event = EventRecord { phase, event, topics: topics.to_vec() };
 
-		<span class="comment">// Index of the to be added event.
+		<span class="comment">// Index of the event to be added.
 		</span><span class="kw">let </span>event_idx = {
 			<span class="kw">let </span>old_event_count = EventCount::&lt;T&gt;::get();
 			<span class="kw">let </span>new_event_count = <span class="kw">match </span>old_event_count.checked_add(<span class="number">1</span>) {

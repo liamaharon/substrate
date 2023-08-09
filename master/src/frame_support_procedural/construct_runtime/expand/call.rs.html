@@ -209,8 +209,6 @@
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -336,9 +334,7 @@
 				}
 			}
 		}
-		<span class="comment">// Deprecated, but will warn when used
-		</span><span class="attr">#[allow(deprecated)]
-		</span><span class="kw">impl </span>#scrate::weights::GetDispatchInfo <span class="kw">for </span>RuntimeCall {}
+
 		<span class="kw">impl </span>#scrate::dispatch::GetCallMetadata <span class="kw">for </span>RuntimeCall {
 			<span class="kw">fn </span>get_call_metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; #scrate::dispatch::CallMetadata {
 				<span class="kw">use </span>#scrate::dispatch::GetCallName;
