@@ -803,6 +803,7 @@
 <a href="#803" id="803">803</a>
 <a href="#804" id="804">804</a>
 <a href="#805" id="805">805</a>
+<a href="#806" id="806">806</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -840,6 +841,7 @@
 	MaxPoolMembersPerPool, MaxPools, Metadata, MinCreateBond, MinJoinBond, Pallet <span class="kw">as </span>Pools,
 	PoolMembers, PoolRoles, PoolState, RewardPools, SubPoolsStorage,
 };
+<span class="kw">use </span>pallet_staking::MaxNominationsOf;
 <span class="kw">use </span>sp_runtime::{
 	traits::{Bounded, StaticLookup, Zero},
 	Perbill,
@@ -1369,7 +1371,7 @@
 	}
 
 	nominate {
-		<span class="kw">let </span>n <span class="kw">in </span><span class="number">1 </span>.. T::MaxNominations::get();
+		<span class="kw">let </span>n <span class="kw">in </span><span class="number">1 </span>.. MaxNominationsOf::&lt;T&gt;::get();
 
 		<span class="comment">// Create a pool
 		</span><span class="kw">let </span>min_create_bond = Pools::&lt;T&gt;::depositor_min_bond() * <span class="number">2u32</span>.into();
@@ -1484,7 +1486,7 @@
 		</span><span class="kw">let </span>(depositor, pool_account) = create_pool_account::&lt;T&gt;(<span class="number">0</span>, Pools::&lt;T&gt;::depositor_min_bond() * <span class="number">2u32</span>.into(), <span class="prelude-val">None</span>);
 
 		<span class="comment">// Nominate with the pool.
-		 </span><span class="kw">let </span>validators: Vec&lt;<span class="kw">_</span>&gt; = (<span class="number">0</span>..T::MaxNominations::get())
+		 </span><span class="kw">let </span>validators: Vec&lt;<span class="kw">_</span>&gt; = (<span class="number">0</span>..MaxNominationsOf::&lt;T&gt;::get())
 			.map(|i| account(<span class="string">&quot;stash&quot;</span>, USER_SEED, i))
 			.collect();
 

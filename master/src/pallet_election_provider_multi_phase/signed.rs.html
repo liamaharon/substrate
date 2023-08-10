@@ -1390,6 +1390,11 @@
 <a href="#1390" id="1390">1390</a>
 <a href="#1391" id="1391">1391</a>
 <a href="#1392" id="1392">1392</a>
+<a href="#1393" id="1393">1393</a>
+<a href="#1394" id="1394">1394</a>
+<a href="#1395" id="1395">1395</a>
+<a href="#1396" id="1396">1396</a>
+<a href="#1397" id="1397">1397</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1928,7 +1933,10 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use crate</span>::{mock::<span class="kw-2">*</span>, ElectionCompute, ElectionError, Error, Event, Perbill, Phase};
+	<span class="kw">use crate</span>::{
+		mock::<span class="kw-2">*</span>, ElectionBoundsBuilder, ElectionCompute, ElectionError, Error, Event, Perbill,
+		Phase,
+	};
 	<span class="kw">use </span>frame_support::{assert_noop, assert_ok, assert_storage_noop};
 
 	<span class="attr">#[test]
@@ -1957,13 +1965,14 @@
 	</span><span class="kw">fn </span>data_provider_should_respect_target_limits() {
 		ExtBuilder::default().build_and_execute(|| {
 			<span class="comment">// given a reduced expectation of maximum electable targets
-			</span>MaxElectableTargets::set(<span class="number">2</span>);
+			</span><span class="kw">let </span>new_bounds = ElectionBoundsBuilder::default().targets_count(<span class="number">2</span>.into()).build();
+			ElectionsBounds::set(new_bounds);
 			<span class="comment">// and a data provider that does not respect limits
 			</span>DataProviderAllowBadData::set(<span class="bool-val">true</span>);
 
 			<span class="macro">assert_noop!</span>(
 				MultiPhase::create_snapshot(),
-				ElectionError::DataProvider(<span class="string">&quot;Snapshot too big for submission.&quot;</span>),
+				ElectionError::DataProvider(<span class="string">&quot;Ensure targets bounds: bounds exceeded.&quot;</span>),
 			);
 		})
 	}
@@ -1972,13 +1981,14 @@
 	</span><span class="kw">fn </span>data_provider_should_respect_voter_limits() {
 		ExtBuilder::default().build_and_execute(|| {
 			<span class="comment">// given a reduced expectation of maximum electing voters
-			</span>MaxElectingVoters::set(<span class="number">2</span>);
+			</span><span class="kw">let </span>new_bounds = ElectionBoundsBuilder::default().voters_count(<span class="number">2</span>.into()).build();
+			ElectionsBounds::set(new_bounds);
 			<span class="comment">// and a data provider that does not respect limits
 			</span>DataProviderAllowBadData::set(<span class="bool-val">true</span>);
 
 			<span class="macro">assert_noop!</span>(
 				MultiPhase::create_snapshot(),
-				ElectionError::DataProvider(<span class="string">&quot;Snapshot too big for submission.&quot;</span>),
+				ElectionError::DataProvider(<span class="string">&quot;Ensure voters bounds: bounds exceeded.&quot;</span>),
 			);
 		})
 	}

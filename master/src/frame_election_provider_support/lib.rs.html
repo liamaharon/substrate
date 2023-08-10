@@ -685,9 +685,6 @@
 <a href="#685" id="685">685</a>
 <a href="#686" id="686">686</a>
 <a href="#687" id="687">687</a>
-<a href="#688" id="688">688</a>
-<a href="#689" id="689">689</a>
-<a href="#690" id="690">690</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -799,12 +796,12 @@
 //!         fn desired_targets() -&gt; data_provider::Result&lt;u32&gt; {
 //!             Ok(1)
 //!         }
-//!         fn electing_voters(maybe_max_len: Option&lt;usize&gt;)
+//!         fn electing_voters(bounds: DataProviderBounds)
 //!           -&gt; data_provider::Result&lt;Vec&lt;VoterOf&lt;Self&gt;&gt;&gt;
 //!         {
 //!             Ok(Default::default())
 //!         }
-//!         fn electable_targets(maybe_max_len: Option&lt;usize&gt;) -&gt; data_provider::Result&lt;Vec&lt;AccountId&gt;&gt; {
+//!         fn electable_targets(bounds: DataProviderBounds) -&gt; data_provider::Result&lt;Vec&lt;AccountId&gt;&gt; {
 //!             Ok(vec![10, 20, 30])
 //!         }
 //!         fn next_election_prediction(now: BlockNumber) -&gt; BlockNumber {
@@ -835,7 +832,7 @@
 //!     impl&lt;T: Config&gt; ElectionProvider for GenericElectionProvider&lt;T&gt; {
 //!         fn ongoing() -&gt; bool { false }
 //!         fn elect() -&gt; Result&lt;BoundedSupportsOf&lt;Self&gt;, Self::Error&gt; {
-//!             Self::DataProvider::electable_targets(None)
+//!             Self::DataProvider::electable_targets(DataProviderBounds::default())
 //!                 .map_err(|_| &quot;failed to elect&quot;)
 //!                 .map(|t| bounded_vec![(t[0], Support::default())])
 //!         }
@@ -863,11 +860,15 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-</span><span class="kw">pub mod </span>onchain;
+</span><span class="kw">pub mod </span>bounds;
+<span class="kw">pub mod </span>onchain;
 <span class="kw">pub mod </span>traits;
+
 <span class="kw">use </span>sp_runtime::traits::{Bounded, Saturating, Zero};
 <span class="kw">use </span>sp_std::{fmt::Debug, prelude::<span class="kw-2">*</span>};
 
+<span class="kw">pub use </span>bounds::DataProviderBounds;
+<span class="kw">pub use </span>codec::{Decode, Encode};
 <span class="doccomment">/// Re-export the solution generation macro.
 </span><span class="kw">pub use </span>frame_election_provider_solution_type::generate_solution_type;
 <span class="kw">pub use </span>frame_support::{traits::Get, weights::Weight, BoundedVec, RuntimeDebug};
@@ -921,7 +922,7 @@
 /// making it fast to repeatedly encode into a `SolutionOf&lt;T&gt;`. This property turns out
 /// to be important when trimming for solution length.
 </span><span class="attr">#[derive(RuntimeDebug, Clone, Default)]
-#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(PartialEq, Eq, codec::Encode, codec::Decode))]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(PartialEq, Eq, Encode, Decode))]
 </span><span class="kw">pub struct </span>IndexAssignment&lt;VoterIndex, TargetIndex, P: PerThing&gt; {
 	<span class="doccomment">/// Index of the voter among the voters list.
 	</span><span class="kw">pub </span>who: VoterIndex,
@@ -965,7 +966,7 @@
 <span class="doccomment">/// Something that can provide the data to an [`ElectionProvider`].
 </span><span class="kw">pub trait </span>ElectionDataProvider {
 	<span class="doccomment">/// The account identifier type.
-	</span><span class="kw">type </span>AccountId;
+	</span><span class="kw">type </span>AccountId: Encode;
 
 	<span class="doccomment">/// The block number type.
 	</span><span class="kw">type </span>BlockNumber;
@@ -976,25 +977,18 @@
 	<span class="doccomment">/// All possible targets for the election, i.e. the targets that could become elected, thus
 	/// &quot;electable&quot;.
 	///
-	/// If `maybe_max_len` is `Some(v)` then the resulting vector MUST NOT be longer than `v` items
-	/// long.
-	///
 	/// This should be implemented as a self-weighing function. The implementor should register its
 	/// appropriate weight at the end of execution with the system pallet directly.
-	</span><span class="kw">fn </span>electable_targets(
-		maybe_max_len: <span class="prelude-ty">Option</span>&lt;usize&gt;,
-	) -&gt; data_provider::Result&lt;Vec&lt;<span class="self">Self</span>::AccountId&gt;&gt;;
+	</span><span class="kw">fn </span>electable_targets(bounds: DataProviderBounds)
+		-&gt; data_provider::Result&lt;Vec&lt;<span class="self">Self</span>::AccountId&gt;&gt;;
 
 	<span class="doccomment">/// All the voters that participate in the election, thus &quot;electing&quot;.
 	///
 	/// Note that if a notion of self-vote exists, it should be represented here.
 	///
-	/// If `maybe_max_len` is `Some(v)` then the resulting vector MUST NOT be longer than `v` items
-	/// long.
-	///
 	/// This should be implemented as a self-weighing function. The implementor should register its
 	/// appropriate weight at the end of execution with the system pallet directly.
-	</span><span class="kw">fn </span>electing_voters(maybe_max_len: <span class="prelude-ty">Option</span>&lt;usize&gt;) -&gt; data_provider::Result&lt;Vec&lt;VoterOf&lt;<span class="self">Self</span>&gt;&gt;&gt;;
+	</span><span class="kw">fn </span>electing_voters(bounds: DataProviderBounds) -&gt; data_provider::Result&lt;Vec&lt;VoterOf&lt;<span class="self">Self</span>&gt;&gt;&gt;;
 
 	<span class="doccomment">/// The number of targets to elect.
 	///
@@ -1115,8 +1109,8 @@
 /// data provider at runtime via `forced_input_voters_bound` and `forced_input_target_bound`.
 </span><span class="kw">pub trait </span>InstantElectionProvider: ElectionProviderBase {
 	<span class="kw">fn </span>instant_elect(
-		forced_input_voters_bound: <span class="prelude-ty">Option</span>&lt;u32&gt;,
-		forced_input_target_bound: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+		forced_input_voters_bound: DataProviderBounds,
+		forced_input_target_bound: DataProviderBounds,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BoundedSupportsOf&lt;<span class="self">Self</span>&gt;, <span class="self">Self</span>::Error&gt;;
 }
 
@@ -1158,8 +1152,8 @@
 	MaxWinners: Get&lt;u32&gt;,
 {
 	<span class="kw">fn </span>instant_elect(
-		<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;u32&gt;,
-		<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+		<span class="kw">_</span>: DataProviderBounds,
+		<span class="kw">_</span>: DataProviderBounds,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BoundedSupportsOf&lt;<span class="self">Self</span>&gt;, <span class="self">Self</span>::Error&gt; {
 		<span class="prelude-val">Err</span>(<span class="string">&quot;`NoElection` cannot do anything.&quot;</span>)
 	}

@@ -1776,6 +1776,13 @@
 <a href="#1776" id="1776">1776</a>
 <a href="#1777" id="1777">1777</a>
 <a href="#1778" id="1778">1778</a>
+<a href="#1779" id="1779">1779</a>
+<a href="#1780" id="1780">1780</a>
+<a href="#1781" id="1781">1781</a>
+<a href="#1782" id="1782">1782</a>
+<a href="#1783" id="1783">1783</a>
+<a href="#1784" id="1784">1784</a>
+<a href="#1785" id="1785">1785</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1823,9 +1830,9 @@
 
 <span class="kw">use crate</span>::{
 	slashing, weights::WeightInfo, AccountIdLookupOf, ActiveEraInfo, BalanceOf, EraPayout,
-	EraRewardPoints, Exposure, Forcing, NegativeImbalanceOf, Nominations, PositiveImbalanceOf,
-	RewardDestination, SessionInterface, StakingLedger, UnappliedSlash, UnlockChunk,
-	ValidatorPrefs,
+	EraRewardPoints, Exposure, Forcing, MaxNominationsOf, NegativeImbalanceOf, Nominations,
+	NominationsQuota, PositiveImbalanceOf, RewardDestination, SessionInterface, StakingLedger,
+	UnappliedSlash, UnlockChunk, ValidatorPrefs,
 };
 
 <span class="kw">const </span>STAKING_ID: LockIdentifier = <span class="kw-2">*</span><span class="string">b&quot;staking &quot;</span>;
@@ -1907,9 +1914,8 @@
 			DataProvider = Pallet&lt;<span class="self">Self</span>&gt;,
 		&gt;;
 
-		<span class="doccomment">/// Maximum number of nominations per nominator.
-		</span><span class="attr">#[pallet::constant]
-		</span><span class="kw">type </span>MaxNominations: Get&lt;u32&gt;;
+		<span class="doccomment">/// Something that defines the maximum number of nominations per nominator.
+		</span><span class="kw">type </span>NominationsQuota: NominationsQuota&lt;BalanceOf&lt;<span class="self">Self</span>&gt;&gt;;
 
 		<span class="doccomment">/// Number of eras to keep in history.
 		///
@@ -2126,7 +2132,8 @@
 	/// they wish to support.
 	///
 	/// Note that the keys of this storage map might become non-decodable in case the
-	/// [`Config::MaxNominations`] configuration is decreased. In this rare case, these nominators
+	/// account&#39;s [`NominationsQuota::MaxNominations`] configuration is decreased.
+	/// In this rare case, these nominators
 	/// are still existent in storage, their key is correct and retrievable (i.e. `contains_key`
 	/// indicates that they exist), but their value cannot be decoded. Therefore, the non-decodable
 	/// nominators will effectively not-exist, until they re-submit their preferences such that it
@@ -2474,6 +2481,10 @@
 		</span>PayoutStarted { era_index: EraIndex, validator_stash: T::AccountId },
 		<span class="doccomment">/// A validator has set their preferences.
 		</span>ValidatorPrefsSet { stash: T::AccountId, prefs: ValidatorPrefs },
+		<span class="doccomment">/// Voters size limit reached.
+		</span>SnapshotVotersSizeExceeded { size: u32 },
+		<span class="doccomment">/// Targets size limit reached.
+		</span>SnapshotTargetsSizeExceeded { size: u32 },
 		<span class="doccomment">/// A new force era mode was set.
 		</span>ForceEra { mode: Forcing },
 	}
@@ -2560,11 +2571,11 @@
 		<span class="kw">fn </span>integrity_test() {
 			<span class="comment">// ensure that we funnel the correct value to the `DataProvider::MaxVotesPerVoter`;
 			</span><span class="macro">assert_eq!</span>(
-				T::MaxNominations::get(),
+				MaxNominationsOf::&lt;T&gt;::get(),
 				&lt;<span class="self">Self </span><span class="kw">as </span>ElectionDataProvider&gt;::MaxVotesPerVoter::get()
 			);
 			<span class="comment">// and that MaxNominations is always greater than 1, since we count on this.
-			</span><span class="macro">assert!</span>(!T::MaxNominations::get().is_zero());
+			</span><span class="macro">assert!</span>(!MaxNominationsOf::&lt;T&gt;::get().is_zero());
 
 			<span class="comment">// ensure election results are always bounded with the same value
 			</span><span class="macro">assert!</span>(
@@ -2923,7 +2934,10 @@
 			}
 
 			<span class="macro">ensure!</span>(!targets.is_empty(), Error::&lt;T&gt;::EmptyTargets);
-			<span class="macro">ensure!</span>(targets.len() &lt;= T::MaxNominations::get() <span class="kw">as </span>usize, Error::&lt;T&gt;::TooManyTargets);
+			<span class="macro">ensure!</span>(
+				targets.len() &lt;= T::NominationsQuota::get_quota(ledger.active) <span class="kw">as </span>usize,
+				Error::&lt;T&gt;::TooManyTargets
+			);
 
 			<span class="kw">let </span>old = Nominators::&lt;T&gt;::get(stash).map_or_else(Vec::new, |x| x.targets.into_inner());
 

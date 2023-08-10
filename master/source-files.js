@@ -11,7 +11,7 @@ var sourcesIndex = JSON.parse('{\
 "frame_benchmarking_cli":["",[["block",[],["bench.rs","cmd.rs","mod.rs"]],["extrinsic",[],["bench.rs","cmd.rs","extrinsic_factory.rs","mod.rs"]],["machine",[],["hardware.rs","mod.rs"]],["overhead",[],["cmd.rs","mod.rs","template.rs"]],["pallet",[],["command.rs","mod.rs","writer.rs"]],["shared",[],["mod.rs","record.rs","stats.rs","weight_params.rs"]],["storage",[],["cmd.rs","mod.rs","read.rs","template.rs","write.rs"]]],["lib.rs"]],\
 "frame_benchmarking_pallet_pov":["",[],["benchmarking.rs","lib.rs","weights.rs"]],\
 "frame_election_provider_solution_type":["",[],["codec.rs","from_assignment_helpers.rs","index_assignment.rs","lib.rs","single_page.rs"]],\
-"frame_election_provider_support":["",[],["lib.rs","onchain.rs","traits.rs","weights.rs"]],\
+"frame_election_provider_support":["",[],["bounds.rs","lib.rs","onchain.rs","traits.rs","weights.rs"]],\
 "frame_executive":["",[],["lib.rs"]],\
 "frame_remote_externalities":["",[],["lib.rs"]],\
 "frame_support":["",[["crypto",[],["ecdsa.rs"]],["storage",[["generator",[],["double_map.rs","map.rs","mod.rs","nmap.rs","value.rs"]],["types",[],["counted_map.rs","counted_nmap.rs","double_map.rs","key.rs","map.rs","mod.rs","nmap.rs","value.rs"]]],["bounded_btree_map.rs","bounded_btree_set.rs","bounded_vec.rs","child.rs","hashed.rs","migration.rs","mod.rs","storage_noop_guard.rs","stream_iter.rs","transactional.rs","unhashed.rs","weak_bounded_vec.rs"]],["traits",[["tokens",[["currency",[],["lockable.rs","reservable.rs"]],["fungible",[["conformance_tests",[],["inspect_mutate.rs","mod.rs"]]],["freeze.rs","hold.rs","imbalance.rs","item_of.rs","mod.rs","regular.rs"]],["fungibles",[],["approvals.rs","enumerable.rs","freeze.rs","hold.rs","imbalance.rs","lifetime.rs","metadata.rs","mod.rs","regular.rs","roles.rs"]],["imbalance",[],["on_unbalanced.rs","signed_imbalance.rs","split_two_ways.rs"]]],["currency.rs","imbalance.rs","misc.rs","nonfungible.rs","nonfungible_v2.rs","nonfungibles.rs","nonfungibles_v2.rs","pay.rs"]]],["dispatch.rs","error.rs","filter.rs","hooks.rs","members.rs","messages.rs","metadata.rs","misc.rs","preimages.rs","randomness.rs","schedule.rs","storage.rs","stored_map.rs","tokens.rs","try_runtime.rs","validation.rs","voting.rs"]],["weights",[],["block_weights.rs","extrinsic_weights.rs","paritydb_weights.rs","rocksdb_weights.rs"]]],["crypto.rs","dispatch.rs","dispatch_context.rs","genesis_builder_helper.rs","hash.rs","inherent.rs","instances.rs","lib.rs","migrations.rs","traits.rs","weights.rs"]],\
@@ -117,7 +117,7 @@ var sourcesIndex = JSON.parse('{\
 "pallet_session":["",[["historical",[],["mod.rs","offchain.rs","onchain.rs","shared.rs"]],["migrations",[],["mod.rs","v1.rs"]]],["lib.rs","weights.rs"]],\
 "pallet_session_benchmarking":["",[],["lib.rs"]],\
 "pallet_society":["",[],["benchmarking.rs","lib.rs","migrations.rs","weights.rs"]],\
-"pallet_staking":["",[["pallet",[],["impls.rs","mod.rs"]]],["benchmarking.rs","inflation.rs","lib.rs","migrations.rs","slashing.rs","testing_utils.rs","weights.rs"]],\
+"pallet_staking":["",[["pallet",[],["impls.rs","mod.rs"]]],["benchmarking.rs","election_size_tracker.rs","inflation.rs","lib.rs","migrations.rs","slashing.rs","testing_utils.rs","weights.rs"]],\
 "pallet_staking_reward_curve":["",[],["lib.rs","log.rs"]],\
 "pallet_staking_reward_fn":["",[],["lib.rs"]],\
 "pallet_staking_runtime_api":["",[],["lib.rs"]],\

@@ -534,6 +534,8 @@
 <a href="#534" id="534">534</a>
 <a href="#535" id="535">535</a>
 <a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -556,6 +558,7 @@
 </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
 <span class="kw">use crate</span>::{unsigned::IndexAssignmentOf, Pallet <span class="kw">as </span>MultiPhase};
 <span class="kw">use </span>frame_benchmarking::account;
+<span class="kw">use </span>frame_election_provider_support::bounds::DataProviderBounds;
 <span class="kw">use </span>frame_support::{
 	assert_ok,
 	traits::{Hooks, TryCollect},
@@ -806,8 +809,9 @@
 
 		<span class="comment">// we don&#39;t directly need the data-provider to be populated, but it is just easy to use it.
 		</span>set_up_data_provider::&lt;T&gt;(v, t);
-		<span class="kw">let </span>targets = T::DataProvider::electable_targets(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>voters = T::DataProvider::electing_voters(<span class="prelude-val">None</span>)<span class="question-mark">?</span>;
+		<span class="comment">// default bounds are unbounded.
+		</span><span class="kw">let </span>targets = T::DataProvider::electable_targets(DataProviderBounds::default())<span class="question-mark">?</span>;
+		<span class="kw">let </span>voters = T::DataProvider::electing_voters(DataProviderBounds::default())<span class="question-mark">?</span>;
 		<span class="kw">let </span>desired_targets = T::DataProvider::desired_targets()<span class="question-mark">?</span>;
 		<span class="macro">assert!</span>(&lt;MultiPhase&lt;T&gt;&gt;::snapshot().is_none());
 	}: {

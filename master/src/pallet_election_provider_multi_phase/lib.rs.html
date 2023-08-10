@@ -2669,6 +2669,31 @@
 <a href="#2669" id="2669">2669</a>
 <a href="#2670" id="2670">2670</a>
 <a href="#2671" id="2671">2671</a>
+<a href="#2672" id="2672">2672</a>
+<a href="#2673" id="2673">2673</a>
+<a href="#2674" id="2674">2674</a>
+<a href="#2675" id="2675">2675</a>
+<a href="#2676" id="2676">2676</a>
+<a href="#2677" id="2677">2677</a>
+<a href="#2678" id="2678">2678</a>
+<a href="#2679" id="2679">2679</a>
+<a href="#2680" id="2680">2680</a>
+<a href="#2681" id="2681">2681</a>
+<a href="#2682" id="2682">2682</a>
+<a href="#2683" id="2683">2683</a>
+<a href="#2684" id="2684">2684</a>
+<a href="#2685" id="2685">2685</a>
+<a href="#2686" id="2686">2686</a>
+<a href="#2687" id="2687">2687</a>
+<a href="#2688" id="2688">2688</a>
+<a href="#2689" id="2689">2689</a>
+<a href="#2690" id="2690">2690</a>
+<a href="#2691" id="2691">2691</a>
+<a href="#2692" id="2692">2692</a>
+<a href="#2693" id="2693">2693</a>
+<a href="#2694" id="2694">2694</a>
+<a href="#2695" id="2695">2695</a>
+<a href="#2696" id="2696">2696</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2902,8 +2927,9 @@
 
 </span><span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>frame_election_provider_support::{
-	BoundedSupportsOf, ElectionDataProvider, ElectionProvider, ElectionProviderBase,
-	InstantElectionProvider, NposSolution,
+	bounds::{CountBound, ElectionBounds, ElectionBoundsBuilder, SizeBound},
+	BoundedSupportsOf, DataProviderBounds, ElectionDataProvider, ElectionProvider,
+	ElectionProviderBase, InstantElectionProvider, NposSolution,
 };
 <span class="kw">use </span>frame_support::{
 	dispatch::DispatchClass,
@@ -3330,22 +3356,17 @@
 		</span><span class="attr">#[pallet::constant]
 		</span><span class="kw">type </span>SignedDepositWeight: Get&lt;BalanceOf&lt;<span class="self">Self</span>&gt;&gt;;
 
-		<span class="doccomment">/// The maximum number of electing voters to put in the snapshot. At the moment, snapshots
-		/// are only over a single block, but once multi-block elections are introduced they will
-		/// take place over multiple blocks.
-		</span><span class="attr">#[pallet::constant]
-		</span><span class="kw">type </span>MaxElectingVoters: Get&lt;SolutionVoterIndexOf&lt;<span class="self">Self</span>::MinerConfig&gt;&gt;;
-
-		<span class="doccomment">/// The maximum number of electable targets to put in the snapshot.
-		</span><span class="attr">#[pallet::constant]
-		</span><span class="kw">type </span>MaxElectableTargets: Get&lt;SolutionTargetIndexOf&lt;<span class="self">Self</span>::MinerConfig&gt;&gt;;
-
 		<span class="doccomment">/// The maximum number of winners that can be elected by this `ElectionProvider`
 		/// implementation.
 		///
 		/// Note: This must always be greater or equal to `T::DataProvider::desired_targets()`.
 		</span><span class="attr">#[pallet::constant]
 		</span><span class="kw">type </span>MaxWinners: Get&lt;u32&gt;;
+
+		<span class="doccomment">/// The maximum number of electing voters and electable targets to put in the snapshot.
+		/// At the moment, snapshots are only over a single block, but once multi-block elections
+		/// are introduced they will take place over multiple blocks.
+		</span><span class="kw">type </span>ElectionBounds: Get&lt;ElectionBounds&gt;;
 
 		<span class="doccomment">/// Handler for the slashed deposits.
 		</span><span class="kw">type </span>SlashHandler: OnUnbalanced&lt;NegativeImbalanceOf&lt;<span class="self">Self</span>&gt;&gt;;
@@ -3768,13 +3789,19 @@
 			T::ForceOrigin::ensure_origin(origin)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(<span class="self">Self</span>::current_phase().is_emergency(), &lt;Error&lt;T&gt;&gt;::CallNotAllowed);
 
-			<span class="kw">let </span>supports =
-				T::GovernanceFallback::instant_elect(maybe_max_voters, maybe_max_targets).map_err(
-					|e| {
-						<span class="macro">log!</span>(error, <span class="string">&quot;GovernanceFallback failed: {:?}&quot;</span>, e);
-						Error::&lt;T&gt;::FallbackFailed
-					},
-				)<span class="question-mark">?</span>;
+			<span class="kw">let </span>election_bounds = ElectionBoundsBuilder::default()
+				.voters_count(maybe_max_voters.unwrap_or(u32::MAX).into())
+				.targets_count(maybe_max_targets.unwrap_or(u32::MAX).into())
+				.build();
+
+			<span class="kw">let </span>supports = T::GovernanceFallback::instant_elect(
+				election_bounds.voters,
+				election_bounds.targets,
+			)
+			.map_err(|e| {
+				<span class="macro">log!</span>(error, <span class="string">&quot;GovernanceFallback failed: {:?}&quot;</span>, e);
+				Error::&lt;T&gt;::FallbackFailed
+			})<span class="question-mark">?</span>;
 
 			<span class="comment">// transform BoundedVec&lt;_, T::GovernanceFallback::MaxWinners&gt; into
 			// `BoundedVec&lt;_, T::MaxWinners&gt;`
@@ -4097,18 +4124,27 @@
 	/// Extracted for easier weight calculation.
 	</span><span class="kw">fn </span>create_snapshot_external(
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;T::AccountId&gt;, Vec&lt;VoterOf&lt;T&gt;&gt;, u32), ElectionError&lt;T&gt;&gt; {
-		<span class="kw">let </span>target_limit = T::MaxElectableTargets::get().saturated_into::&lt;usize&gt;();
-		<span class="kw">let </span>voter_limit = T::MaxElectingVoters::get().saturated_into::&lt;usize&gt;();
+		<span class="kw">let </span>election_bounds = T::ElectionBounds::get();
 
-		<span class="kw">let </span>targets = T::DataProvider::electable_targets(<span class="prelude-val">Some</span>(target_limit))
+		<span class="kw">let </span>targets = T::DataProvider::electable_targets(election_bounds.targets)
+			.and_then(|t| {
+				election_bounds.ensure_targets_limits(
+					CountBound(t.len() <span class="kw">as </span>u32),
+					SizeBound(t.encoded_size() <span class="kw">as </span>u32),
+				)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(t)
+			})
 			.map_err(ElectionError::DataProvider)<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>voters = T::DataProvider::electing_voters(<span class="prelude-val">Some</span>(voter_limit))
+		<span class="kw">let </span>voters = T::DataProvider::electing_voters(election_bounds.voters)
+			.and_then(|v| {
+				election_bounds.ensure_voters_limits(
+					CountBound(v.len() <span class="kw">as </span>u32),
+					SizeBound(v.encoded_size() <span class="kw">as </span>u32),
+				)<span class="question-mark">?</span>;
+				<span class="prelude-val">Ok</span>(v)
+			})
 			.map_err(ElectionError::DataProvider)<span class="question-mark">?</span>;
-
-		<span class="kw">if </span>targets.len() &gt; target_limit || voters.len() &gt; voter_limit {
-			<span class="kw">return </span><span class="prelude-val">Err</span>(ElectionError::DataProvider(<span class="string">&quot;Snapshot too big for submission.&quot;</span>))
-		}
 
 		<span class="kw">let </span><span class="kw-2">mut </span>desired_targets = &lt;Pallet&lt;T&gt; <span class="kw">as </span>ElectionProviderBase&gt;::desired_targets_checked()
 			.map_err(|e| ElectionError::DataProvider(e))<span class="question-mark">?</span>;
@@ -4215,18 +4251,25 @@
 		// - signed phase was complete or not started, in which case finalization is idempotent and
 		//   inexpensive (1 read of an empty vector).
 		</span><span class="kw">let _ </span>= <span class="self">Self</span>::finalize_signed_phase();
+
 		&lt;QueuedSolution&lt;T&gt;&gt;::take()
 			.ok_or(ElectionError::&lt;T&gt;::NothingQueued)
 			.or_else(|<span class="kw">_</span>| {
-				T::Fallback::instant_elect(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
-					.map_err(|fe| ElectionError::Fallback(fe))
-					.and_then(|supports| {
-						<span class="prelude-val">Ok</span>(ReadySolution {
-							supports,
-							score: Default::default(),
-							compute: ElectionCompute::Fallback,
-						})
+				<span class="comment">// default data provider bounds are unbounded. calling `instant_elect` with
+				// unbounded data provider bounds means that the on-chain `T:Bounds` configs will
+				// *not* be overwritten.
+				</span>T::Fallback::instant_elect(
+					DataProviderBounds::default(),
+					DataProviderBounds::default(),
+				)
+				.map_err(|fe| ElectionError::Fallback(fe))
+				.and_then(|supports| {
+					<span class="prelude-val">Ok</span>(ReadySolution {
+						supports,
+						score: Default::default(),
+						compute: ElectionCompute::Fallback,
 					})
+				})
 			})
 			.map(|ReadySolution { compute, score, supports }| {
 				<span class="self">Self</span>::deposit_event(Event::ElectionFinalized { compute, score });
@@ -4596,8 +4639,8 @@
 	<span class="kw">use crate</span>::{
 		mock::{
 			multi_phase_events, raw_solution, roll_to, roll_to_signed, roll_to_unsigned, AccountId,
-			ExtBuilder, MockWeightInfo, MockedWeightInfo, MultiPhase, Runtime, RuntimeOrigin,
-			SignedMaxSubmissions, System, TargetIndex, Targets,
+			ElectionsBounds, ExtBuilder, MockWeightInfo, MockedWeightInfo, MultiPhase, Runtime,
+			RuntimeOrigin, SignedMaxSubmissions, System, TargetIndex, Targets, Voters,
 		},
 		Phase,
 	};
@@ -5200,7 +5243,11 @@
 	</span><span class="kw">fn </span>snapshot_too_big_failure_onchain_fallback() {
 		<span class="comment">// the `MockStaking` is designed such that if it has too many targets, it simply fails.
 		</span>ExtBuilder::default().build_and_execute(|| {
-			Targets::set((<span class="number">0</span>..(TargetIndex::max_value() <span class="kw">as </span>AccountId) + <span class="number">1</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;());
+			<span class="comment">// sets bounds on number of targets.
+			</span><span class="kw">let </span>new_bounds = ElectionBoundsBuilder::default().targets_count(<span class="number">1_000</span>.into()).build();
+			ElectionsBounds::set(new_bounds);
+
+			Targets::set((<span class="number">0</span>..(<span class="number">1_000 </span><span class="kw">as </span>AccountId) + <span class="number">1</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;());
 
 			<span class="comment">// Signed phase failed to open.
 			</span>roll_to(<span class="number">15</span>);
@@ -5235,9 +5282,11 @@
 	</span><span class="kw">fn </span>snapshot_too_big_failure_no_fallback() {
 		<span class="comment">// and if the backup mode is nothing, we go into the emergency mode..
 		</span>ExtBuilder::default().onchain_fallback(<span class="bool-val">false</span>).build_and_execute(|| {
-			<span class="kw">crate</span>::mock::Targets::set(
-				(<span class="number">0</span>..(TargetIndex::max_value() <span class="kw">as </span>AccountId) + <span class="number">1</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;(),
-			);
+			<span class="comment">// sets bounds on number of targets.
+			</span><span class="kw">let </span>new_bounds = ElectionBoundsBuilder::default().targets_count(<span class="number">1_000</span>.into()).build();
+			ElectionsBounds::set(new_bounds);
+
+			Targets::set((<span class="number">0</span>..(TargetIndex::max_value() <span class="kw">as </span>AccountId) + <span class="number">1</span>).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;());
 
 			<span class="comment">// Signed phase failed to open.
 			</span>roll_to(<span class="number">15</span>);
@@ -5267,9 +5316,10 @@
 		<span class="comment">// but if there are too many voters, we simply truncate them.
 		</span>ExtBuilder::default().build_and_execute(|| {
 			<span class="comment">// we have 8 voters in total.
-			</span><span class="macro">assert_eq!</span>(<span class="kw">crate</span>::mock::Voters::get().len(), <span class="number">8</span>);
+			</span><span class="macro">assert_eq!</span>(Voters::get().len(), <span class="number">8</span>);
 			<span class="comment">// but we want to take 2.
-			</span><span class="kw">crate</span>::mock::MaxElectingVoters::set(<span class="number">2</span>);
+			</span><span class="kw">let </span>new_bounds = ElectionBoundsBuilder::default().voters_count(<span class="number">2</span>.into()).build();
+			ElectionsBounds::set(new_bounds);
 
 			<span class="comment">// Signed phase opens just fine.
 			</span>roll_to_signed();

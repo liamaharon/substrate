@@ -90,6 +90,14 @@
 <a href="#90" id="90">90</a>
 <a href="#91" id="91">91</a>
 <a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
 </pre></div><pre class="rust"><code><span class="comment">// Copyright Parity Technologies (UK) Ltd.
 // This file is part of Polkadot.
 
@@ -108,7 +116,10 @@
 
 </span><span class="doccomment">//! Test to execute the snapshot using the voter bag.
 
-</span><span class="kw">use </span>frame_election_provider_support::SortedListProvider;
+</span><span class="kw">use </span>frame_election_provider_support::{
+	bounds::{CountBound, DataProviderBounds},
+	SortedListProvider,
+};
 <span class="kw">use </span>frame_support::traits::PalletInfoAccess;
 <span class="kw">use </span>remote_externalities::{Builder, Mode, OnlineConfig};
 <span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, DeserializeOwned};
@@ -154,8 +165,13 @@
 			&lt;Runtime <span class="kw">as </span>pallet_staking::Config&gt;::VoterList::count(),
 		);
 
+		<span class="kw">let </span>bounds = <span class="kw">match </span>voter_limit {
+			<span class="prelude-val">None </span>=&gt; DataProviderBounds::default(),
+			<span class="prelude-val">Some</span>(v) =&gt; DataProviderBounds { count: <span class="prelude-val">Some</span>(CountBound(v <span class="kw">as </span>u32)), size: <span class="prelude-val">None </span>},
+		};
+
 		<span class="kw">let </span>voters =
-			&lt;pallet_staking::Pallet&lt;Runtime&gt; <span class="kw">as </span>ElectionDataProvider&gt;::electing_voters(voter_limit)
+			&lt;pallet_staking::Pallet&lt;Runtime&gt; <span class="kw">as </span>ElectionDataProvider&gt;::electing_voters(bounds)
 				.unwrap();
 
 		<span class="kw">let </span><span class="kw-2">mut </span>voters_nominator_only = voters

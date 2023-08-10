@@ -204,7 +204,7 @@
 <span class="kw">use </span>pallet_session::{historical::Pallet <span class="kw">as </span>Historical, Pallet <span class="kw">as </span>Session, <span class="kw-2">*</span>};
 <span class="kw">use </span>pallet_staking::{
 	benchmarking::create_validator_with_nominators, testing_utils::create_validators,
-	RewardDestination,
+	MaxNominationsOf, RewardDestination,
 };
 
 <span class="kw">const </span>MAX_VALIDATORS: u32 = <span class="number">1000</span>;
@@ -223,10 +223,10 @@
 
 <span class="macro">benchmarks! </span>{
 	set_keys {
-		<span class="kw">let </span>n = &lt;T <span class="kw">as </span>pallet_staking::Config&gt;::MaxNominations::get();
+		<span class="kw">let </span>n = MaxNominationsOf::&lt;T&gt;::get();
 		<span class="kw">let </span>(v_stash, <span class="kw">_</span>) = create_validator_with_nominators::&lt;T&gt;(
 			n,
-			&lt;T <span class="kw">as </span>pallet_staking::Config&gt;::MaxNominations::get(),
+			MaxNominationsOf::&lt;T&gt;::get(),
 			<span class="bool-val">false</span>,
 			<span class="bool-val">true</span>,
 			RewardDestination::Staked,
@@ -241,10 +241,10 @@
 	}: <span class="kw">_</span>(RawOrigin::Signed(v_controller), keys, proof)
 
 	purge_keys {
-		<span class="kw">let </span>n = &lt;T <span class="kw">as </span>pallet_staking::Config&gt;::MaxNominations::get();
+		<span class="kw">let </span>n = MaxNominationsOf::&lt;T&gt;::get();
 		<span class="kw">let </span>(v_stash, <span class="kw">_</span>) = create_validator_with_nominators::&lt;T&gt;(
 			n,
-			&lt;T <span class="kw">as </span>pallet_staking::Config&gt;::MaxNominations::get(),
+			MaxNominationsOf::&lt;T&gt;::get(),
 			<span class="bool-val">false</span>,
 			<span class="bool-val">true</span>,
 			RewardDestination::Staked,

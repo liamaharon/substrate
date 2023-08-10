@@ -957,6 +957,41 @@
 <a href="#957" id="957">957</a>
 <a href="#958" id="958">958</a>
 <a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
+<a href="#964" id="964">964</a>
+<a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
+<a href="#968" id="968">968</a>
+<a href="#969" id="969">969</a>
+<a href="#970" id="970">970</a>
+<a href="#971" id="971">971</a>
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+<a href="#974" id="974">974</a>
+<a href="#975" id="975">975</a>
+<a href="#976" id="976">976</a>
+<a href="#977" id="977">977</a>
+<a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
+<a href="#986" id="986">986</a>
+<a href="#987" id="987">987</a>
+<a href="#988" id="988">988</a>
+<a href="#989" id="989">989</a>
+<a href="#990" id="990">990</a>
+<a href="#991" id="991">991</a>
+<a href="#992" id="992">992</a>
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1251,6 +1286,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
+<span class="kw">pub mod </span>election_size_tracker;
 <span class="kw">pub mod </span>inflation;
 <span class="kw">pub mod </span>migrations;
 <span class="kw">pub mod </span>slashing;
@@ -1260,7 +1296,7 @@
 
 <span class="kw">use </span>codec::{Decode, Encode, HasCompact, MaxEncodedLen};
 <span class="kw">use </span>frame_support::{
-	traits::{Currency, Defensive, Get},
+	traits::{ConstU32, Currency, Defensive, Get},
 	weights::Weight,
 	BoundedVec, CloneNoBound, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound,
 };
@@ -1296,6 +1332,10 @@
 <span class="doccomment">/// Maximum number of winners (aka. active validators), as defined in the election provider of this
 /// pallet.
 </span><span class="kw">pub type </span>MaxWinnersOf&lt;T&gt; = &lt;&lt;T <span class="kw">as </span>Config&gt;::ElectionProvider <span class="kw">as </span>frame_election_provider_support::ElectionProviderBase&gt;::MaxWinners;
+
+<span class="doccomment">/// Maximum number of nominations per nominator.
+</span><span class="kw">pub type </span>MaxNominationsOf&lt;T&gt; =
+	&lt;&lt;T <span class="kw">as </span>Config&gt;::NominationsQuota <span class="kw">as </span>NominationsQuota&lt;BalanceOf&lt;T&gt;&gt;&gt;::MaxNominations;
 
 <span class="doccomment">/// Counter for the number of &quot;reward&quot; points earned by a given validator.
 </span><span class="kw">pub type </span>RewardPoint = u32;
@@ -1638,7 +1678,7 @@
 #[scale_info(skip_type_params(T))]
 </span><span class="kw">pub struct </span>Nominations&lt;T: Config&gt; {
 	<span class="doccomment">/// The targets of nomination.
-	</span><span class="kw">pub </span>targets: BoundedVec&lt;T::AccountId, T::MaxNominations&gt;,
+	</span><span class="kw">pub </span>targets: BoundedVec&lt;T::AccountId, MaxNominationsOf&lt;T&gt;&gt;,
 	<span class="doccomment">/// The era the nominations were submitted.
 	///
 	/// Except for initial nominations which are considered submitted at era 0.
@@ -1705,6 +1745,36 @@
 			reporters: <span class="macro">vec!</span>[],
 			payout: Zero::zero(),
 		}
+	}
+}
+
+<span class="doccomment">/// Something that defines the maximum number of nominations per nominator based on a curve.
+///
+/// The method `curve` implements the nomination quota curve and should not be used directly.
+/// However, `get_quota` returns the bounded maximum number of nominations based on `fn curve` and
+/// the nominator&#39;s balance.
+</span><span class="kw">pub trait </span>NominationsQuota&lt;Balance&gt; {
+	<span class="doccomment">/// Strict maximum number of nominations that caps the nominations curve. This value can be
+	/// used as the upper bound of the number of votes per nominator.
+	</span><span class="kw">type </span>MaxNominations: Get&lt;u32&gt;;
+
+	<span class="doccomment">/// Returns the voter&#39;s nomination quota within reasonable bounds [`min`, `max`], where `min`
+	/// is 1 and `max` is `Self::MaxNominations`.
+	</span><span class="kw">fn </span>get_quota(balance: Balance) -&gt; u32 {
+		<span class="self">Self</span>::curve(balance).clamp(<span class="number">1</span>, <span class="self">Self</span>::MaxNominations::get())
+	}
+
+	<span class="doccomment">/// Returns the voter&#39;s nomination quota based on its balance and a curve.
+	</span><span class="kw">fn </span>curve(balance: Balance) -&gt; u32;
+}
+
+<span class="doccomment">/// A nomination quota that allows up to MAX nominations for all validators.
+</span><span class="kw">pub struct </span>FixedNominationsQuota&lt;<span class="kw">const </span>MAX: u32&gt;;
+<span class="kw">impl</span>&lt;Balance, <span class="kw">const </span>MAX: u32&gt; NominationsQuota&lt;Balance&gt; <span class="kw">for </span>FixedNominationsQuota&lt;MAX&gt; {
+	<span class="kw">type </span>MaxNominations = ConstU32&lt;MAX&gt;;
+
+	<span class="kw">fn </span>curve(<span class="kw">_</span>: Balance) -&gt; u32 {
+		MAX
 	}
 }
 

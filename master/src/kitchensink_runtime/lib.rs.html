@@ -2643,6 +2643,11 @@
 <a href="#2643" id="2643">2643</a>
 <a href="#2644" id="2644">2644</a>
 <a href="#2645" id="2645">2645</a>
+<a href="#2646" id="2646">2646</a>
+<a href="#2647" id="2647">2647</a>
+<a href="#2648" id="2648">2648</a>
+<a href="#2649" id="2649">2649</a>
+<a href="#2650" id="2650">2650</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2669,6 +2674,7 @@
 
 </span><span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>frame_election_provider_support::{
+	bounds::{ElectionBounds, ElectionBoundsBuilder},
 	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen, VoteWeight,
 };
 <span class="kw">use </span>frame_support::{
@@ -3207,6 +3213,9 @@
 	<span class="kw">pub </span>HistoryDepth: u32 = <span class="number">84</span>;
 }
 
+<span class="doccomment">/// Upper limit on the number of NPOS nominations.
+</span><span class="kw">const </span>MAX_QUOTA_NOMINATIONS: u32 = <span class="number">16</span>;
+
 <span class="kw">pub struct </span>StakingBenchmarkingConfig;
 <span class="kw">impl </span>pallet_staking::BenchmarkingConfig <span class="kw">for </span>StakingBenchmarkingConfig {
 	<span class="kw">type </span>MaxNominators = ConstU32&lt;<span class="number">1000</span>&gt;;
@@ -3214,7 +3223,6 @@
 }
 
 <span class="kw">impl </span>pallet_staking::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>MaxNominations = MaxNominations;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>CurrencyBalance = Balance;
 	<span class="kw">type </span>UnixTime = Timestamp;
@@ -3239,6 +3247,7 @@
 	<span class="kw">type </span>ElectionProvider = ElectionProviderMultiPhase;
 	<span class="kw">type </span>GenesisElectionProvider = onchain::OnChainExecution&lt;OnChainSeqPhragmen&gt;;
 	<span class="kw">type </span>VoterList = VoterList;
+	<span class="kw">type </span>NominationsQuota = pallet_staking::FixedNominationsQuota&lt;MAX_QUOTA_NOMINATIONS&gt;;
 	<span class="comment">// This a placeholder, to be introduced in the next PR as an instance of bags-list
 	</span><span class="kw">type </span>TargetList = pallet_staking::UseValidatorsMap&lt;<span class="self">Self</span>&gt;;
 	<span class="kw">type </span>MaxUnlockingChunks = ConstU32&lt;<span class="number">32</span>&gt;;
@@ -3292,17 +3301,20 @@
 		VoterIndex = u32,
 		TargetIndex = u16,
 		Accuracy = sp_runtime::PerU16,
-		MaxVoters = MaxElectingVoters,
+		MaxVoters = MaxElectingVotersSolution,
 	&gt;(<span class="number">16</span>)
 );
 
 <span class="macro">parameter_types! </span>{
+	<span class="comment">// Note: the EPM in this runtime runs the election on-chain. The election bounds must be
+	// carefully set so that an election round fits in one block.
+	</span><span class="kw">pub </span>ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
+		.voters_count(<span class="number">10_000</span>.into()).targets_count(<span class="number">1_500</span>.into()).build();
+	<span class="kw">pub </span>ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
+		.voters_count(<span class="number">5_000</span>.into()).targets_count(<span class="number">1_250</span>.into()).build();
+
 	<span class="kw">pub </span>MaxNominations: u32 = &lt;NposSolution16 <span class="kw">as </span>frame_election_provider_support::NposSolution&gt;::LIMIT <span class="kw">as </span>u32;
-	<span class="kw">pub </span>MaxElectingVoters: u32 = <span class="number">40_000</span>;
-	<span class="kw">pub </span>MaxElectableTargets: u16 = <span class="number">10_000</span>;
-	<span class="comment">// OnChain values are lower.
-	</span><span class="kw">pub </span>MaxOnChainElectingVoters: u32 = <span class="number">5000</span>;
-	<span class="kw">pub </span>MaxOnChainElectableTargets: u16 = <span class="number">1250</span>;
+	<span class="kw">pub </span>MaxElectingVotersSolution: u32 = <span class="number">40_000</span>;
 	<span class="comment">// The maximum winners that can be elected by the Election pallet which is equivalent to the
 	// maximum active validators the staking pallet can have.
 	</span><span class="kw">pub </span>MaxActiveValidators: u32 = <span class="number">1000</span>;
@@ -3357,8 +3369,7 @@
 	<span class="kw">type </span>DataProvider = &lt;Runtime <span class="kw">as </span>pallet_election_provider_multi_phase::Config&gt;::DataProvider;
 	<span class="kw">type </span>WeightInfo = frame_election_provider_support::weights::SubstrateWeight&lt;Runtime&gt;;
 	<span class="kw">type </span>MaxWinners = &lt;Runtime <span class="kw">as </span>pallet_election_provider_multi_phase::Config&gt;::MaxWinners;
-	<span class="kw">type </span>VotersBound = MaxOnChainElectingVoters;
-	<span class="kw">type </span>TargetsBound = MaxOnChainElectableTargets;
+	<span class="kw">type </span>Bounds = ElectionBoundsOnChain;
 }
 
 <span class="kw">impl </span>pallet_election_provider_multi_phase::MinerConfig <span class="kw">for </span>Runtime {
@@ -3406,9 +3417,8 @@
 	<span class="kw">type </span>GovernanceFallback = onchain::OnChainExecution&lt;OnChainSeqPhragmen&gt;;
 	<span class="kw">type </span>Solver = SequentialPhragmen&lt;AccountId, SolutionAccuracyOf&lt;<span class="self">Self</span>&gt;, OffchainRandomBalancing&gt;;
 	<span class="kw">type </span>ForceOrigin = EnsureRootOrHalfCouncil;
-	<span class="kw">type </span>MaxElectableTargets = MaxElectableTargets;
 	<span class="kw">type </span>MaxWinners = MaxActiveValidators;
-	<span class="kw">type </span>MaxElectingVoters = MaxElectingVoters;
+	<span class="kw">type </span>ElectionBounds = ElectionBoundsMultiPhase;
 	<span class="kw">type </span>BenchmarkingConfig = ElectionProviderBenchmarkConfig;
 	<span class="kw">type </span>WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
 }
