@@ -528,6 +528,15 @@
 <a href="#528" id="528">528</a>
 <a href="#529" id="529">529</a>
 <a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -934,7 +943,7 @@
 			<span class="kw">let </span>best_beefy = <span class="kw-2">*</span>header.number();
 			<span class="comment">// If no session boundaries detected so far, just initialize new rounds here.
 			</span><span class="kw">if </span>sessions.is_empty() {
-				<span class="kw">let </span>active_set = expect_validator_set(runtime, header.hash())<span class="question-mark">?</span>;
+				<span class="kw">let </span>active_set = expect_validator_set(runtime, backend, <span class="kw-2">&amp;</span>header, beefy_genesis)<span class="question-mark">?</span>;
 				<span class="kw">let </span><span class="kw-2">mut </span>rounds = Rounds::new(best_beefy, active_set);
 				<span class="comment">// Mark the round as already finalized.
 				</span>rounds.conclude(best_beefy);
@@ -953,7 +962,7 @@
 
 		<span class="kw">if </span><span class="kw-2">*</span>header.number() == beefy_genesis {
 			<span class="comment">// We&#39;ve reached BEEFY genesis, initialize voter here.
-			</span><span class="kw">let </span>genesis_set = expect_validator_set(runtime, header.hash())<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>genesis_set = expect_validator_set(runtime, backend, <span class="kw-2">&amp;</span>header, beefy_genesis)<span class="question-mark">?</span>;
 			<span class="macro">info!</span>(
 				target: LOG_TARGET,
 				<span class="string">&quot;🥩 Loading BEEFY voter state from genesis on what appears to be first startup. \
@@ -982,16 +991,8 @@
 			sessions.push_front(Rounds::new(<span class="kw-2">*</span>header.number(), active));
 		}
 
-		<span class="comment">// Check if state is still available if we move up the chain.
-		</span><span class="kw">let </span>parent_hash = <span class="kw-2">*</span>header.parent_hash();
-		runtime.runtime_api().validator_set(parent_hash).ok().flatten().ok_or_else(|| {
-			<span class="kw">let </span>msg = <span class="macro">format!</span>(<span class="string">&quot;{}. Could not initialize BEEFY voter.&quot;</span>, parent_hash);
-			<span class="macro">error!</span>(target: LOG_TARGET, <span class="string">&quot;🥩 {}&quot;</span>, msg);
-			ClientError::Consensus(sp_consensus::Error::StateUnavailable(msg))
-		})<span class="question-mark">?</span>;
-
 		<span class="comment">// Move up the chain.
-		</span>header = blockchain.expect_header(parent_hash)<span class="question-mark">?</span>;
+		</span>header = blockchain.expect_header(<span class="kw-2">*</span>header.parent_hash())<span class="question-mark">?</span>;
 	};
 
 	aux_schema::write_current_version(backend)<span class="question-mark">?</span>;
@@ -1042,20 +1043,37 @@
 	<span class="prelude-val">Err</span>(ClientError::Backend(err_msg))
 }
 
-<span class="kw">fn </span>expect_validator_set&lt;B, R&gt;(
+<span class="kw">fn </span>expect_validator_set&lt;B, BE, R&gt;(
 	runtime: <span class="kw-2">&amp;</span>R,
-	at_hash: B::Hash,
+	backend: <span class="kw-2">&amp;</span>BE,
+	at_header: <span class="kw-2">&amp;</span>B::Header,
+	beefy_genesis: NumberFor&lt;B&gt;,
 ) -&gt; ClientResult&lt;ValidatorSet&lt;AuthorityId&gt;&gt;
 <span class="kw">where
 	</span>B: Block,
+	BE: Backend&lt;B&gt;,
 	R: ProvideRuntimeApi&lt;B&gt;,
 	R::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {
 	runtime
 		.runtime_api()
-		.validator_set(at_hash)
+		.validator_set(at_header.hash())
 		.ok()
 		.flatten()
-		.ok_or_else(|| ClientError::Backend(<span class="string">&quot;BEEFY pallet expected to be active.&quot;</span>.into()))
+		.or_else(|| {
+			<span class="comment">// if state unavailable, fallback to walking up the chain looking for the header
+			// Digest emitted when validator set active &#39;at_header&#39; was enacted.
+			</span><span class="kw">let </span>blockchain = backend.blockchain();
+			<span class="kw">let </span><span class="kw-2">mut </span>header = at_header.clone();
+			<span class="kw">while </span><span class="kw-2">*</span>header.number() &gt;= beefy_genesis {
+				<span class="kw">match </span>worker::find_authorities_change::&lt;B&gt;(<span class="kw-2">&amp;</span>header) {
+					<span class="prelude-val">Some</span>(active) =&gt; <span class="kw">return </span><span class="prelude-val">Some</span>(active),
+					<span class="comment">// Move up the chain.
+					</span><span class="prelude-val">None </span>=&gt; header = blockchain.expect_header(<span class="kw-2">*</span>header.parent_hash()).ok()<span class="question-mark">?</span>,
+				}
+			}
+			<span class="prelude-val">None
+		</span>})
+		.ok_or_else(|| ClientError::Backend(<span class="string">&quot;Could not find initial validator set&quot;</span>.into()))
 }
 </code></pre></div></section></main></body></html>
