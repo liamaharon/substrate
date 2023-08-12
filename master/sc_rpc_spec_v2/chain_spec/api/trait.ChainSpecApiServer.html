@@ -2,7 +2,7 @@
     // Required methods
     fn <a href="#tymethod.chain_spec_unstable_chain_name" class="fn">chain_spec_unstable_chain_name</a>(&amp;self) -&gt; RpcResult&lt;<a class="struct" href="https://doc.rust-lang.org/1.70.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>&gt;;
 <span class="item-spacer"></span>    fn <a href="#tymethod.chain_spec_unstable_genesis_hash" class="fn">chain_spec_unstable_genesis_hash</a>(&amp;self) -&gt; RpcResult&lt;<a class="struct" href="https://doc.rust-lang.org/1.70.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>&gt;;
-<span class="item-spacer"></span>    fn <a href="#tymethod.chain_spec_unstable_properties" class="fn">chain_spec_unstable_properties</a>(&amp;self) -&gt; RpcResult&lt;<a class="type" href="../../../sc_chain_spec/type.Properties.html" title="type sc_chain_spec::Properties">Properties</a>&gt;;
+<span class="item-spacer"></span>    fn <a href="#tymethod.chain_spec_unstable_properties" class="fn">chain_spec_unstable_properties</a>(&amp;self) -&gt; RpcResult&lt;Properties&gt;;
 
     // Provided method
     fn <a href="#method.into_rpc" class="fn">into_rpc</a>(self) -&gt; RpcModule&lt;Self&gt; { ... }
@@ -13,7 +13,7 @@
 </div></details><details class="toggle method-toggle" open><summary><section id="tymethod.chain_spec_unstable_genesis_hash" class="method"><a class="srclink rightside" href="../../../src/sc_rpc_spec_v2/chain_spec/api.rs.html#40">source</a><h4 class="code-header">fn <a href="#tymethod.chain_spec_unstable_genesis_hash" class="fn">chain_spec_unstable_genesis_hash</a>(&amp;self) -&gt; RpcResult&lt;<a class="struct" href="https://doc.rust-lang.org/1.70.0/alloc/string/struct.String.html" title="struct alloc::string::String">String</a>&gt;</h4></section></summary><div class="docblock"><p>Get the chain’s genesis hash.</p>
 <h5 id="unstable-1"><a href="#unstable-1">Unstable</a></h5>
 <p>This method is unstable and subject to change in the future.</p>
-</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.chain_spec_unstable_properties" class="method"><a class="srclink rightside" href="../../../src/sc_rpc_spec_v2/chain_spec/api.rs.html#52">source</a><h4 class="code-header">fn <a href="#tymethod.chain_spec_unstable_properties" class="fn">chain_spec_unstable_properties</a>(&amp;self) -&gt; RpcResult&lt;<a class="type" href="../../../sc_chain_spec/type.Properties.html" title="type sc_chain_spec::Properties">Properties</a>&gt;</h4></section></summary><div class="docblock"><p>Get the properties of the chain, as present in the chain specification.</p>
+</div></details><details class="toggle method-toggle" open><summary><section id="tymethod.chain_spec_unstable_properties" class="method"><a class="srclink rightside" href="../../../src/sc_rpc_spec_v2/chain_spec/api.rs.html#52">source</a><h4 class="code-header">fn <a href="#tymethod.chain_spec_unstable_properties" class="fn">chain_spec_unstable_properties</a>(&amp;self) -&gt; RpcResult&lt;Properties&gt;</h4></section></summary><div class="docblock"><p>Get the properties of the chain, as present in the chain specification.</p>
 <h5 id="note"><a href="#note">Note</a></h5>
 <p>The json whitespaces are not guaranteed to persist.</p>
 <h5 id="unstable-2"><a href="#unstable-2">Unstable</a></h5>

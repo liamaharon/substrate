@@ -412,6 +412,95 @@
 <a href="#412" id="412">412</a>
 <a href="#413" id="413">413</a>
 <a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a>
+<a href="#498" id="498">498</a>
+<a href="#499" id="499">499</a>
+<a href="#500" id="500">500</a>
+<a href="#501" id="501">501</a>
+<a href="#502" id="502">502</a>
+<a href="#503" id="503">503</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -429,21 +518,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="doccomment">//! # Bags-List Pallet
+</span><span class="doccomment">//! &gt; Made with *Substrate*, for *Polkadot*.
 //!
-//! A semi-sorted list, where items hold an `AccountId` based on some `Score`. The
-//! `AccountId` (`id` for short) might be synonym to a `voter` or `nominator` in some context, and
-//! `Score` signifies the chance of each id being included in the final
-//! [`SortedListProvider::iter`].
+//! [![github]](https://github.com/paritytech/substrate/frame/fast-unstake) -
+//! [![polkadot]](https://polkadot.network)
 //!
-//! It implements [`frame_election_provider_support::SortedListProvider`] to provide a semi-sorted
-//! list of accounts to another pallet. It needs some other pallet to give it some information about
-//! the weights of accounts via [`frame_election_provider_support::ScoreProvider`].
+//! [polkadot]:
+//!     https://img.shields.io/badge/polkadot-E6007A?style=for-the-badge&amp;logo=polkadot&amp;logoColor=white
+//! [github]:
+//!     https://img.shields.io/badge/github-8da0cb?style=for-the-badge&amp;labelColor=555555&amp;logo=github
 //!
-//! This pallet is not configurable at genesis. Whoever uses it should call appropriate functions of
-//! the `SortedListProvider` (e.g. `on_insert`, or `unsafe_regenerate`) at their genesis.
+//!  # Bags-List Pallet
 //!
-//! # Goals
+//! An onchain implementation of a semi-sorted linked list, with permissionless sorting and update
+//! operations.
+//!
+//! ## Pallet API
+//!
+//! See the [`pallet`] module for more information about the interfaces this pallet exposes,
+//! including its configuration trait, dispatchables, storage items, events and errors.
+//!
+//! This pallet provides an implementation of
+//! [`frame_election_provider_support::SortedListProvider`] and it can typically be used by another
+//! pallet via this API.
+//!
+//! ## Overview
+//!
+//! This pallet splits `AccountId`s into different bags. Within a bag, these `AccountId`s are stored
+//! as nodes in a linked-list manner. This pallet then provides iteration over all bags, which
+//! basically allows an infinitely large list of items to be kept in a sorted manner.
+//!
+//! Each bags has a upper and lower range of scores, denoted by [`Config::BagThresholds`]. All nodes
+//! within a bag must be within the range of the bag. If not, the permissionless [`Pallet::rebag`]
+//! can be used to move any node to the right bag.
+//!
+//! Once a `rebag` happens, the order within a node is still not enforced. To move a node to the
+//! optimal position in a bag, the [`Pallet::put_in_front_of`] or [`Pallet::put_in_front_of_other`]
+//! can be used.
+//!
+//! Additional reading, about how this pallet is used in the context of Polkadot&#39;s staking system:
+//! &lt;https://polkadot.network/blog/staking-update-september-2021/#bags-list-in-depth&gt;
+//!
+//! ## Examples
+//!
+//! See [`example`] for a diagram of `rebag` and `put_in_front_of` operations.
+//!
+//! ## Low Level / Implementation Details
 //!
 //! The data structure exposed by this pallet aims to be optimized for:
 //!
@@ -451,7 +571,7 @@
 //! - iteration over the top* N items by score, where the precise ordering of items doesn&#39;t
 //!   particularly matter.
 //!
-//! # Details
+//! ### Further Details
 //!
 //! - items are kept in bags, which are delineated by their range of score (See
 //!   [`Config::BagThresholds`]).
@@ -467,7 +587,45 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-</span><span class="kw">use </span>codec::FullCodec;
+#[cfg(doc)]
+#[cfg_attr(doc, aquamarine::aquamarine)]
+</span><span class="doccomment">///
+/// In this example, assuming each node has an equal id and score (eg. node 21 has a score of 21),
+/// the node 22 can be moved from bag 1 to bag 0 with the `rebag` operation.
+///
+/// Once the whole list is iterated, assuming the above above rebag happens, the order of iteration
+/// would be: `25, 21, 22, 12, 22, 5, 7, 3`.
+///
+/// Moreover, in bag2, node 7 can be moved to the front of node 5 with the `put_in_front_of`, as it
+/// has a higher score.
+///
+/// ```mermaid
+/// graph LR
+/// 	Bag0 --&gt; Bag1 --&gt; Bag2
+///
+/// 	subgraph Bag0[Bag 0: 21-30 DOT]
+/// 		direction LR
+/// 		25 --&gt; 21 --&gt; 22X[22]
+/// 	end
+///
+/// 	subgraph Bag1[Bag 1: 11-20 DOT]
+/// 		direction LR
+/// 		12 --&gt; 22
+/// 	end
+///
+/// 	subgraph Bag2[Bag 2: 0-10 DOT]
+/// 		direction LR
+/// 		5 --&gt; 7 --&gt; 3
+/// 	end
+///
+/// 	style 22X stroke-dasharray: 5 5,opacity:50%
+/// ```
+///
+/// The equivalent of this in code would be:
+</span><span class="attr">#[doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, examples_work)]
+</span><span class="kw">pub mod </span>example {}
+
+<span class="kw">use </span>codec::FullCodec;
 <span class="kw">use </span>frame_election_provider_support::{ScoreProvider, SortedListProvider};
 <span class="kw">use </span>frame_system::ensure_signed;
 <span class="kw">use </span>sp_runtime::traits::{AtLeast32BitUnsigned, Bounded, StaticLookup};
@@ -654,9 +812,11 @@
 		<span class="doccomment">/// Move the caller&#39;s Id directly in front of `lighter`.
 		///
 		/// The dispatch origin for this call must be _Signed_ and can only be called by the Id of
-		/// the account going in front of `lighter`.
+		/// the account going in front of `lighter`. Fee is payed by the origin under all
+		/// circumstances.
 		///
-		/// Only works if
+		/// Only works if:
+		///
 		/// - both nodes are within the same bag,
 		/// - and `origin` has a greater `Score` than `lighter`.
 		</span><span class="attr">#[pallet::call_index(<span class="number">1</span>)]
@@ -667,6 +827,24 @@
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>heavier = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="kw">let </span>lighter = T::Lookup::lookup(lighter)<span class="question-mark">?</span>;
+			List::&lt;T, I&gt;::put_in_front_of(<span class="kw-2">&amp;</span>lighter, <span class="kw-2">&amp;</span>heavier)
+				.map_err::&lt;Error&lt;T, I&gt;, <span class="kw">_</span>&gt;(Into::into)
+				.map_err::&lt;DispatchError, <span class="kw">_</span>&gt;(Into::into)
+		}
+
+		<span class="doccomment">/// Same as [`Pallet::put_in_front_of`], but it can be called by anyone.
+		///
+		/// Fee is paid by the origin under all circumstances.
+		</span><span class="attr">#[pallet::call_index(<span class="number">2</span>)]
+		#[pallet::weight(T::WeightInfo::put_in_front_of())]
+		</span><span class="kw">pub fn </span>put_in_front_of_other(
+			origin: OriginFor&lt;T&gt;,
+			heavier: AccountIdLookupOf&lt;T&gt;,
+			lighter: AccountIdLookupOf&lt;T&gt;,
+		) -&gt; DispatchResult {
+			<span class="kw">let _ </span>= ensure_signed(origin)<span class="question-mark">?</span>;
+			<span class="kw">let </span>lighter = T::Lookup::lookup(lighter)<span class="question-mark">?</span>;
+			<span class="kw">let </span>heavier = T::Lookup::lookup(heavier)<span class="question-mark">?</span>;
 			List::&lt;T, I&gt;::put_in_front_of(<span class="kw-2">&amp;</span>lighter, <span class="kw-2">&amp;</span>heavier)
 				.map_err::&lt;Error&lt;T, I&gt;, <span class="kw">_</span>&gt;(Into::into)
 				.map_err::&lt;DispatchError, <span class="kw">_</span>&gt;(Into::into)
