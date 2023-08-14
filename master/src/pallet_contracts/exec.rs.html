@@ -3903,6 +3903,16 @@
 <a href="#3903" id="3903">3903</a>
 <a href="#3904" id="3904">3904</a>
 <a href="#3905" id="3905">3905</a>
+<a href="#3906" id="3906">3906</a>
+<a href="#3907" id="3907">3907</a>
+<a href="#3908" id="3908">3908</a>
+<a href="#3909" id="3909">3909</a>
+<a href="#3910" id="3910">3910</a>
+<a href="#3911" id="3911">3911</a>
+<a href="#3912" id="3912">3912</a>
+<a href="#3913" id="3913">3913</a>
+<a href="#3914" id="3914">3914</a>
+<a href="#3915" id="3915">3915</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -4251,7 +4261,17 @@
 }
 
 <span class="doccomment">/// Describes the different functions that can be exported by an [`Executable`].
-</span><span class="attr">#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+</span><span class="attr">#[derive(
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	sp_core::RuntimeDebug,
+	codec::Decode,
+	codec::Encode,
+	codec::MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
 </span><span class="kw">pub enum </span>ExportedFunction {
 	<span class="doccomment">/// The constructor function which is executed on deployment of a contract.
 	</span>Constructor,

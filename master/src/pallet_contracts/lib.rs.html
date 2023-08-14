@@ -1655,6 +1655,10 @@
 <a href="#1655" id="1655">1655</a>
 <a href="#1656" id="1656">1656</a>
 <a href="#1657" id="1657">1657</a>
+<a href="#1658" id="1658">1658</a>
+<a href="#1659" id="1659">1659</a>
+<a href="#1660" id="1660">1660</a>
+<a href="#1661" id="1661">1661</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1765,7 +1769,7 @@
 	storage::{meter::Meter <span class="kw">as </span>StorageMeter, ContractInfo, DeletionQueueManager},
 	wasm::{CodeInfo, WasmBlob},
 };
-<span class="kw">use </span>codec::{Codec, Decode, Encode, HasCompact};
+<span class="kw">use </span>codec::{Codec, Decode, Encode, HasCompact, MaxEncodedLen};
 <span class="kw">use </span>environmental::<span class="kw-2">*</span>;
 <span class="kw">use </span>frame_support::{
 	dispatch::{
@@ -1779,7 +1783,7 @@
 		ConstU32, Contains, Get, Randomness, Time,
 	},
 	weights::Weight,
-	BoundedVec, RuntimeDebugNoBound,
+	BoundedVec, RuntimeDebug, RuntimeDebugNoBound,
 };
 <span class="kw">use </span>frame_system::{ensure_signed, pallet_prelude::OriginFor, EventRecord, Pallet <span class="kw">as </span>System};
 <span class="kw">use </span>pallet_contracts_primitives::{
@@ -2776,7 +2780,9 @@
 }
 
 <span class="doccomment">/// Determines whether events should be collected during execution.
-</span><span class="attr">#[derive(PartialEq)]
+</span><span class="attr">#[derive(
+	Copy, Clone, PartialEq, Eq, RuntimeDebug, Decode, Encode, MaxEncodedLen, scale_info::TypeInfo,
+)]
 </span><span class="kw">pub enum </span>CollectEvents {
 	<span class="doccomment">/// Collect events.
 	///
@@ -2792,7 +2798,9 @@
 }
 
 <span class="doccomment">/// Determines whether debug messages will be collected.
-</span><span class="attr">#[derive(PartialEq)]
+</span><span class="attr">#[derive(
+	Copy, Clone, PartialEq, Eq, RuntimeDebug, Decode, Encode, MaxEncodedLen, scale_info::TypeInfo,
+)]
 </span><span class="kw">pub enum </span>DebugInfo {
 	<span class="doccomment">/// Collect debug messages.
 	/// # Note

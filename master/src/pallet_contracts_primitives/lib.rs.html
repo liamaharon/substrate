@@ -259,6 +259,8 @@
 <a href="#259" id="259">259</a>
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -281,7 +283,7 @@
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">use </span>bitflags::bitflags;
-<span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">use </span>codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="kw">use </span>sp_runtime::{
 	traits::{Saturating, Zero},
@@ -300,7 +302,7 @@
 /// It has been extended to include `events` at the end of the struct while not bumping the
 /// `ContractsApi` version. Therefore when SCALE decoding a `ContractResult` its trailing data
 /// should be ignored to avoid any potential compatibility issues.
-</span><span class="attr">#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="attr">#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub struct </span>ContractResult&lt;R, Balance, EventRecord&gt; {
 	<span class="doccomment">/// How much weight was consumed during execution.
 	</span><span class="kw">pub </span>gas_consumed: Weight,
@@ -360,7 +362,7 @@
 </span><span class="kw">pub type </span>GetStorageResult = <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;, ContractAccessError&gt;;
 
 <span class="doccomment">/// The possible errors that can happen querying the storage of a contract.
-</span><span class="attr">#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="attr">#[derive(Copy, Clone, Eq, PartialEq, Encode, Decode, MaxEncodedLen, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub enum </span>ContractAccessError {
 	<span class="doccomment">/// The given address doesn&#39;t point to a contract.
 	</span>DoesntExist,
@@ -380,7 +382,7 @@
 }
 
 <span class="doccomment">/// Output of a contract call or instantiation which ran to completion.
-</span><span class="attr">#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub struct </span>ExecReturnValue {
 	<span class="doccomment">/// Flags passed along by `seal_return`. Empty when `seal_return` was never called.
 	</span><span class="kw">pub </span>flags: ReturnFlags,
@@ -396,7 +398,7 @@
 }
 
 <span class="doccomment">/// The result of a successful contract instantiation.
-</span><span class="attr">#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub struct </span>InstantiateReturnValue&lt;AccountId&gt; {
 	<span class="doccomment">/// The output of the called constructor.
 	</span><span class="kw">pub </span>result: ExecReturnValue,
@@ -405,7 +407,7 @@
 }
 
 <span class="doccomment">/// The result of successfully uploading a contract.
-</span><span class="attr">#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="attr">#[derive(Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub struct </span>CodeUploadReturnValue&lt;CodeHash, Balance&gt; {
 	<span class="doccomment">/// The key under which the new code is stored.
 	</span><span class="kw">pub </span>code_hash: CodeHash,
@@ -414,7 +416,7 @@
 }
 
 <span class="doccomment">/// Reference to an existing code hash or a new wasm module.
-</span><span class="attr">#[derive(Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
+</span><span class="attr">#[derive(Clone, Eq, PartialEq, Encode, Decode, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub enum </span>Code&lt;Hash&gt; {
 	<span class="doccomment">/// A wasm module as raw bytes.
 	</span>Upload(Vec&lt;u8&gt;),
@@ -423,7 +425,9 @@
 }
 
 <span class="doccomment">/// The amount of balance that was either charged or refunded in order to pay for storage.
-</span><span class="attr">#[derive(Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, Clone, TypeInfo)]
+</span><span class="attr">#[derive(
+	Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, RuntimeDebug, TypeInfo,
+)]
 </span><span class="kw">pub enum </span>StorageDeposit&lt;Balance&gt; {
 	<span class="doccomment">/// The transaction reduced storage consumption.
 	///
