@@ -436,6 +436,24 @@
 <a href="#436" id="436">436</a>
 <a href="#437" id="437">437</a>
 <a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -475,6 +493,12 @@
 	<span class="macro">syn::custom_keyword!</span>(constant);
 }
 
+<span class="attr">#[derive(Default)]
+</span><span class="kw">pub struct </span>DefaultTrait {
+	<span class="kw">pub </span>items: Vec&lt;syn::TraitItem&gt;,
+	<span class="kw">pub </span>has_system: bool,
+}
+
 <span class="doccomment">/// Input definition for the pallet config.
 </span><span class="kw">pub struct </span>ConfigDef {
 	<span class="doccomment">/// The index of item in pallet module.
@@ -496,8 +520,8 @@
 	///
 	/// Contains default sub-trait items (instantiated by `#[pallet::config(with_default)]`).
 	/// Vec will be empty if `#[pallet::config(with_default)]` is not specified or if there are
-	/// no trait items
-	</span><span class="kw">pub </span>default_sub_trait: Vec&lt;syn::TraitItem&gt;,
+	/// no trait items.
+	</span><span class="kw">pub </span>default_sub_trait: <span class="prelude-ty">Option</span>&lt;DefaultTrait&gt;,
 }
 
 <span class="doccomment">/// Input definition for a constant in pallet config.
@@ -777,9 +801,21 @@
 			<span class="bool-val">false
 		</span>};
 
+		<span class="kw">let </span>has_frame_system_supertrait = item.supertraits.iter().any(|s| {
+			syn::parse2::&lt;ConfigBoundParse&gt;(s.to_token_stream())
+				.map_or(<span class="bool-val">false</span>, |b| b.<span class="number">0 </span>== <span class="kw-2">*</span>frame_system)
+		});
+
 		<span class="kw">let </span><span class="kw-2">mut </span>has_event_type = <span class="bool-val">false</span>;
 		<span class="kw">let </span><span class="kw-2">mut </span>consts_metadata = <span class="macro">vec!</span>[];
-		<span class="kw">let </span><span class="kw-2">mut </span>default_sub_trait = <span class="macro">vec!</span>[];
+		<span class="kw">let </span><span class="kw-2">mut </span>default_sub_trait = <span class="kw">if </span>enable_default {
+			<span class="prelude-val">Some</span>(DefaultTrait {
+				items: Default::default(),
+				has_system: has_frame_system_supertrait,
+			})
+		} <span class="kw">else </span>{
+			<span class="prelude-val">None
+		</span>};
 		<span class="kw">for </span>trait_item <span class="kw">in </span><span class="kw-2">&amp;mut </span>item.items {
 			<span class="kw">let </span>is_event = check_event_type(frame_system, trait_item, has_instance)<span class="question-mark">?</span>;
 			has_event_type = has_event_type || is_event;
@@ -820,24 +856,24 @@
 								<span class="string">&quot;Duplicate #[pallet::no_default] attribute not allowed.&quot;</span>,
 							))
 						}
+
 						already_no_default = <span class="bool-val">true</span>;
 					},
 				}
 			}
 
 			<span class="kw">if </span>!already_no_default &amp;&amp; !is_event &amp;&amp; enable_default {
-				default_sub_trait.push(trait_item.clone());
+				default_sub_trait
+					.as_mut()
+					.expect(<span class="string">&quot;is &#39;Some(_)&#39; if &#39;enable_default&#39;; qed&quot;</span>)
+					.items
+					.push(trait_item.clone());
 			}
 		}
 
 		<span class="kw">let </span>attr: <span class="prelude-ty">Option</span>&lt;DisableFrameSystemSupertraitCheck&gt; =
 			helper::take_first_item_pallet_attr(<span class="kw-2">&amp;mut </span>item.attrs)<span class="question-mark">?</span>;
 		<span class="kw">let </span>disable_system_supertrait_check = attr.is_some();
-
-		<span class="kw">let </span>has_frame_system_supertrait = item.supertraits.iter().any(|s| {
-			syn::parse2::&lt;ConfigBoundParse&gt;(s.to_token_stream())
-				.map_or(<span class="bool-val">false</span>, |b| b.<span class="number">0 </span>== <span class="kw-2">*</span>frame_system)
-		});
 
 		<span class="kw">if </span>!has_frame_system_supertrait &amp;&amp; !disable_system_supertrait_check {
 			<span class="kw">let </span>found = <span class="kw">if </span>item.supertraits.is_empty() {

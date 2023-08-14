@@ -203,6 +203,28 @@
 <a href="#203" id="203">203</a>
 <a href="#204" id="204">204</a>
 <a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -260,11 +282,20 @@
 		/// in our tests below.
 		</span><span class="kw">type </span>OverwrittenDefaultValue: Get&lt;u32&gt;;
 
-		<span class="doccomment">/// An input parameter that relies on `&lt;Self as frame_system::Config&gt;::AccountId`. As of
-		/// now, such types cannot have defaults and need to be annotated as such, iff
-		/// `#[pallet::config(with_default)]` is enabled:
+		<span class="doccomment">/// An input parameter that relies on `&lt;Self as frame_system::Config&gt;::AccountId`. This can
+		/// too have a default, as long as as it is present in `frame_system::DefaultConfig`.
+		</span><span class="kw">type </span>CanDeriveDefaultFromSystem: Get&lt;<span class="self">Self</span>::AccountId&gt;;
+
+		<span class="doccomment">/// We might chose to declare as one that doesn&#39;t have a default, for whatever semantical
+		/// reason.
 		</span><span class="attr">#[pallet::no_default]
-		</span><span class="kw">type </span>CannotHaveDefault: Get&lt;<span class="self">Self</span>::AccountId&gt;;
+		</span><span class="kw">type </span>HasNoDefault: Get&lt;u32&gt;;
+
+		<span class="doccomment">/// Some types can technically have no default, such as those the rely on
+		/// `frame_system::Config` but are not present in `frame_system::DefaultConfig`. For
+		/// example, a `RuntimeCall` cannot reasonably have a default.
+		</span><span class="attr">#[pallet::no_default] </span><span class="comment">// if we skip this, there will be a compiler error.
+		</span><span class="kw">type </span>CannotHaveDefault: Get&lt;<span class="self">Self</span>::RuntimeCall&gt;;
 
 		<span class="doccomment">/// Something that is a normal type, with default.
 		</span><span class="kw">type </span>WithDefaultType;
@@ -278,24 +309,41 @@
 	</span><span class="kw">pub mod </span>config_preludes {
 		<span class="comment">// This will help use not need to disambiguate anything when using `derive_impl`.
 		</span><span class="kw">use super</span>::<span class="kw-2">*</span>;
+		<span class="kw">use </span>frame_support::derive_impl;
 
 		<span class="doccomment">/// A type providing default configurations for this pallet in testing environment.
 		</span><span class="kw">pub struct </span>TestDefaultConfig;
+
+		<span class="attr">#[derive_impl(frame_system::config_preludes::TestDefaultConfig <span class="kw">as </span>frame_system::DefaultConfig)]
+		</span><span class="kw">impl </span>frame_system::DefaultConfig <span class="kw">for </span>TestDefaultConfig {}
+
 		<span class="attr">#[frame_support::register_default_impl(TestDefaultConfig)]
 		</span><span class="kw">impl </span>DefaultConfig <span class="kw">for </span>TestDefaultConfig {
 			<span class="kw">type </span>WithDefaultValue = frame_support::traits::ConstU32&lt;<span class="number">42</span>&gt;;
 			<span class="kw">type </span>OverwrittenDefaultValue = frame_support::traits::ConstU32&lt;<span class="number">42</span>&gt;;
 
+			<span class="comment">// `frame_system::config_preludes::TestDefaultConfig` declares account-id as u64.
+			</span><span class="kw">type </span>CanDeriveDefaultFromSystem = frame_support::traits::ConstU64&lt;<span class="number">42</span>&gt;;
+
 			<span class="kw">type </span>WithDefaultType = u32;
 			<span class="kw">type </span>OverwrittenDefaultType = u32;
 		}
 
-		<span class="doccomment">/// A type providing default configurations for this pallet in a parachain environment.
-		</span><span class="kw">pub struct </span>ParachainDefaultConfig;
-		<span class="attr">#[frame_support::register_default_impl(ParachainDefaultConfig)]
-		</span><span class="kw">impl </span>DefaultConfig <span class="kw">for </span>ParachainDefaultConfig {
+		<span class="doccomment">/// A type providing default configurations for this pallet in another environment. Examples
+		/// could be a parachain, or a solo-chain.
+		///
+		/// Appropriate derive for `frame_system::DefaultConfig` needs to be provided. In this
+		/// example, we simple derive `frame_system::config_preludes::TestDefaultConfig` again.
+		</span><span class="kw">pub struct </span>OtherDefaultConfig;
+
+		<span class="attr">#[derive_impl(frame_system::config_preludes::TestDefaultConfig <span class="kw">as </span>frame_system::DefaultConfig)]
+		</span><span class="kw">impl </span>frame_system::DefaultConfig <span class="kw">for </span>OtherDefaultConfig {}
+
+		<span class="attr">#[frame_support::register_default_impl(OtherDefaultConfig)]
+		</span><span class="kw">impl </span>DefaultConfig <span class="kw">for </span>OtherDefaultConfig {
 			<span class="kw">type </span>WithDefaultValue = frame_support::traits::ConstU32&lt;<span class="number">66</span>&gt;;
 			<span class="kw">type </span>OverwrittenDefaultValue = frame_support::traits::ConstU32&lt;<span class="number">66</span>&gt;;
+			<span class="kw">type </span>CanDeriveDefaultFromSystem = frame_support::traits::ConstU64&lt;<span class="number">42</span>&gt;;
 			<span class="kw">type </span>WithDefaultType = u32;
 			<span class="kw">type </span>OverwrittenDefaultType = u32;
 		}
@@ -311,28 +359,25 @@
 <span class="attr">#[cfg(any(test, doc))]
 </span><span class="kw">pub mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span>frame_support::derive_impl;
-	<span class="kw">use </span>sp_runtime::traits::ConstU64;
+	<span class="kw">use </span>frame_support::{derive_impl, parameter_types};
+	<span class="kw">use </span>pallet::{<span class="self">self </span><span class="kw">as </span>pallet_default_config_example, config_preludes::<span class="kw-2">*</span>};
 
-	<span class="kw">use </span><span class="kw">super</span>::pallet <span class="kw">as </span>pallet_default_config_example;
-
-	<span class="kw">type </span>Block = frame_system::mocking::MockBlock&lt;Test&gt;;
+	<span class="kw">type </span>Block = frame_system::mocking::MockBlock&lt;Runtime&gt;;
 
 	<span class="macro">frame_support::construct_runtime!</span>(
-		<span class="kw">pub enum </span>Test
-		{
+		<span class="kw">pub struct </span>Runtime {
 			System: frame_system,
 			DefaultPallet: pallet_default_config_example,
 		}
 	);
 
 	<span class="attr">#[derive_impl(frame_system::config_preludes::TestDefaultConfig <span class="kw">as </span>frame_system::DefaultConfig)]
-	</span><span class="kw">impl </span>frame_system::Config <span class="kw">for </span>Test {
+	</span><span class="kw">impl </span>frame_system::Config <span class="kw">for </span>Runtime {
 		<span class="comment">// these items are defined by frame-system as `no_default`, so we must specify them here.
 		// Note that these are types that actually rely on the outer runtime, and can&#39;t sensibly
 		// have an _independent_ default.
 		</span><span class="kw">type </span>Block = Block;
-		<span class="kw">type </span>BlockHashCount = ConstU64&lt;<span class="number">10</span>&gt;;
+		<span class="kw">type </span>BlockHashCount = frame_support::traits::ConstU64&lt;<span class="number">10</span>&gt;;
 		<span class="kw">type </span>BaseCallFilter = frame_support::traits::Everything;
 		<span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
 		<span class="kw">type </span>RuntimeCall = RuntimeCall;
@@ -344,9 +389,6 @@
 
 		// type Nonce = u32;
 		// type BlockNumber = u32;
-		// type Header =
-		// sp_runtime::generic::Header&lt;frame_system::pallet_prelude::BlockNumberFor&lt;Self&gt;,
-		// Self::Hashing&gt;;
 		// type Hash = sp_core::hash::H256;
 		// type Hashing = sp_runtime::traits::BlakeTwo256;
 		// type AccountId = u64;
@@ -367,15 +409,17 @@
 		</span><span class="kw">type </span>SS58Prefix = frame_support::traits::ConstU16&lt;<span class="number">456</span>&gt;;
 	}
 
-	<span class="comment">// Similarly, we use the defaults provided by own crate as well.
-	</span><span class="kw">use </span>pallet::config_preludes::<span class="kw-2">*</span>;
+	<span class="macro">parameter_types! </span>{
+		<span class="kw">pub const </span>SomeCall: RuntimeCall = RuntimeCall::System(frame_system::Call::&lt;Runtime&gt;::remark { remark: <span class="macro">vec!</span>[] });
+	}
+
 	<span class="attr">#[derive_impl(TestDefaultConfig <span class="kw">as </span>pallet::DefaultConfig)]
-	</span><span class="kw">impl </span><span class="kw">crate</span>::pallet::Config <span class="kw">for </span>Test {
+	</span><span class="kw">impl </span>pallet_default_config_example::Config <span class="kw">for </span>Runtime {
 		<span class="comment">// These two both cannot have defaults.
 		</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-		<span class="comment">// Note that the default account-id type in
-		// `frame_system::config_preludes::TestDefaultConfig` is `u64`.
-		</span><span class="kw">type </span>CannotHaveDefault = frame_support::traits::ConstU64&lt;<span class="number">1</span>&gt;;
+
+		<span class="kw">type </span>HasNoDefault = frame_support::traits::ConstU32&lt;<span class="number">1</span>&gt;;
+		<span class="kw">type </span>CannotHaveDefault = SomeCall;
 
 		<span class="kw">type </span>OverwrittenDefaultValue = frame_support::traits::ConstU32&lt;<span class="number">678</span>&gt;;
 		<span class="kw">type </span>OverwrittenDefaultType = u128;
@@ -388,22 +432,22 @@
 
 		<span class="comment">// assert one of the value types that is not overwritten.
 		</span><span class="macro">assert_eq!</span>(
-			&lt;&lt;Test <span class="kw">as </span>Config&gt;::WithDefaultValue <span class="kw">as </span>Get&lt;u32&gt;&gt;::get(),
+			&lt;&lt;Runtime <span class="kw">as </span>Config&gt;::WithDefaultValue <span class="kw">as </span>Get&lt;u32&gt;&gt;::get(),
 			&lt;&lt;TestDefaultConfig <span class="kw">as </span>DefaultConfig&gt;::WithDefaultValue <span class="kw">as </span>Get&lt;u32&gt;&gt;::get()
 		);
 
 		<span class="comment">// assert one of the value types that is overwritten.
-		</span><span class="macro">assert_eq!</span>(&lt;&lt;Test <span class="kw">as </span>Config&gt;::OverwrittenDefaultValue <span class="kw">as </span>Get&lt;u32&gt;&gt;::get(), <span class="number">678u32</span>);
+		</span><span class="macro">assert_eq!</span>(&lt;&lt;Runtime <span class="kw">as </span>Config&gt;::OverwrittenDefaultValue <span class="kw">as </span>Get&lt;u32&gt;&gt;::get(), <span class="number">678u32</span>);
 
 		<span class="comment">// assert one of the types that is not overwritten.
 		</span><span class="macro">assert_eq!</span>(
-			std::any::TypeId::of::&lt;&lt;Test <span class="kw">as </span>Config&gt;::WithDefaultType&gt;(),
+			std::any::TypeId::of::&lt;&lt;Runtime <span class="kw">as </span>Config&gt;::WithDefaultType&gt;(),
 			std::any::TypeId::of::&lt;&lt;TestDefaultConfig <span class="kw">as </span>DefaultConfig&gt;::WithDefaultType&gt;()
 		);
 
 		<span class="comment">// assert one of the types that is overwritten.
 		</span><span class="macro">assert_eq!</span>(
-			std::any::TypeId::of::&lt;&lt;Test <span class="kw">as </span>Config&gt;::OverwrittenDefaultType&gt;(),
+			std::any::TypeId::of::&lt;&lt;Runtime <span class="kw">as </span>Config&gt;::OverwrittenDefaultType&gt;(),
 			std::any::TypeId::of::&lt;u128&gt;()
 		)
 	}

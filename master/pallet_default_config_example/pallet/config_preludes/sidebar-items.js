@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ParachainDefaultConfig","TestDefaultConfig"]};
+window.SIDEBAR_ITEMS = {"struct":["OtherDefaultConfig","TestDefaultConfig"]};
