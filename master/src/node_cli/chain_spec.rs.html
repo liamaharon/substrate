@@ -700,14 +700,14 @@
 	)
 }
 
-<span class="doccomment">/// Helper function to generate a crypto pair from seed
+<span class="doccomment">/// Helper function to generate a crypto pair from seed.
 </span><span class="kw">pub fn </span>get_from_seed&lt;TPublic: Public&gt;(seed: <span class="kw-2">&amp;</span>str) -&gt; &lt;TPublic::Pair <span class="kw">as </span>Pair&gt;::Public {
 	TPublic::Pair::from_string(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;//{}&quot;</span>, seed), <span class="prelude-val">None</span>)
 		.expect(<span class="string">&quot;static values are valid; qed&quot;</span>)
 		.public()
 }
 
-<span class="doccomment">/// Helper function to generate an account ID from seed
+<span class="doccomment">/// Helper function to generate an account ID from seed.
 </span><span class="kw">pub fn </span>get_account_id_from_seed&lt;TPublic: Public&gt;(seed: <span class="kw-2">&amp;</span>str) -&gt; AccountId
 <span class="kw">where
 	</span>AccountPublic: From&lt;&lt;TPublic::Pair <span class="kw">as </span>Pair&gt;::Public&gt;,
@@ -715,7 +715,7 @@
 	AccountPublic::from(get_from_seed::&lt;TPublic&gt;(seed)).into_account()
 }
 
-<span class="doccomment">/// Helper function to generate stash, controller and session key from seed
+<span class="doccomment">/// Helper function to generate stash, controller and session key from seed.
 </span><span class="kw">pub fn </span>authority_keys_from_seed(
 	seed: <span class="kw-2">&amp;</span>str,
 ) -&gt; (AccountId, AccountId, GrandpaId, BabeId, ImOnlineId, AuthorityDiscoveryId) {
@@ -729,7 +729,7 @@
 	)
 }
 
-<span class="doccomment">/// Helper function to create RuntimeGenesisConfig for testing
+<span class="doccomment">/// Helper function to create RuntimeGenesisConfig for testing.
 </span><span class="kw">pub fn </span>testnet_genesis(
 	initial_authorities: Vec&lt;(
 		AccountId,
@@ -878,7 +878,7 @@
 	)
 }
 
-<span class="doccomment">/// Development config (single validator Alice)
+<span class="doccomment">/// Development config (single validator Alice).
 </span><span class="kw">pub fn </span>development_config() -&gt; ChainSpec {
 	ChainSpec::from_genesis(
 		<span class="string">&quot;Development&quot;</span>,
@@ -903,7 +903,7 @@
 	)
 }
 
-<span class="doccomment">/// Local testnet config (multivalidator Alice + Bob)
+<span class="doccomment">/// Local testnet config (multivalidator Alice + Bob).
 </span><span class="kw">pub fn </span>local_testnet_config() -&gt; ChainSpec {
 	ChainSpec::from_genesis(
 		<span class="string">&quot;Local Testnet&quot;</span>,
@@ -935,7 +935,7 @@
 		)
 	}
 
-	<span class="doccomment">/// Local testnet config (single validator - Alice)
+	<span class="doccomment">/// Local testnet config (single validator - Alice).
 	</span><span class="kw">pub fn </span>integration_test_config_with_single_authority() -&gt; ChainSpec {
 		ChainSpec::from_genesis(
 			<span class="string">&quot;Integration Test&quot;</span>,
@@ -951,7 +951,7 @@
 		)
 	}
 
-	<span class="doccomment">/// Local testnet config (multivalidator Alice + Bob)
+	<span class="doccomment">/// Local testnet config (multivalidator Alice + Bob).
 	</span><span class="kw">pub fn </span>integration_test_config_with_two_authorities() -&gt; ChainSpec {
 		ChainSpec::from_genesis(
 			<span class="string">&quot;Integration Test&quot;</span>,
