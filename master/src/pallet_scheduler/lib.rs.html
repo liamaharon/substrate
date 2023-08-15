@@ -1321,6 +1321,32 @@
 <a href="#1321" id="1321">1321</a>
 <a href="#1322" id="1322">1322</a>
 <a href="#1323" id="1323">1323</a>
+<a href="#1324" id="1324">1324</a>
+<a href="#1325" id="1325">1325</a>
+<a href="#1326" id="1326">1326</a>
+<a href="#1327" id="1327">1327</a>
+<a href="#1328" id="1328">1328</a>
+<a href="#1329" id="1329">1329</a>
+<a href="#1330" id="1330">1330</a>
+<a href="#1331" id="1331">1331</a>
+<a href="#1332" id="1332">1332</a>
+<a href="#1333" id="1333">1333</a>
+<a href="#1334" id="1334">1334</a>
+<a href="#1335" id="1335">1335</a>
+<a href="#1336" id="1336">1336</a>
+<a href="#1337" id="1337">1337</a>
+<a href="#1338" id="1338">1338</a>
+<a href="#1339" id="1339">1339</a>
+<a href="#1340" id="1340">1340</a>
+<a href="#1341" id="1341">1341</a>
+<a href="#1342" id="1342">1342</a>
+<a href="#1343" id="1343">1343</a>
+<a href="#1344" id="1344">1344</a>
+<a href="#1345" id="1345">1345</a>
+<a href="#1346" id="1346">1346</a>
+<a href="#1347" id="1347">1347</a>
+<a href="#1348" id="1348">1348</a>
+<a href="#1349" id="1349">1349</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1338,37 +1364,63 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="doccomment">//! # Scheduler
-//! A Pallet for scheduling dispatches.
+</span><span class="doccomment">//! &gt; Made with *Substrate*, for *Polkadot*.
 //!
-//! - [`Config`]
-//! - [`Call`]
-//! - [`Pallet`]
+//! [![github]](https://github.com/paritytech/substrate/frame/fast-unstake) -
+//! [![polkadot]](https://polkadot.network)
+//!
+//! [polkadot]: https://img.shields.io/badge/polkadot-E6007A?style=for-the-badge&amp;logo=polkadot&amp;logoColor=white
+//! [github]: https://img.shields.io/badge/github-8da0cb?style=for-the-badge&amp;labelColor=555555&amp;logo=github
+//!
+//! # Scheduler Pallet
+//!
+//! A Pallet for scheduling runtime calls.
 //!
 //! ## Overview
 //!
-//! This Pallet exposes capabilities for scheduling dispatches to occur at a
-//! specified block number or at a specified period. These scheduled dispatches
-//! may be named or anonymous and may be canceled.
+//! This Pallet exposes capabilities for scheduling runtime calls to occur at a specified block
+//! number or at a specified period. These scheduled runtime calls may be named or anonymous and may
+//! be canceled.
 //!
-//! **NOTE:** The scheduled calls will be dispatched with the default filter
-//! for the origin: namely `frame_system::Config::BaseCallFilter` for all origin
-//! except root which will get no filter. And not the filter contained in origin
-//! use to call `fn schedule`.
+//! __NOTE:__ Instead of using the filter contained in the origin to call `fn schedule`, scheduled
+//! runtime calls will be dispatched with the default filter for the origin: namely
+//! `frame_system::Config::BaseCallFilter` for all origin types (except root which will get no
+//! filter).
 //!
-//! If a call is scheduled using proxy or whatever mecanism which adds filter,
-//! then those filter will not be used when dispatching the schedule call.
+//! If a call is scheduled using proxy or whatever mechanism which adds filter, then those filter
+//! will not be used when dispatching the schedule runtime call.
 //!
-//! ## Interface
+//! ### Examples
 //!
-//! ### Dispatchable Functions
+//! 1. Scheduling a runtime call at a specific block.
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, basic_scheduling_works)]
+</span><span class="doccomment">//!
+//! 2. Scheduling a preimage hash of a runtime call at a specifc block
+</span><span class="attr">#![doc = <span class="macro">docify::embed!</span>(<span class="string">&quot;src/tests.rs&quot;</span>, scheduling_with_preimages_works)]
+
+</span><span class="doccomment">//!
+//! ## Pallet API
 //!
-//! * `schedule` - schedule a dispatch, which may be periodic, to occur at a specified block and
-//!   with a specified priority.
-//! * `cancel` - cancel a scheduled dispatch, specified by block number and index.
-//! * `schedule_named` - augments the `schedule` interface with an additional `Vec&lt;u8&gt;` parameter
-//!   that can be used for identification.
-//! * `cancel_named` - the named complement to the cancel function.
+//! See the [`pallet`] module for more information about the interfaces this pallet exposes,
+//! including its configuration trait, dispatchables, storage items, events and errors.
+//!
+//! ## Warning
+//!
+//! This Pallet executes all scheduled runtime calls in the [`on_initialize`] hook. Do not execute
+//! any runtime calls which should not be considered mandatory.
+//!
+//! Please be aware that any scheduled runtime calls executed in a future block may __fail__ or may
+//! result in __undefined behavior__ since the runtime could have upgraded between the time of
+//! scheduling and execution. For example, the runtime upgrade could have:
+//!
+//! * Modified the implementation of the runtime call (runtime specification upgrade).
+//!     * Could lead to undefined behavior.
+//! * Removed or changed the ordering/index of the runtime call.
+//!     * Could fail due to the runtime call index not being part of the `Call`.
+//!     * Could lead to undefined behavior, such as executing another runtime call with the same
+//!       index.
+//!
+//! [`on_initialize`]: frame_support::traits::Hooks::on_initialize
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]

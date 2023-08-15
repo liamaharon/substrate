@@ -122,6 +122,11 @@
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -164,12 +169,14 @@
 	</span><span class="kw">pub fn </span>new(
 		global_max_pinned_blocks: usize,
 		local_max_pin_duration: Duration,
+		max_ongoing_operations: usize,
 		backend: Arc&lt;BE&gt;,
 	) -&gt; <span class="self">Self </span>{
 		SubscriptionManagement {
 			inner: RwLock::new(SubscriptionsInner::new(
 				global_max_pinned_blocks,
 				local_max_pin_duration,
+				max_ongoing_operations,
 				backend,
 			)),
 		}
@@ -234,16 +241,19 @@
 
 	<span class="doccomment">/// Ensure the block remains pinned until the return object is dropped.
 	///
-	/// Returns a [`BlockGuard`] that pins and unpins the block hash in RAII manner.
-	/// Returns an error if the block hash is not pinned for the subscription or
-	/// the subscription ID is invalid.
+	/// Returns a [`BlockGuard`] that pins and unpins the block hash in RAII manner
+	/// and reserves capacity for ogoing operations.
+	///
+	/// Returns an error if the block hash is not pinned for the subscription,
+	/// the subscription ID is invalid or the limit of ongoing operations was exceeded.
 	</span><span class="kw">pub fn </span>lock_block(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		sub_id: <span class="kw-2">&amp;</span>str,
 		hash: Block::Hash,
+		to_reserve: usize,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockGuard&lt;Block, BE&gt;, SubscriptionManagementError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>inner = <span class="self">self</span>.inner.write();
-		inner.lock_block(sub_id, hash)
+		inner.lock_block(sub_id, hash, to_reserve)
 	}
 }
 </code></pre></div></section></main></body></html>

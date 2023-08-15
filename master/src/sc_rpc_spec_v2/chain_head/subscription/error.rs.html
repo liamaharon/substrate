@@ -87,10 +87,10 @@
 <span class="doccomment">/// Subscription management error.
 </span><span class="attr">#[derive(Debug, thiserror::Error)]
 </span><span class="kw">pub enum </span>SubscriptionManagementError {
-	<span class="doccomment">/// The block cannot be pinned into memory because
-	/// the subscription has exceeded the maximum number
-	/// of blocks pinned.
-	</span><span class="attr">#[error(<span class="string">&quot;Exceeded pinning limits&quot;</span>)]
+	<span class="doccomment">/// The subscription has exceeded the internal limits
+	/// regarding the number of pinned blocks in memory or
+	/// the number of ongoing operations.
+	</span><span class="attr">#[error(<span class="string">&quot;Exceeded pinning or operation limits&quot;</span>)]
 	</span>ExceededLimits,
 	<span class="doccomment">/// Error originated from the blockchain (client or backend).
 	</span><span class="attr">#[error(<span class="string">&quot;Blockchain error {0}&quot;</span>)]

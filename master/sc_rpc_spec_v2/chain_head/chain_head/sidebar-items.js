@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ChainHead"]};
+window.SIDEBAR_ITEMS = {"struct":["ChainHead","ChainHeadConfig"]};

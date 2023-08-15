@@ -406,6 +406,44 @@
 <a href="#406" id="406">406</a>
 <a href="#407" id="407">407</a>
 <a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -461,6 +499,41 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;rpc-spec-v2&quot;</span>;
 
+<span class="doccomment">/// The configuration of [`ChainHead`].
+</span><span class="kw">pub struct </span>ChainHeadConfig {
+	<span class="doccomment">/// The maximum number of pinned blocks across all subscriptions.
+	</span><span class="kw">pub </span>global_max_pinned_blocks: usize,
+	<span class="doccomment">/// The maximum duration that a block is allowed to be pinned per subscription.
+	</span><span class="kw">pub </span>subscription_max_pinned_duration: Duration,
+	<span class="doccomment">/// The maximum number of ongoing operations per subscription.
+	</span><span class="kw">pub </span>subscription_max_ongoing_operations: usize,
+}
+
+<span class="doccomment">/// Maximum pinned blocks across all connections.
+/// This number is large enough to consider immediate blocks.
+/// Note: This should never exceed the `PINNING_CACHE_SIZE` from client/db.
+</span><span class="kw">const </span>MAX_PINNED_BLOCKS: usize = <span class="number">512</span>;
+
+<span class="doccomment">/// Any block of any subscription should not be pinned more than
+/// this constant. When a subscription contains a block older than this,
+/// the subscription becomes subject to termination.
+/// Note: This should be enough for immediate blocks.
+</span><span class="kw">const </span>MAX_PINNED_DURATION: Duration = Duration::from_secs(<span class="number">60</span>);
+
+<span class="doccomment">/// The maximum number of ongoing operations per subscription.
+/// Note: The lower limit imposed by the spec is 16.
+</span><span class="kw">const </span>MAX_ONGOING_OPERATIONS: usize = <span class="number">16</span>;
+
+<span class="kw">impl </span>Default <span class="kw">for </span>ChainHeadConfig {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		ChainHeadConfig {
+			global_max_pinned_blocks: MAX_PINNED_BLOCKS,
+			subscription_max_pinned_duration: MAX_PINNED_DURATION,
+			subscription_max_ongoing_operations: MAX_ONGOING_OPERATIONS,
+		}
+	}
+}
+
 <span class="doccomment">/// An API for chain head RPC calls.
 </span><span class="kw">pub struct </span>ChainHead&lt;BE: Backend&lt;Block&gt;, Block: BlockT, Client&gt; {
 	<span class="doccomment">/// Substrate client.
@@ -484,8 +557,7 @@
 		backend: Arc&lt;BE&gt;,
 		executor: SubscriptionTaskExecutor,
 		genesis_hash: GenesisHash,
-		max_pinned_blocks: usize,
-		max_pinned_duration: Duration,
+		config: ChainHeadConfig,
 	) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>genesis_hash = hex_string(<span class="kw-2">&amp;</span>genesis_hash.as_ref());
 		<span class="self">Self </span>{
@@ -493,8 +565,9 @@
 			backend: backend.clone(),
 			executor,
 			subscriptions: Arc::new(SubscriptionManagement::new(
-				max_pinned_blocks,
-				max_pinned_duration,
+				config.global_max_pinned_blocks,
+				config.subscription_max_pinned_duration,
+				config.subscription_max_ongoing_operations,
 				backend,
 			)),
 			genesis_hash,
@@ -605,12 +678,10 @@
 		follow_subscription: String,
 		hash: Block::Hash,
 	) -&gt; RpcResult&lt;MethodResponse&gt; {
-		<span class="kw">let </span>block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash) {
+		<span class="kw">let </span>block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash, <span class="number">1</span>) {
 			<span class="prelude-val">Ok</span>(block) =&gt; block,
-			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) =&gt; {
-				<span class="comment">// Invalid invalid subscription ID.
-				</span><span class="kw">return </span><span class="prelude-val">Ok</span>(MethodResponse::LimitReached)
-			},
+			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) |
+			<span class="prelude-val">Err</span>(SubscriptionManagementError::ExceededLimits) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(MethodResponse::LimitReached),
 			<span class="prelude-val">Err</span>(SubscriptionManagementError::BlockHashAbsent) =&gt; {
 				<span class="comment">// Block is not part of the subscription.
 				</span><span class="kw">return </span><span class="prelude-val">Err</span>(ChainHeadRpcError::InvalidBlock.into())
@@ -660,12 +731,10 @@
 		follow_subscription: String,
 		hash: Block::Hash,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; {
-		<span class="kw">let </span>_block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash) {
+		<span class="kw">let </span>_block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash, <span class="number">1</span>) {
 			<span class="prelude-val">Ok</span>(block) =&gt; block,
-			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) =&gt; {
-				<span class="comment">// Invalid invalid subscription ID.
-				</span><span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-			},
+			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) |
+			<span class="prelude-val">Err</span>(SubscriptionManagementError::ExceededLimits) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 			<span class="prelude-val">Err</span>(SubscriptionManagementError::BlockHashAbsent) =&gt; {
 				<span class="comment">// Block is not part of the subscription.
 				</span><span class="kw">return </span><span class="prelude-val">Err</span>(ChainHeadRpcError::InvalidBlock.into())
@@ -714,21 +783,27 @@
 			.transpose()<span class="question-mark">?
 			</span>.map(ChildInfo::new_default_from_vec);
 
-		<span class="kw">let </span>block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash) {
-			<span class="prelude-val">Ok</span>(block) =&gt; block,
-			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) =&gt; {
-				<span class="comment">// Invalid invalid subscription ID.
-				</span><span class="kw">return </span><span class="prelude-val">Ok</span>(MethodResponse::LimitReached)
-			},
-			<span class="prelude-val">Err</span>(SubscriptionManagementError::BlockHashAbsent) =&gt; {
-				<span class="comment">// Block is not part of the subscription.
-				</span><span class="kw">return </span><span class="prelude-val">Err</span>(ChainHeadRpcError::InvalidBlock.into())
-			},
-			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(ChainHeadRpcError::InvalidBlock.into()),
-		};
+		<span class="kw">let </span>block_guard =
+			<span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash, items.len()) {
+				<span class="prelude-val">Ok</span>(block) =&gt; block,
+				<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) |
+				<span class="prelude-val">Err</span>(SubscriptionManagementError::ExceededLimits) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(MethodResponse::LimitReached),
+				<span class="prelude-val">Err</span>(SubscriptionManagementError::BlockHashAbsent) =&gt; {
+					<span class="comment">// Block is not part of the subscription.
+					</span><span class="kw">return </span><span class="prelude-val">Err</span>(ChainHeadRpcError::InvalidBlock.into())
+				},
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(ChainHeadRpcError::InvalidBlock.into()),
+			};
 
 		<span class="kw">let </span>storage_client = ChainHeadStorage::&lt;Client, Block, BE&gt;::new(<span class="self">self</span>.client.clone());
 		<span class="kw">let </span>operation_id = block_guard.operation_id();
+
+		<span class="comment">// The number of operations we are allowed to execute.
+		</span><span class="kw">let </span>num_operations = block_guard.num_reserved();
+		<span class="kw">let </span>discarded = items.len().saturating_sub(num_operations);
+		<span class="kw">let </span><span class="kw-2">mut </span>items = items;
+		items.truncate(num_operations);
+
 		<span class="kw">let </span>fut = <span class="kw">async move </span>{
 			storage_client.generate_events(block_guard, hash, items, child_trie);
 		};
@@ -737,7 +812,7 @@
 			.spawn_blocking(<span class="string">&quot;substrate-rpc-subscription&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;rpc&quot;</span>), fut.boxed());
 		<span class="prelude-val">Ok</span>(MethodResponse::Started(MethodResponseStarted {
 			operation_id,
-			discarded_items: <span class="prelude-val">Some</span>(<span class="number">0</span>),
+			discarded_items: <span class="prelude-val">Some</span>(discarded),
 		}))
 	}
 
@@ -750,9 +825,10 @@
 	) -&gt; RpcResult&lt;MethodResponse&gt; {
 		<span class="kw">let </span>call_parameters = Bytes::from(parse_hex_param(call_parameters)<span class="question-mark">?</span>);
 
-		<span class="kw">let </span>block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash) {
+		<span class="kw">let </span>block_guard = <span class="kw">match </span><span class="self">self</span>.subscriptions.lock_block(<span class="kw-2">&amp;</span>follow_subscription, hash, <span class="number">1</span>) {
 			<span class="prelude-val">Ok</span>(block) =&gt; block,
-			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) =&gt; {
+			<span class="prelude-val">Err</span>(SubscriptionManagementError::SubscriptionAbsent) |
+			<span class="prelude-val">Err</span>(SubscriptionManagementError::ExceededLimits) =&gt; {
 				<span class="comment">// Invalid invalid subscription ID.
 				</span><span class="kw">return </span><span class="prelude-val">Ok</span>(MethodResponse::LimitReached)
 			},
