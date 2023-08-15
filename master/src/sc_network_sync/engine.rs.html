@@ -942,29 +942,6 @@
 <a href="#942" id="942">942</a>
 <a href="#943" id="943">943</a>
 <a href="#944" id="944">944</a>
-<a href="#945" id="945">945</a>
-<a href="#946" id="946">946</a>
-<a href="#947" id="947">947</a>
-<a href="#948" id="948">948</a>
-<a href="#949" id="949">949</a>
-<a href="#950" id="950">950</a>
-<a href="#951" id="951">951</a>
-<a href="#952" id="952">952</a>
-<a href="#953" id="953">953</a>
-<a href="#954" id="954">954</a>
-<a href="#955" id="955">955</a>
-<a href="#956" id="956">956</a>
-<a href="#957" id="957">957</a>
-<a href="#958" id="958">958</a>
-<a href="#959" id="959">959</a>
-<a href="#960" id="960">960</a>
-<a href="#961" id="961">961</a>
-<a href="#962" id="962">962</a>
-<a href="#963" id="963">963</a>
-<a href="#964" id="964">964</a>
-<a href="#965" id="965">965</a>
-<a href="#966" id="966">966</a>
-<a href="#967" id="967">967</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2017-2023 Parity Technologies (UK) Ltd.
@@ -1141,10 +1118,6 @@
 	</span><span class="kw">pub </span>known_blocks: LruHashSet&lt;B::Hash&gt;,
 	<span class="doccomment">/// Notification sink.
 	</span>sink: NotificationsSink,
-	<span class="doccomment">/// Instant when the last notification was sent to peer.
-	</span>last_notification_sent: Instant,
-	<span class="doccomment">/// Instant when the last notification was received from peer.
-	</span>last_notification_received: Instant,
 	<span class="doccomment">/// Is the peer inbound.
 	</span>inbound: bool,
 }
@@ -1187,9 +1160,6 @@
 	<span class="doccomment">/// All connected peers. Contains both full and light node peers.
 	</span>peers: HashMap&lt;PeerId, Peer&lt;B&gt;&gt;,
 
-	<span class="doccomment">/// Evicted peers
-	</span>evicted: HashSet&lt;PeerId&gt;,
-
 	<span class="doccomment">/// List of nodes for which we perform additional logging because they are important for the
 	/// user.
 	</span>important_peers: HashSet&lt;PeerId&gt;,
@@ -1230,6 +1200,9 @@
 	/// Stored as an `Option&lt;Instant&gt;` so once the initial wait has passed, `SyncingEngine`
 	/// can reset the peer timers and continue with the normal eviction process.
 	</span>syncing_started: <span class="prelude-ty">Option</span>&lt;Instant&gt;,
+
+	<span class="doccomment">/// Instant when the last notification was sent or received.
+	</span>last_notification_io: Instant,
 }
 
 <span class="kw">impl</span>&lt;B: BlockT, Client&gt; SyncingEngine&lt;B, Client&gt;
@@ -1358,7 +1331,6 @@
 				chain_sync,
 				network_service,
 				peers: HashMap::new(),
-				evicted: HashSet::new(),
 				block_announce_data_cache: LruMap::new(ByLength::new(cache_capacity)),
 				block_announce_protocol_name,
 				num_connected: num_connected.clone(),
@@ -1377,6 +1349,7 @@
 				event_streams: Vec::new(),
 				tick_timeout: Delay::new(TICK_TIMEOUT),
 				syncing_started: <span class="prelude-val">None</span>,
+				last_notification_io: Instant::now(),
 				metrics: <span class="kw">if let </span><span class="prelude-val">Some</span>(r) = metrics_registry {
 					<span class="kw">match </span>Metrics::register(r, is_major_syncing.clone()) {
 						<span class="prelude-val">Ok</span>(metrics) =&gt; <span class="prelude-val">Some</span>(metrics),
@@ -1489,7 +1462,6 @@
 			</span>},
 		};
 		peer.known_blocks.insert(hash);
-		peer.last_notification_received = Instant::now();
 
 		<span class="kw">if </span>peer.info.roles.is_full() {
 			<span class="kw">let </span>is_best = <span class="kw">match </span>announce.state.unwrap_or(BlockState::Best) {
@@ -1540,7 +1512,7 @@
 					data: <span class="prelude-val">Some</span>(data.clone()),
 				};
 
-				peer.last_notification_sent = Instant::now();
+				<span class="self">self</span>.last_notification_io = Instant::now();
 				peer.sink.send_sync_notification(message.encode());
 			}
 		}
@@ -1583,42 +1555,26 @@
 					<span class="kw">continue
 				</span>}
 
-				<span class="comment">// reset the peer activity timers so they don&#39;t expire right away after
-				// the initial wait is done.
-				</span><span class="kw">for </span>info <span class="kw">in </span><span class="self">self</span>.peers.values_mut() {
-					info.last_notification_received = Instant::now();
-					info.last_notification_sent = Instant::now();
-				}
-
 				<span class="self">self</span>.syncing_started = <span class="prelude-val">None</span>;
+				<span class="self">self</span>.last_notification_io = Instant::now();
 			}
 
-			<span class="comment">// go over all connected peers and check if any of them have been idle for a while. Idle
-			// in this case means that we haven&#39;t sent or received block announcements to/from this
-			// peer. If that is the case, because of #5685, it could be that the block announces
-			// substream is not actually open and and this peer is just wasting a slot and is should
-			// be replaced with some other node that is willing to send us block announcements.
-			</span><span class="kw">for </span>(id, peer) <span class="kw">in </span><span class="self">self</span>.peers.iter() {
-				<span class="comment">// because of a delay between disconnecting a peer in `SyncingEngine` and getting
-				// the response back from `Protocol`, a peer might be reported and disconnect
-				// multiple times. To prevent this from happening (until the underlying issue is
-				// fixed), keep track of evicted peers and report and disconnect them only once.
-				</span><span class="kw">if </span><span class="self">self</span>.evicted.contains(id) {
-					<span class="kw">continue
-				</span>}
+			<span class="comment">// if syncing hasn&#39;t sent or received any blocks within `INACTIVITY_EVICT_THRESHOLD`,
+			// it means the local node has stalled and is connected to peers who either don&#39;t
+			// consider it connected or are also all stalled. In order to unstall the node,
+			// disconnect all peers and allow `ProtocolController` to establish new connections.
+			</span><span class="kw">if </span><span class="self">self</span>.last_notification_io.elapsed() &gt; INACTIVITY_EVICT_THRESHOLD {
+				<span class="macro">log::debug!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;syncing has halted due to inactivity, evicting all peers&quot;</span>);
 
-				<span class="kw">let </span>last_received_late =
-					peer.last_notification_received.elapsed() &gt; INACTIVITY_EVICT_THRESHOLD;
-				<span class="kw">let </span>last_sent_late =
-					peer.last_notification_sent.elapsed() &gt; INACTIVITY_EVICT_THRESHOLD;
-
-				<span class="kw">if </span>last_received_late &amp;&amp; last_sent_late {
-					<span class="macro">log::debug!</span>(target: <span class="string">&quot;sync&quot;</span>, <span class="string">&quot;evict peer {id} since it has been idling for too long&quot;</span>);
-					<span class="self">self</span>.network_service.report_peer(<span class="kw-2">*</span>id, rep::INACTIVE_SUBSTREAM);
+				<span class="kw">for </span>peer <span class="kw">in </span><span class="self">self</span>.peers.keys() {
+					<span class="self">self</span>.network_service.report_peer(<span class="kw-2">*</span>peer, rep::INACTIVE_SUBSTREAM);
 					<span class="self">self</span>.network_service
-						.disconnect_peer(<span class="kw-2">*</span>id, <span class="self">self</span>.block_announce_protocol_name.clone());
-					<span class="self">self</span>.evicted.insert(<span class="kw-2">*</span>id);
+						.disconnect_peer(<span class="kw-2">*</span>peer, <span class="self">self</span>.block_announce_protocol_name.clone());
 				}
+
+				<span class="comment">// after all the peers have been evicted, start timer again to prevent evicting
+				// new peers that join after the old peer have been evicted
+				</span><span class="self">self</span>.last_notification_io = Instant::now();
 			}
 		}
 
@@ -1716,7 +1672,6 @@
 					},
 				},
 				sc_network::SyncEvent::NotificationStreamClosed { remote } =&gt; {
-					<span class="self">self</span>.evicted.remove(<span class="kw-2">&amp;</span>remote);
 					<span class="kw">if </span><span class="self">self</span>.on_sync_peer_disconnected(remote).is_err() {
 						<span class="macro">log::trace!</span>(
 							target: <span class="string">&quot;sync&quot;</span>,
@@ -1729,6 +1684,7 @@
 					<span class="kw">for </span>message <span class="kw">in </span>messages {
 						<span class="kw">if </span><span class="self">self</span>.peers.contains_key(<span class="kw-2">&amp;</span>remote) {
 							<span class="kw">if let </span><span class="prelude-val">Ok</span>(announce) = BlockAnnounce::decode(<span class="kw-2">&amp;mut </span>message.as_ref()) {
+								<span class="self">self</span>.last_notification_io = Instant::now();
 								<span class="self">self</span>.push_block_announce_validation(remote, announce);
 
 								<span class="comment">// Make sure that the newly added block announce validation future
@@ -1895,8 +1851,6 @@
 				NonZeroUsize::new(MAX_KNOWN_BLOCKS).expect(<span class="string">&quot;Constant is nonzero&quot;</span>),
 			),
 			sink,
-			last_notification_sent: Instant::now(),
-			last_notification_received: Instant::now(),
 			inbound,
 		};
 
