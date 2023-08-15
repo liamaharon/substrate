@@ -73,6 +73,11 @@
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -106,7 +111,12 @@
 		Collection::&lt;T, I&gt;::get(collection).map(|i| i.owner)
 	}
 
-	<span class="doccomment">/// Validate the `data` was signed by `signer` and the `signature` is correct.
+	<span class="doccomment">/// Validates the signature of the given data with the provided signer&#39;s account ID.
+	///
+	/// # Errors
+	///
+	/// This function returns a [`WrongSignature`](crate::Error::WrongSignature) error if the
+	/// signature is invalid or the verification process fails.
 	</span><span class="kw">pub fn </span>validate_signature(
 		data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;,
 		signature: <span class="kw-2">&amp;</span>T::OffchainSignature,

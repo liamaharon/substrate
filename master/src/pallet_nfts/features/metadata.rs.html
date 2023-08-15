@@ -215,6 +215,11 @@
 <a href="#215" id="215">215</a>
 <a href="#216" id="216">216</a>
 <a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -426,6 +431,11 @@
 	}
 
 	<span class="doccomment">/// A helper method to construct metadata.
+	///
+	/// # Errors
+	///
+	/// This function returns an [`IncorrectMetadata`](crate::Error::IncorrectMetadata) dispatch
+	/// error if the provided metadata is too long.
 	</span><span class="kw">pub fn </span>construct_metadata(
 		metadata: Vec&lt;u8&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BoundedVec&lt;u8, T::StringLimit&gt;, DispatchError&gt; {
