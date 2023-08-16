@@ -202,7 +202,7 @@
 			<span class="comment">// Read a value from storage.
 			</span><span class="kw">match </span>&lt;Something&lt;T&gt;&gt;::get() {
 				<span class="comment">// Return an error if the value has not been set.
-				</span><span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NoneValue.into()),
+				</span><span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(Error::&lt;T&gt;::NoneValue.into()),
 				<span class="prelude-val">Some</span>(old) =&gt; {
 					<span class="comment">// Increment the value read from storage; will error in the event of overflow.
 					</span><span class="kw">let </span>new = old.checked_add(<span class="number">1</span>).ok_or(Error::&lt;T&gt;::StorageOverflow)<span class="question-mark">?</span>;
