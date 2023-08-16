@@ -592,6 +592,39 @@
 <a href="#592" id="592">592</a>
 <a href="#593" id="593">593</a>
 <a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -700,7 +733,16 @@
 		Weight::zero()
 	}
 
-	<span class="doccomment">/// See [`Hooks::on_runtime_upgrade`].
+	<span class="doccomment">/// The expected and default behavior of this method is to handle executing `pre_upgrade` -&gt;
+	/// `on_runtime_upgrade` -&gt; `post_upgrade` hooks for a migration.
+	///
+	/// Internally, the default implementation
+	/// - Handles passing data from `pre_upgrade` to `post_upgrade`
+	/// - Ensure storage is not modified in `pre_upgrade` and `post_upgrade` hooks.
+	///
+	/// Combining the `pre_upgrade` -&gt; `on_runtime_upgrade` -&gt; `post_upgrade` logic flow into a
+	/// single method call is helpful for scenarios like testing a tuple of migrations, where the
+	/// tuple contains order-dependent migrations.
 	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span><span class="kw">fn </span>try_on_runtime_upgrade(checks: bool) -&gt; <span class="prelude-ty">Result</span>&lt;Weight, TryRuntimeError&gt; {
 		<span class="kw">let </span>maybe_state = <span class="kw">if </span>checks {
@@ -722,13 +764,13 @@
 		<span class="prelude-val">Ok</span>(weight)
 	}
 
-	<span class="doccomment">/// See [`Hooks::on_runtime_upgrade`].
+	<span class="doccomment">/// See [`Hooks::pre_upgrade`].
 	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span><span class="kw">fn </span>pre_upgrade() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, TryRuntimeError&gt; {
 		<span class="prelude-val">Ok</span>(Vec::new())
 	}
 
-	<span class="doccomment">/// See [`Hooks::on_runtime_upgrade`].
+	<span class="doccomment">/// See [`Hooks::post_upgrade`].
 	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span><span class="kw">fn </span>post_upgrade(_state: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), TryRuntimeError&gt; {
 		<span class="prelude-val">Ok</span>(())
@@ -745,9 +787,8 @@
 		weight
 	}
 
-	<span class="comment">// We are executing pre- and post-checks sequentially in order to be able to test several
-	// consecutive migrations for the same pallet without errors. Therefore pre and post upgrade
-	// hooks for tuples are a noop.
+	<span class="doccomment">/// Implements the default behavior of `try_on_runtime_upgrade` for tuples, logging any errors
+	/// that occur.
 	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span><span class="kw">fn </span>try_on_runtime_upgrade(checks: bool) -&gt; <span class="prelude-ty">Result</span>&lt;Weight, TryRuntimeError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>weight = Weight::zero();
@@ -781,6 +822,26 @@
 		}
 
 		<span class="prelude-val">Ok</span>(weight)
+	}
+
+	<span class="doccomment">/// [`OnRuntimeUpgrade::pre_upgrade`] should not be used on a tuple.
+	///
+	/// Instead, implementors should use [`OnRuntimeUpgrade::try_on_runtime_upgrade`] which
+	/// internally calls `pre_upgrade` -&gt; `on_runtime_upgrade` -&gt; `post_upgrade` for each tuple
+	/// member in sequence, enabling testing of order-dependent migrations.
+	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
+	</span><span class="kw">fn </span>pre_upgrade() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, TryRuntimeError&gt; {
+		<span class="prelude-val">Err</span>(<span class="string">&quot;Usage of `pre_upgrade` with Tuples is not expected. Please use `try_on_runtime_upgrade` instead, which internally calls `pre_upgrade` -&gt; `on_runtime_upgrade` -&gt; `post_upgrade` for each tuple member.&quot;</span>.into())
+	}
+
+	<span class="doccomment">/// [`OnRuntimeUpgrade::post_upgrade`] should not be used on a tuple.
+	///
+	/// Instead, implementors should use [`OnRuntimeUpgrade::try_on_runtime_upgrade`] which
+	/// internally calls `pre_upgrade` -&gt; `on_runtime_upgrade` -&gt; `post_upgrade` for each tuple
+	/// member in sequence, enabling testing of order-dependent migrations.
+	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
+	</span><span class="kw">fn </span>post_upgrade(_state: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), TryRuntimeError&gt; {
+		<span class="prelude-val">Err</span>(<span class="string">&quot;Usage of `post_upgrade` with Tuples is not expected. Please use `try_on_runtime_upgrade` instead, which internally calls `pre_upgrade` -&gt; `on_runtime_upgrade` -&gt; `post_upgrade` for each tuple member.&quot;</span>.into())
 	}
 }
 
@@ -1091,7 +1152,8 @@
 		<span class="macro">impl_test_type!</span>(Baz);
 
 		TestExternalities::default().execute_with(|| {
-			Foo::try_on_runtime_upgrade(<span class="bool-val">true</span>).unwrap();
+			<span class="comment">// try_on_runtime_upgrade works
+			</span>Foo::try_on_runtime_upgrade(<span class="bool-val">true</span>).unwrap();
 			<span class="macro">assert_eq!</span>(Pre::take(), <span class="macro">vec!</span>[<span class="string">&quot;Foo&quot;</span>]);
 			<span class="macro">assert_eq!</span>(Post::take(), <span class="macro">vec!</span>[<span class="string">&quot;Foo&quot;</span>]);
 
@@ -1106,6 +1168,10 @@
 			&lt;(Foo, (Bar, Baz))&gt;::try_on_runtime_upgrade(<span class="bool-val">true</span>).unwrap();
 			<span class="macro">assert_eq!</span>(Pre::take(), <span class="macro">vec!</span>[<span class="string">&quot;Foo&quot;</span>, <span class="string">&quot;Bar&quot;</span>, <span class="string">&quot;Baz&quot;</span>]);
 			<span class="macro">assert_eq!</span>(Post::take(), <span class="macro">vec!</span>[<span class="string">&quot;Foo&quot;</span>, <span class="string">&quot;Bar&quot;</span>, <span class="string">&quot;Baz&quot;</span>]);
+
+			<span class="comment">// calling pre_upgrade and post_upgrade directly on tuple of pallets fails
+			</span><span class="macro">assert!</span>(&lt;(Foo, (Bar, Baz))&gt;::pre_upgrade().is_err());
+			<span class="macro">assert!</span>(&lt;(Foo, (Bar, Baz))&gt;::post_upgrade(<span class="macro">vec!</span>[]).is_err());
 		});
 	}
 
