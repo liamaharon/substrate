@@ -531,6 +531,20 @@
 <a href="#531" id="531">531</a>
 <a href="#532" id="532">532</a>
 <a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -548,7 +562,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="doccomment">//! Various basic types for use in the Nfts pallet.
+</span><span class="doccomment">//! This module contains various basic types and data structures used in the NFTs pallet.
 
 </span><span class="kw">use super</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::macros::<span class="kw-2">*</span>;
@@ -562,44 +576,58 @@
 <span class="kw">use </span>frame_system::pallet_prelude::BlockNumberFor;
 <span class="kw">use </span>scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>DepositBalanceOf&lt;T, I = ()&gt; =
+<span class="doccomment">/// A type alias for handling balance deposits.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>DepositBalanceOf&lt;T, I = ()&gt; =
 	&lt;&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId&gt;&gt;::Balance;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CollectionDetailsFor&lt;T, I&gt; =
+<span class="doccomment">/// A type alias representing the details of a collection.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CollectionDetailsFor&lt;T, I&gt; =
 	CollectionDetails&lt;&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId, DepositBalanceOf&lt;T, I&gt;&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ApprovalsOf&lt;T, I = ()&gt; = BoundedBTreeMap&lt;
+<span class="doccomment">/// A type alias for keeping track of approvals used by a single item.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ApprovalsOf&lt;T, I = ()&gt; = BoundedBTreeMap&lt;
 	&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,
 	<span class="prelude-ty">Option</span>&lt;BlockNumberFor&lt;T&gt;&gt;,
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::ApprovalsLimit,
 &gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemAttributesApprovals&lt;T, I = ()&gt; =
+<span class="doccomment">/// A type alias for keeping track of approvals for an item&#39;s attributes.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemAttributesApprovals&lt;T, I = ()&gt; =
 	BoundedBTreeSet&lt;&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId, &lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::ItemAttributesApprovalsLimit&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemDepositOf&lt;T, I&gt; =
+<span class="doccomment">/// A type that holds the deposit for a single item.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemDepositOf&lt;T, I&gt; =
 	ItemDeposit&lt;DepositBalanceOf&lt;T, I&gt;, &lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>AttributeDepositOf&lt;T, I&gt; =
+<span class="doccomment">/// A type that holds the deposit amount for an item&#39;s attribute.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>AttributeDepositOf&lt;T, I&gt; =
 	AttributeDeposit&lt;DepositBalanceOf&lt;T, I&gt;, &lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemMetadataDepositOf&lt;T, I&gt; =
+<span class="doccomment">/// A type that holds the deposit amount for an item&#39;s metadata.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemMetadataDepositOf&lt;T, I&gt; =
 	ItemMetadataDeposit&lt;DepositBalanceOf&lt;T, I&gt;, &lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemDetailsFor&lt;T, I&gt; =
+<span class="doccomment">/// A type that holds the details of a single item.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemDetailsFor&lt;T, I&gt; =
 	ItemDetails&lt;&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId, ItemDepositOf&lt;T, I&gt;, ApprovalsOf&lt;T, I&gt;&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>BalanceOf&lt;T, I = ()&gt; =
+<span class="doccomment">/// A type alias for an accounts balance.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>BalanceOf&lt;T, I = ()&gt; =
 	&lt;&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId&gt;&gt;::Balance;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemPrice&lt;T, I = ()&gt; = BalanceOf&lt;T, I&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemTipOf&lt;T, I = ()&gt; = ItemTip&lt;
+<span class="doccomment">/// A type alias to represent the price of an item.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemPrice&lt;T, I = ()&gt; = BalanceOf&lt;T, I&gt;;
+<span class="doccomment">/// A type alias for the tips held by a single item.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>ItemTipOf&lt;T, I = ()&gt; = ItemTip&lt;
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::CollectionId,
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::ItemId,
 	&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,
 	BalanceOf&lt;T, I&gt;,
 &gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CollectionConfigFor&lt;T, I = ()&gt; =
+<span class="doccomment">/// A type alias for the settings configuration of a collection.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CollectionConfigFor&lt;T, I = ()&gt; =
 	CollectionConfig&lt;BalanceOf&lt;T, I&gt;, BlockNumberFor&lt;T&gt;, &lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::CollectionId&gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PreSignedMintOf&lt;T, I = ()&gt; = PreSignedMint&lt;
+<span class="doccomment">/// A type alias for the pre-signed minting configuration for a specified collection.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PreSignedMintOf&lt;T, I = ()&gt; = PreSignedMint&lt;
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::CollectionId,
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::ItemId,
 	&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,
 	BlockNumberFor&lt;T&gt;,
 	BalanceOf&lt;T, I&gt;,
 &gt;;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PreSignedAttributesOf&lt;T, I = ()&gt; = PreSignedAttributes&lt;
+<span class="doccomment">/// A type alias for the pre-signed minting configuration on the attribute level of an item.
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>PreSignedAttributesOf&lt;T, I = ()&gt; = PreSignedAttributes&lt;
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::CollectionId,
 	&lt;T <span class="kw">as </span>Config&lt;I&gt;&gt;::ItemId,
 	&lt;T <span class="kw">as </span>SystemConfig&gt;::AccountId,

@@ -109,6 +109,73 @@
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -126,11 +193,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+</span><span class="doccomment">//! This module provides helper methods to configure collection settings for the NFTs pallet.
+
 </span><span class="kw">use crate</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
 
 <span class="kw">impl</span>&lt;T: Config&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; Pallet&lt;T, I&gt; {
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_force_collection_config(
+	<span class="doccomment">/// Forcefully change the configuration of a collection.
+	///
+	/// - `collection`: The ID of the collection for which to update the configuration.
+	/// - `config`: The new collection configuration to set.
+	///
+	/// This function allows for changing the configuration of a collection without any checks.
+	/// It updates the collection configuration and emits a `CollectionConfigChanged` event.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_force_collection_config(
 		collection: T::CollectionId,
 		config: CollectionConfigFor&lt;T, I&gt;,
 	) -&gt; DispatchResult {
@@ -140,7 +216,23 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_set_collection_max_supply(
+	<span class="doccomment">/// Set the maximum supply for a collection.
+	///
+	/// - `maybe_check_owner`: An optional account ID used to check permissions.
+	/// - `collection`: The ID of the collection for which to set the maximum supply.
+	/// - `max_supply`: The new maximum supply to set for the collection.
+	///
+	/// This function checks if the setting `UnlockedMaxSupply` is enabled in the collection
+	/// configuration. If it is not enabled, it returns an `Error::MaxSupplyLocked`. If
+	/// `maybe_check_owner` is `Some(owner)`, it checks if the caller of the function is the
+	/// owner of the collection. If the caller is not the owner and the `maybe_check_owner`
+	/// parameter is provided, it returns an `Error::NoPermission`.
+	///
+	/// It also checks if the new maximum supply is greater than the current number of items in
+	/// the collection, and if not, it returns an `Error::MaxSupplyTooSmall`. If all checks pass,
+	/// it updates the collection configuration with the new maximum supply and emits a
+	/// `CollectionMaxSupplySet` event.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_set_collection_max_supply(
 		maybe_check_owner: <span class="prelude-ty">Option</span>&lt;T::AccountId&gt;,
 		collection: T::CollectionId,
 		max_supply: u32,
@@ -167,7 +259,19 @@
 		})
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_update_mint_settings(
+	<span class="doccomment">/// Update the mint settings for a collection.
+	///
+	/// - `maybe_check_origin`: An optional account ID used to check issuer permissions.
+	/// - `collection`: The ID of the collection for which to update the mint settings.
+	/// - `mint_settings`: The new mint settings to set for the collection.
+	///
+	/// This function updates the mint settings for a collection. If `maybe_check_origin` is
+	/// `Some(origin)`, it checks if the caller of the function has the `CollectionRole::Issuer`
+	/// for the given collection. If the caller doesn&#39;t have the required permission and
+	/// `maybe_check_origin` is provided, it returns an `Error::NoPermission`. If all checks
+	/// pass, it updates the collection configuration with the new mint settings and emits a
+	/// `CollectionMintSettingsUpdated` event.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_update_mint_settings(
 		maybe_check_origin: <span class="prelude-ty">Option</span>&lt;T::AccountId&gt;,
 		collection: T::CollectionId,
 		mint_settings: MintSettings&lt;
@@ -191,7 +295,14 @@
 		})
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_collection_config(
+	<span class="doccomment">/// Get the configuration for a specific collection.
+	///
+	/// - `collection_id`: The ID of the collection for which to retrieve the configuration.
+	///
+	/// This function attempts to fetch the configuration (`CollectionConfigFor`) associated
+	/// with the given `collection_id`. If the configuration exists, it returns `Ok(config)`,
+	/// otherwise, it returns a `DispatchError` with `Error::NoConfig`.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_collection_config(
 		collection_id: <span class="kw-2">&amp;</span>T::CollectionId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CollectionConfigFor&lt;T, I&gt;, DispatchError&gt; {
 		<span class="kw">let </span>config =
@@ -199,7 +310,15 @@
 		<span class="prelude-val">Ok</span>(config)
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_item_config(
+	<span class="doccomment">/// Get the configuration for a specific item within a collection.
+	///
+	/// - `collection_id`: The ID of the collection to which the item belongs.
+	/// - `item_id`: The ID of the item for which to retrieve the configuration.
+	///
+	/// This function attempts to fetch the configuration (`ItemConfig`) associated with the given
+	/// `collection_id` and `item_id`. If the configuration exists, it returns `Ok(config)`,
+	/// otherwise, it returns a `DispatchError` with `Error::UnknownItem`.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_item_config(
 		collection_id: <span class="kw-2">&amp;</span>T::CollectionId,
 		item_id: <span class="kw-2">&amp;</span>T::ItemId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ItemConfig, DispatchError&gt; {
@@ -208,14 +327,29 @@
 		<span class="prelude-val">Ok</span>(config)
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_default_item_settings(
+	<span class="doccomment">/// Get the default item settings for a specific collection.
+	///
+	/// - `collection_id`: The ID of the collection for which to retrieve the default item settings.
+	///
+	/// This function fetches the `default_item_settings` from the collection configuration
+	/// associated with the given `collection_id`. If the collection configuration exists, it
+	/// returns `Ok(default_item_settings)`, otherwise, it returns a `DispatchError` with
+	/// `Error::NoConfig`.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>get_default_item_settings(
 		collection_id: <span class="kw-2">&amp;</span>T::CollectionId,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ItemSettings, DispatchError&gt; {
 		<span class="kw">let </span>collection_config = <span class="self">Self</span>::get_collection_config(collection_id)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(collection_config.mint_settings.default_item_settings)
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>is_pallet_feature_enabled(feature: PalletFeature) -&gt; bool {
+	<span class="doccomment">/// Check if a specified pallet feature is enabled.
+	///
+	/// - `feature`: The feature to check.
+	///
+	/// This function checks if the given `feature` is enabled in the runtime using the
+	/// pallet&#39;s `T::Features::get()` function. It returns `true` if the feature is enabled,
+	/// otherwise it returns `false`.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>is_pallet_feature_enabled(feature: PalletFeature) -&gt; bool {
 		<span class="kw">let </span>features = T::Features::get();
 		<span class="kw">return </span>features.is_enabled(feature)
 	}

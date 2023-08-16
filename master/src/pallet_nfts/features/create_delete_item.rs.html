@@ -255,6 +255,22 @@
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -271,6 +287,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+</span><span class="doccomment">//! This module contains helper methods to perform functionality associated with minting and burning
+//! items for the NFTs pallet.
 
 </span><span class="kw">use crate</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, traits::ExistenceRequirement};
@@ -362,7 +381,20 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_mint_pre_signed(
+	<span class="doccomment">/// Mints a new item using a pre-signed message.
+	///
+	/// This function allows minting a new item using a pre-signed message. The minting process is
+	/// similar to the regular minting process, but it is performed by a pre-authorized account. The
+	/// `mint_to` account receives the newly minted item. The minting process is configurable
+	/// through the provided `mint_data`. The attributes, metadata, and price of the item are set
+	/// according to the provided `mint_data`. The `with_details_and_config` closure is called to
+	/// validate the provided `collection_details` and `collection_config` before minting the item.
+	///
+	/// - `mint_to`: The account that receives the newly minted item.
+	/// - `mint_data`: The pre-signed minting data containing the `collection`, `item`,
+	///   `attributes`, `metadata`, `deadline`, `only_account`, and `mint_price`.
+	/// - `signer`: The account that is authorized to mint the item using the pre-signed message.
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>do_mint_pre_signed(
 		mint_to: T::AccountId,
 		mint_data: PreSignedMintOf&lt;T, I&gt;,
 		signer: T::AccountId,

@@ -53,6 +53,17 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -70,6 +81,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+</span><span class="doccomment">/// Implements encoding and decoding traits for a wrapper type that represents
+/// bitflags. The wrapper type should contain a field of type `$size`, where
+/// `$size` is an integer type (e.g., u8, u16, u32) that can represent the bitflags.
+/// The `$bitflag_enum` type is the enumeration type that defines the individual bitflags.
+///
+/// This macro provides implementations for the following traits:
+/// - `MaxEncodedLen`: Calculates the maximum encoded length for the wrapper type.
+/// - `Encode`: Encodes the wrapper type using the provided encoding function.
+/// - `EncodeLike`: Trait indicating the type can be encoded as is.
+/// - `Decode`: Decodes the wrapper type from the input.
+/// - `TypeInfo`: Provides type information for the wrapper type.
 </span><span class="macro">macro_rules! </span>impl_codec_bitflags {
 	(<span class="macro-nonterminal">$wrapper</span>:ty, <span class="macro-nonterminal">$size</span>:ty, <span class="macro-nonterminal">$bitflag_enum</span>:ty) =&gt; {
 		<span class="kw">impl </span>MaxEncodedLen <span class="kw">for </span><span class="macro-nonterminal">$wrapper </span>{
