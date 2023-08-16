@@ -2191,8 +2191,8 @@
 }
 
 <span class="attr">#[proc_macro_attribute]
-</span><span class="kw">pub fn </span>storage_alias(<span class="kw">_</span>: TokenStream, input: TokenStream) -&gt; TokenStream {
-	storage_alias::storage_alias(input.into())
+</span><span class="kw">pub fn </span>storage_alias(attributes: TokenStream, input: TokenStream) -&gt; TokenStream {
+	storage_alias::storage_alias(attributes.into(), input.into())
 		.unwrap_or_else(|r| r.into_compile_error())
 		.into()
 }

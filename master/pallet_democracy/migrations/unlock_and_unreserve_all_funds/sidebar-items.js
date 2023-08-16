@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["UnlockAndUnreserveAllFunds"]};
+window.SIDEBAR_ITEMS = {"struct":["UnlockAndUnreserveAllFunds"],"trait":["UnlockConfig"]};
