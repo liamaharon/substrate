@@ -357,16 +357,6 @@
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
 <a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -399,8 +389,8 @@
 <span class="kw">use </span>bytes::Bytes;
 <span class="kw">use </span>futures::channel::oneshot;
 <span class="kw">use </span>libp2p::{
-	connection_limits::ConnectionLimits, core::Multiaddr, identify::Info <span class="kw">as </span>IdentifyInfo,
-	identity::PublicKey, kad::RecordKey, swarm::NetworkBehaviour, PeerId,
+	core::Multiaddr, identify::Info <span class="kw">as </span>IdentifyInfo, identity::PublicKey, kad::RecordKey,
+	swarm::NetworkBehaviour, PeerId,
 };
 
 <span class="kw">use </span>parking_lot::Mutex;
@@ -412,7 +402,7 @@
 
 <span class="doccomment">/// General behaviour of the network. Combines all protocols together.
 </span><span class="attr">#[derive(NetworkBehaviour)]
-#[behaviour(to_swarm = <span class="string">&quot;BehaviourOut&quot;</span>)]
+#[behaviour(out_event = <span class="string">&quot;BehaviourOut&quot;</span>)]
 </span><span class="kw">pub struct </span>Behaviour&lt;B: BlockT&gt; {
 	<span class="doccomment">/// All the substrate-specific protocols.
 	</span>substrate: Protocol&lt;B&gt;,
@@ -421,8 +411,6 @@
 	</span>peer_info: peer_info::PeerInfoBehaviour,
 	<span class="doccomment">/// Discovers nodes of the network.
 	</span>discovery: DiscoveryBehaviour,
-	<span class="doccomment">/// Connection limits.
-	</span>connection_limits: libp2p::connection_limits::Behaviour,
 	<span class="doccomment">/// Generic request-response protocols.
 	</span>request_responses: request_responses::RequestResponsesBehaviour,
 }
@@ -543,7 +531,6 @@
 		disco_config: DiscoveryConfig,
 		request_response_protocols: Vec&lt;ProtocolConfig&gt;,
 		peer_store_handle: PeerStoreHandle,
-		connection_limits: ConnectionLimits,
 		external_addresses: Arc&lt;Mutex&lt;HashSet&lt;Multiaddr&gt;&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, request_responses::RegisterError&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
@@ -554,7 +541,6 @@
 				external_addresses,
 			),
 			discovery: disco_config.finish(),
-			connection_limits: libp2p::connection_limits::Behaviour::new(connection_limits),
 			request_responses: request_responses::RequestResponsesBehaviour::new(
 				request_response_protocols.into_iter(),
 				Box::new(peer_store_handle),
@@ -626,7 +612,7 @@
 	</span><span class="kw">pub fn </span>add_self_reported_address_to_dht(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		peer_id: <span class="kw-2">&amp;</span>PeerId,
-		supported_protocols: <span class="kw-2">&amp;</span>[<span class="kw">impl </span>AsRef&lt;str&gt;],
+		supported_protocols: <span class="kw-2">&amp;</span>[<span class="kw">impl </span>AsRef&lt;[u8]&gt;],
 		addr: Multiaddr,
 	) {
 		<span class="self">self</span>.discovery.add_self_reported_address(peer_id, supported_protocols, addr);
@@ -728,12 +714,6 @@
 				BehaviourOut::Dht(DhtEvent::ValuePutFailed(key), duration),
 			DiscoveryOut::RandomKademliaStarted =&gt; BehaviourOut::RandomKademliaStarted,
 		}
-	}
-}
-
-<span class="kw">impl </span>From&lt;void::Void&gt; <span class="kw">for </span>BehaviourOut {
-	<span class="kw">fn </span>from(e: void::Void) -&gt; <span class="self">Self </span>{
-		void::unreachable(e)
 	}
 }
 </code></pre></div></section></main></body></html>

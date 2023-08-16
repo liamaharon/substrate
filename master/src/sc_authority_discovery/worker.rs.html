@@ -811,8 +811,8 @@
 <span class="kw">use </span>addr_cache::AddrCache;
 <span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>ip_network::IpNetwork;
-<span class="kw">use </span>libp2p::{core::multiaddr, identity::PublicKey, Multiaddr};
-<span class="kw">use </span>multihash_codetable::{Code, MultihashDigest};
+<span class="kw">use </span>libp2p::{core::multiaddr, identity::PublicKey, multihash::Multihash, Multiaddr, PeerId};
+<span class="kw">use </span>multihash::{Code, MultihashDigest};
 
 <span class="kw">use </span>log::{debug, error, log_enabled};
 <span class="kw">use </span>prometheus_endpoint::{register, Counter, CounterVec, Gauge, Opts, U64};
@@ -1081,7 +1081,7 @@
 	}
 
 	<span class="kw">fn </span>addresses_to_publish(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Iterator&lt;Item = Multiaddr&gt; {
-		<span class="kw">let </span>peer_id = <span class="self">self</span>.network.local_peer_id();
+		<span class="kw">let </span>peer_id: Multihash = <span class="self">self</span>.network.local_peer_id().into();
 		<span class="kw">let </span>publish_non_global_ips = <span class="self">self</span>.publish_non_global_ips;
 		<span class="self">self</span>.network
 			.external_addresses()
@@ -1306,7 +1306,7 @@
 					.map_err(Error::ParsingMultiaddress)<span class="question-mark">?</span>;
 
 				<span class="kw">let </span>get_peer_id = |a: <span class="kw-2">&amp;</span>Multiaddr| <span class="kw">match </span>a.iter().last() {
-					<span class="prelude-val">Some</span>(multiaddr::Protocol::P2p(peer_id)) =&gt; <span class="prelude-val">Some</span>(peer_id),
+					<span class="prelude-val">Some</span>(multiaddr::Protocol::P2p(key)) =&gt; PeerId::from_multihash(key).ok(),
 					<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 				};
 

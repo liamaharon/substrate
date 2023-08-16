@@ -508,14 +508,6 @@
 <a href="#508" id="508">508</a>
 <a href="#509" id="509">509</a>
 <a href="#510" id="510">510</a>
-<a href="#511" id="511">511</a>
-<a href="#512" id="512">512</a>
-<a href="#513" id="513">513</a>
-<a href="#514" id="514">514</a>
-<a href="#515" id="515">515</a>
-<a href="#516" id="516">516</a>
-<a href="#517" id="517">517</a>
-<a href="#518" id="518">518</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -730,7 +722,7 @@
 
 <span class="kw">impl</span>&lt;B: BlockT&gt; NetworkBehaviour <span class="kw">for </span>Protocol&lt;B&gt; {
 	<span class="kw">type </span>ConnectionHandler = &lt;Notifications <span class="kw">as </span>NetworkBehaviour&gt;::ConnectionHandler;
-	<span class="kw">type </span>ToSwarm = CustomMessageOutcome;
+	<span class="kw">type </span>OutEvent = CustomMessageOutcome;
 
 	<span class="kw">fn </span>handle_established_inbound_connection(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -791,7 +783,7 @@
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		cx: <span class="kw-2">&amp;mut </span>std::task::Context,
 		params: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PollParameters,
-	) -&gt; Poll&lt;ToSwarm&lt;<span class="self">Self</span>::ToSwarm, THandlerInEvent&lt;<span class="self">Self</span>&gt;&gt;&gt; {
+	) -&gt; Poll&lt;ToSwarm&lt;<span class="self">Self</span>::OutEvent, THandlerInEvent&lt;<span class="self">Self</span>&gt;&gt;&gt; {
 		<span class="kw">while let </span>Poll::Ready(<span class="prelude-val">Some</span>(validation_result)) =
 			<span class="self">self</span>.sync_substream_validations.poll_next_unpin(cx)
 		{
@@ -815,18 +807,10 @@
 			Poll::Ready(ToSwarm::Dial { opts }) =&gt; <span class="kw">return </span>Poll::Ready(ToSwarm::Dial { opts }),
 			Poll::Ready(ToSwarm::NotifyHandler { peer_id, handler, event }) =&gt;
 				<span class="kw">return </span>Poll::Ready(ToSwarm::NotifyHandler { peer_id, handler, event }),
+			Poll::Ready(ToSwarm::ReportObservedAddr { address, score }) =&gt;
+				<span class="kw">return </span>Poll::Ready(ToSwarm::ReportObservedAddr { address, score }),
 			Poll::Ready(ToSwarm::CloseConnection { peer_id, connection }) =&gt;
 				<span class="kw">return </span>Poll::Ready(ToSwarm::CloseConnection { peer_id, connection }),
-			Poll::Ready(ToSwarm::NewExternalAddrCandidate(observed)) =&gt;
-				<span class="kw">return </span>Poll::Ready(ToSwarm::NewExternalAddrCandidate(observed)),
-			Poll::Ready(ToSwarm::ExternalAddrConfirmed(addr)) =&gt;
-				<span class="kw">return </span>Poll::Ready(ToSwarm::ExternalAddrConfirmed(addr)),
-			Poll::Ready(ToSwarm::ExternalAddrExpired(addr)) =&gt;
-				<span class="kw">return </span>Poll::Ready(ToSwarm::ExternalAddrExpired(addr)),
-			Poll::Ready(ToSwarm::ListenOn { opts }) =&gt;
-				<span class="kw">return </span>Poll::Ready(ToSwarm::ListenOn { opts }),
-			Poll::Ready(ToSwarm::RemoveListener { id }) =&gt;
-				<span class="kw">return </span>Poll::Ready(ToSwarm::RemoveListener { id }),
 		};
 
 		<span class="kw">let </span>outcome = <span class="kw">match </span>event {

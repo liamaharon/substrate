@@ -775,8 +775,8 @@
 	<span class="kw">fn </span>handle_sync_event(<span class="kw-2">&amp;mut </span><span class="self">self</span>, event: SyncEvent) {
 		<span class="kw">match </span>event {
 			SyncEvent::PeerConnected(remote) =&gt; {
-				<span class="kw">let </span>addr =
-					iter::once(multiaddr::Protocol::P2p(remote)).collect::&lt;multiaddr::Multiaddr&gt;();
+				<span class="kw">let </span>addr = iter::once(multiaddr::Protocol::P2p(remote.into()))
+					.collect::&lt;multiaddr::Multiaddr&gt;();
 				<span class="kw">let </span>result = <span class="self">self</span>.network.add_peers_to_reserved_set(
 					<span class="self">self</span>.protocol_name.clone(),
 					iter::once(addr).collect(),

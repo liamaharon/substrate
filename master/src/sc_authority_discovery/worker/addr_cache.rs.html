@@ -385,6 +385,7 @@
 <a href="#385" id="385">385</a>
 <a href="#386" id="386">386</a>
 <a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -549,8 +550,8 @@
 
 <span class="kw">fn </span>peer_id_from_multiaddr(addr: <span class="kw-2">&amp;</span>Multiaddr) -&gt; <span class="prelude-ty">Option</span>&lt;PeerId&gt; {
 	addr.iter().last().and_then(|protocol| {
-		<span class="kw">if let </span>Protocol::P2p(peer_id) = protocol {
-			<span class="prelude-val">Some</span>(peer_id)
+		<span class="kw">if let </span>Protocol::P2p(multihash) = protocol {
+			PeerId::from_multihash(multihash).ok()
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>}
@@ -565,8 +566,7 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="kw">use </span>libp2p::multihash::Multihash;
-	<span class="kw">use </span>multihash_codetable::Code;
+	<span class="kw">use </span>libp2p::multihash::{<span class="self">self</span>, Multihash};
 	<span class="kw">use </span>quickcheck::{Arbitrary, Gen, QuickCheck, TestResult};
 
 	<span class="kw">use </span>sp_authority_discovery::{AuthorityId, AuthorityPair};
@@ -588,13 +588,14 @@
 	<span class="kw">impl </span>Arbitrary <span class="kw">for </span>TestMultiaddr {
 		<span class="kw">fn </span>arbitrary(g: <span class="kw-2">&amp;mut </span>Gen) -&gt; <span class="self">Self </span>{
 			<span class="kw">let </span>seed = (<span class="number">0</span>..<span class="number">32</span>).map(|<span class="kw">_</span>| u8::arbitrary(g)).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-			<span class="kw">let </span>peer_id =
-				PeerId::from_multihash(Multihash::wrap(Code::Sha2_256.into(), <span class="kw-2">&amp;</span>seed).unwrap())
-					.unwrap();
+			<span class="kw">let </span>peer_id = PeerId::from_multihash(
+				Multihash::wrap(multihash::Code::Sha2_256.into(), <span class="kw-2">&amp;</span>seed).unwrap(),
+			)
+			.unwrap();
 			<span class="kw">let </span>multiaddr = <span class="string">&quot;/ip6/2001:db8:0:0:0:0:0:2/tcp/30333&quot;
 				</span>.parse::&lt;Multiaddr&gt;()
 				.unwrap()
-				.with(Protocol::P2p(peer_id));
+				.with(Protocol::P2p(peer_id.into()));
 
 			TestMultiaddr(multiaddr)
 		}
@@ -606,17 +607,18 @@
 	<span class="kw">impl </span>Arbitrary <span class="kw">for </span>TestMultiaddrsSamePeerCombo {
 		<span class="kw">fn </span>arbitrary(g: <span class="kw-2">&amp;mut </span>Gen) -&gt; <span class="self">Self </span>{
 			<span class="kw">let </span>seed = (<span class="number">0</span>..<span class="number">32</span>).map(|<span class="kw">_</span>| u8::arbitrary(g)).collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-			<span class="kw">let </span>peer_id =
-				PeerId::from_multihash(Multihash::wrap(Code::Sha2_256.into(), <span class="kw-2">&amp;</span>seed).unwrap())
-					.unwrap();
+			<span class="kw">let </span>peer_id = PeerId::from_multihash(
+				Multihash::wrap(multihash::Code::Sha2_256.into(), <span class="kw-2">&amp;</span>seed).unwrap(),
+			)
+			.unwrap();
 			<span class="kw">let </span>multiaddr1 = <span class="string">&quot;/ip6/2001:db8:0:0:0:0:0:2/tcp/30333&quot;
 				</span>.parse::&lt;Multiaddr&gt;()
 				.unwrap()
-				.with(Protocol::P2p(peer_id));
+				.with(Protocol::P2p(peer_id.into()));
 			<span class="kw">let </span>multiaddr2 = <span class="string">&quot;/ip6/2002:db8:0:0:0:0:0:2/tcp/30133&quot;
 				</span>.parse::&lt;Multiaddr&gt;()
 				.unwrap()
-				.with(Protocol::P2p(peer_id));
+				.with(Protocol::P2p(peer_id.into()));
 			TestMultiaddrsSamePeerCombo(multiaddr1, multiaddr2)
 		}
 	}
@@ -753,7 +755,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>addr_cache = AddrCache::new();
 
 		<span class="kw">let </span>peer_id = PeerId::random();
-		<span class="kw">let </span>addr = Multiaddr::empty().with(Protocol::P2p(peer_id));
+		<span class="kw">let </span>addr = Multiaddr::empty().with(Protocol::P2p(peer_id.into()));
 
 		<span class="kw">let </span>authority_id0 = AuthorityPair::generate().<span class="number">0</span>.public();
 		<span class="kw">let </span>authority_id1 = AuthorityPair::generate().<span class="number">0</span>.public();
