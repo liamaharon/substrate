@@ -252,6 +252,76 @@
 <a href="#252" id="252">252</a>
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -273,13 +343,64 @@
 //! pallet.
 
 </span><span class="kw">use </span>core::iter::Sum;
-<span class="kw">use </span>frame_support::traits::{OnRuntimeUpgrade, ReservableCurrency};
-<span class="kw">use </span>pallet_treasury::BalanceOf;
+<span class="kw">use </span>frame_support::{
+	pallet_prelude::OptionQuery,
+	storage_alias,
+	traits::{Currency, LockableCurrency, OnRuntimeUpgrade, ReservableCurrency},
+	weights::RuntimeDbWeight,
+	Parameter, Twox64Concat,
+};
 <span class="kw">use </span>sp_runtime::{traits::Zero, Saturating};
 <span class="kw">use </span>sp_std::collections::btree_map::BTreeMap;
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
-</span><span class="kw">use </span>sp_std::vec::Vec;
+</span><span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;runtime::tips::migrations::unreserve_deposits&quot;</span>;
+
+<span class="kw">type </span>BalanceOf&lt;T, I&gt; =
+	&lt;&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::Currency <span class="kw">as </span>Currency&lt;&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::AccountId&gt;&gt;::Balance;
+
+<span class="doccomment">/// The configuration for [`UnreserveDeposits`].
+</span><span class="kw">pub trait </span>UnlockConfig&lt;I&gt;: <span class="lifetime">&#39;static </span>{
+	<span class="doccomment">/// The hash used in the runtime.
+	</span><span class="kw">type </span>Hash: Parameter;
+	<span class="doccomment">/// The account ID used in the runtime.
+	</span><span class="kw">type </span>AccountId: Parameter + Ord;
+	<span class="doccomment">/// The currency type used in the runtime.
+	///
+	/// Should match the currency type previously used for the pallet, if applicable.
+	</span><span class="kw">type </span>Currency: LockableCurrency&lt;<span class="self">Self</span>::AccountId&gt; + ReservableCurrency&lt;<span class="self">Self</span>::AccountId&gt;;
+	<span class="doccomment">/// Base deposit to report a tip.
+	///
+	/// Should match the currency type previously used for the pallet, if applicable.
+	</span><span class="kw">type </span>TipReportDepositBase: sp_core::Get&lt;BalanceOf&lt;<span class="self">Self</span>, I&gt;&gt;;
+	<span class="doccomment">/// Deposit per byte to report a tip.
+	///
+	/// Should match the currency type previously used for the pallet, if applicable.
+	</span><span class="kw">type </span>DataDepositPerByte: sp_core::Get&lt;BalanceOf&lt;<span class="self">Self</span>, I&gt;&gt;;
+	<span class="doccomment">/// The name of the pallet as previously configured in
+	/// [`construct_runtime!`](frame_support::construct_runtime).
+	</span><span class="kw">type </span>PalletName: sp_core::Get&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;;
+	<span class="doccomment">/// The DB weight as configured in the runtime to calculate the correct weight.
+	</span><span class="kw">type </span>DbWeight: sp_core::Get&lt;RuntimeDbWeight&gt;;
+	<span class="doccomment">/// The block number as configured in the runtime.
+	</span><span class="kw">type </span>BlockNumber: Parameter + Zero + Copy + Ord;
+}
+
+<span class="doccomment">/// An open tipping &quot;motion&quot;. Retains all details of a tip including information on the finder
+/// and the members who have voted.
+</span><span class="attr">#[storage_alias(dynamic)]
+</span><span class="kw">type </span>Tips&lt;T: UnlockConfig&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; = StorageMap&lt;
+	&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::PalletName,
+	Twox64Concat,
+	&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::Hash,
+	<span class="kw">crate</span>::OpenTip&lt;
+		&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::AccountId,
+		BalanceOf&lt;T, I&gt;,
+		&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::BlockNumber,
+		&lt;T <span class="kw">as </span>UnlockConfig&lt;I&gt;&gt;::Hash,
+	&gt;,
+	OptionQuery,
+&gt;;
 
 <span class="doccomment">/// A migration that unreserves all tip deposits.
 ///
@@ -288,9 +409,9 @@
 /// The pallet should be made inoperable before or immediately after this migration is run.
 ///
 /// (See also the `RemovePallet` migration in `frame/support/src/migrations.rs`)
-</span><span class="kw">pub struct </span>UnreserveDeposits&lt;T: <span class="kw">crate</span>::Config&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt;(sp_std::marker::PhantomData&lt;(T, I)&gt;);
+</span><span class="kw">pub struct </span>UnreserveDeposits&lt;T: UnlockConfig&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt;(sp_std::marker::PhantomData&lt;(T, I)&gt;);
 
-<span class="kw">impl</span>&lt;T: <span class="kw">crate</span>::Config&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; UnreserveDeposits&lt;T, I&gt; {
+<span class="kw">impl</span>&lt;T: UnlockConfig&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; UnreserveDeposits&lt;T, I&gt; {
 	<span class="doccomment">/// Calculates and returns the total amount reserved by each account by this pallet from open
 	/// tips.
 	///
@@ -300,14 +421,14 @@
 	///   reserved balance by this pallet
 	/// * `frame_support::weights::Weight`: The weight of this operation.
 	</span><span class="kw">fn </span>get_deposits() -&gt; (BTreeMap&lt;T::AccountId, BalanceOf&lt;T, I&gt;&gt;, frame_support::weights::Weight) {
-		<span class="kw">use </span>frame_support::traits::Get;
+		<span class="kw">use </span>sp_core::Get;
 
 		<span class="kw">let </span><span class="kw-2">mut </span>tips_len = <span class="number">0</span>;
-		<span class="kw">let </span>account_deposits: BTreeMap&lt;T::AccountId, BalanceOf&lt;T, I&gt;&gt; = <span class="kw">crate</span>::Tips::&lt;T, I&gt;::iter()
+		<span class="kw">let </span>account_deposits: BTreeMap&lt;T::AccountId, BalanceOf&lt;T, I&gt;&gt; = Tips::&lt;T, I&gt;::iter()
 			.map(|(_hash, open_tip)| open_tip)
 			.fold(BTreeMap::new(), |<span class="kw-2">mut </span>acc, tip| {
 				<span class="comment">// Count the total number of tips
-				</span>tips_len.saturating_accrue(<span class="number">1</span>);
+				</span>tips_len.saturating_inc();
 
 				<span class="comment">// Add the balance to the account&#39;s existing deposit in the accumulator
 				</span>acc.entry(tip.finder).or_insert(Zero::zero()).saturating_accrue(tip.deposit);
@@ -318,7 +439,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;T: <span class="kw">crate</span>::Config&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; OnRuntimeUpgrade <span class="kw">for </span>UnreserveDeposits&lt;T, I&gt;
+<span class="kw">impl</span>&lt;T: UnlockConfig&lt;I&gt;, I: <span class="lifetime">&#39;static</span>&gt; OnRuntimeUpgrade <span class="kw">for </span>UnreserveDeposits&lt;T, I&gt;
 <span class="kw">where
 	</span>BalanceOf&lt;T, I&gt;: Sum,
 {
@@ -336,7 +457,7 @@
 	/// Fails with a `TryRuntimeError` if somehow the amount reserved by this pallet is greater than
 	/// the actual total reserved amount for any accounts.
 	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
-	</span><span class="kw">fn </span>pre_upgrade() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, sp_runtime::TryRuntimeError&gt; {
+	</span><span class="kw">fn </span>pre_upgrade() -&gt; <span class="prelude-ty">Result</span>&lt;sp_std::vec::Vec&lt;u8&gt;, sp_runtime::TryRuntimeError&gt; {
 		<span class="kw">use </span>codec::Encode;
 		<span class="kw">use </span>frame_support::ensure;
 
@@ -361,8 +482,8 @@
 		<span class="comment">// Print some summary stats
 		</span><span class="kw">let </span>total_deposits_to_unreserve =
 			account_deposits.clone().into_values().sum::&lt;BalanceOf&lt;T, I&gt;&gt;();
-		<span class="macro">log::info!</span>(<span class="string">&quot;Total accounts: {}&quot;</span>, account_deposits.keys().count());
-		<span class="macro">log::info!</span>(<span class="string">&quot;Total amount to unreserve: {:?}&quot;</span>, total_deposits_to_unreserve);
+		<span class="macro">log::info!</span>(target: LOG_TARGET, <span class="string">&quot;Total accounts: {}&quot;</span>, account_deposits.keys().count());
+		<span class="macro">log::info!</span>(target: LOG_TARGET, <span class="string">&quot;Total amount to unreserve: {:?}&quot;</span>, total_deposits_to_unreserve);
 
 		<span class="comment">// Return the actual amount reserved before the upgrade to verify integrity of the upgrade
 		// in the post_upgrade hook.
@@ -392,7 +513,7 @@
 	<span class="doccomment">/// Verifies that the account reserved balances were reduced by the actual expected amounts.
 	</span><span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 	</span><span class="kw">fn </span>post_upgrade(
-		account_reserved_before_bytes: Vec&lt;u8&gt;,
+		account_reserved_before_bytes: sp_std::vec::Vec&lt;u8&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), sp_runtime::TryRuntimeError&gt; {
 		<span class="kw">use </span>codec::Decode;
 
@@ -415,6 +536,7 @@
 
 			<span class="kw">if </span>actual_reserved_after != expected_reserved_after {
 				<span class="macro">log::error!</span>(
+					target: LOG_TARGET,
 					<span class="string">&quot;Reserved balance for {:?} is incorrect. actual before: {:?}, actual after, {:?}, expected deducted: {:?}&quot;</span>,
 					account,
 					actual_reserved_before,
@@ -434,9 +556,27 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use crate</span>::{
 		migrations::unreserve_deposits::UnreserveDeposits,
-		tests::{new_test_ext, RuntimeOrigin, Test, Tips},
+		tests::{new_test_ext, Balances, RuntimeOrigin, Test, Tips},
 	};
-	<span class="kw">use </span>frame_support::{assert_ok, traits::TypedGet};
+	<span class="kw">use </span>frame_support::{assert_ok, parameter_types, traits::TypedGet};
+	<span class="kw">use </span>frame_system::pallet_prelude::BlockNumberFor;
+	<span class="kw">use </span>sp_core::ConstU64;
+
+	<span class="macro">parameter_types! </span>{
+		<span class="kw">const </span>PalletName: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;Tips&quot;</span>;
+	}
+
+	<span class="kw">struct </span>UnlockConfigImpl;
+	<span class="kw">impl </span><span class="kw">super</span>::UnlockConfig&lt;()&gt; <span class="kw">for </span>UnlockConfigImpl {
+		<span class="kw">type </span>Currency = Balances;
+		<span class="kw">type </span>TipReportDepositBase = ConstU64&lt;<span class="number">1</span>&gt;;
+		<span class="kw">type </span>DataDepositPerByte = ConstU64&lt;<span class="number">1</span>&gt;;
+		<span class="kw">type </span>Hash = sp_core::H256;
+		<span class="kw">type </span>AccountId = u128;
+		<span class="kw">type </span>BlockNumber = BlockNumberFor&lt;Test&gt;;
+		<span class="kw">type </span>DbWeight = ();
+		<span class="kw">type </span>PalletName = PalletName;
+	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>unreserve_all_funds_works() {
@@ -487,12 +627,12 @@
 			);
 
 			<span class="comment">// Execute the migration
-			</span><span class="kw">let </span>bytes = <span class="kw">match </span>UnreserveDeposits::&lt;Test, ()&gt;::pre_upgrade() {
+			</span><span class="kw">let </span>bytes = <span class="kw">match </span>UnreserveDeposits::&lt;UnlockConfigImpl, ()&gt;::pre_upgrade() {
 				<span class="prelude-val">Ok</span>(bytes) =&gt; bytes,
 				<span class="prelude-val">Err</span>(e) =&gt; <span class="macro">panic!</span>(<span class="string">&quot;pre_upgrade failed: {:?}&quot;</span>, e),
 			};
-			UnreserveDeposits::&lt;Test, ()&gt;::on_runtime_upgrade();
-			<span class="macro">assert_ok!</span>(UnreserveDeposits::&lt;Test, ()&gt;::post_upgrade(bytes));
+			UnreserveDeposits::&lt;UnlockConfigImpl, ()&gt;::on_runtime_upgrade();
+			<span class="macro">assert_ok!</span>(UnreserveDeposits::&lt;UnlockConfigImpl, ()&gt;::post_upgrade(bytes));
 
 			<span class="comment">// Check the deposits were were unreserved
 			</span><span class="macro">assert_eq!</span>(
