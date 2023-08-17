@@ -913,14 +913,6 @@
 <a href="#913" id="913">913</a>
 <a href="#914" id="914">914</a>
 <a href="#915" id="915">915</a>
-<a href="#916" id="916">916</a>
-<a href="#917" id="917">917</a>
-<a href="#918" id="918">918</a>
-<a href="#919" id="919">919</a>
-<a href="#920" id="920">920</a>
-<a href="#921" id="921">921</a>
-<a href="#922" id="922">922</a>
-<a href="#923" id="923">923</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -942,7 +934,7 @@
 //! from storage.
 
 </span><span class="kw">use crate</span>::{
-	backend::{Consolidate, IterArgs, StorageIterator},
+	backend::{IterArgs, StorageIterator},
 	trie_backend::TrieCacheProvider,
 	warn, StorageKey, StorageValue,
 };
@@ -958,7 +950,8 @@
 	child_delta_trie_root, delta_trie_root, empty_child_trie_root, read_child_trie_hash,
 	read_child_trie_value, read_trie_value,
 	trie_types::{TrieDBBuilder, TrieError},
-	DBValue, KeySpacedDB, NodeCodec, Trie, TrieCache, TrieDBRawIterator, TrieRecorder,
+	DBValue, KeySpacedDB, NodeCodec, PrefixedMemoryDB, Trie, TrieCache, TrieDBRawIterator,
+	TrieRecorder,
 };
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>std::{collections::HashMap, sync::Arc};
@@ -1544,8 +1537,8 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delta: <span class="kw">impl </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt;)&gt;,
 		state_version: StateVersion,
-	) -&gt; (H::Out, S::Overlay) {
-		<span class="kw">let </span><span class="kw-2">mut </span>write_overlay = S::Overlay::default();
+	) -&gt; (H::Out, PrefixedMemoryDB&lt;H&gt;) {
+		<span class="kw">let </span><span class="kw-2">mut </span>write_overlay = PrefixedMemoryDB::default();
 
 		<span class="kw">let </span>root = <span class="self">self</span>.with_recorder_and_cache_for_storage_root(<span class="prelude-val">None</span>, |recorder, cache| {
 			<span class="kw">let </span><span class="kw-2">mut </span>eph = Ephemeral::new(<span class="self">self</span>.backend_storage(), <span class="kw-2">&amp;mut </span>write_overlay);
@@ -1577,11 +1570,11 @@
 		child_info: <span class="kw-2">&amp;</span>ChildInfo,
 		delta: <span class="kw">impl </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt;)&gt;,
 		state_version: StateVersion,
-	) -&gt; (H::Out, bool, S::Overlay) {
+	) -&gt; (H::Out, bool, PrefixedMemoryDB&lt;H&gt;) {
 		<span class="kw">let </span>default_root = <span class="kw">match </span>child_info.child_type() {
 			ChildType::ParentKeyId =&gt; empty_child_trie_root::&lt;sp_trie::LayoutV1&lt;H&gt;&gt;(),
 		};
-		<span class="kw">let </span><span class="kw-2">mut </span>write_overlay = S::Overlay::default();
+		<span class="kw">let </span><span class="kw-2">mut </span>write_overlay = PrefixedMemoryDB::default();
 		<span class="kw">let </span>child_root = <span class="kw">match </span><span class="self">self</span>.child_root(child_info) {
 			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) =&gt; hash,
 			<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; default_root,
@@ -1630,7 +1623,7 @@
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>Ephemeral&lt;<span class="lifetime">&#39;a</span>, S: <span class="lifetime">&#39;a </span>+ TrieBackendStorage&lt;H&gt;, H: <span class="lifetime">&#39;a </span>+ Hasher&gt; {
 	storage: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>S,
-	overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>S::Overlay,
+	overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>PrefixedMemoryDB&lt;H&gt;,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, S: <span class="lifetime">&#39;a </span>+ TrieBackendStorage&lt;H&gt;, H: <span class="lifetime">&#39;a </span>+ Hasher&gt; AsHashDB&lt;H, DBValue&gt;
@@ -1645,7 +1638,7 @@
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, S: TrieBackendStorage&lt;H&gt;, H: Hasher&gt; Ephemeral&lt;<span class="lifetime">&#39;a</span>, S, H&gt; {
-	<span class="kw">pub fn </span>new(storage: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>S, overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>S::Overlay) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new(storage: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>S, overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>PrefixedMemoryDB&lt;H&gt;) -&gt; <span class="self">Self </span>{
 		Ephemeral { storage, overlay }
 	}
 }
@@ -1691,16 +1684,11 @@
 
 <span class="doccomment">/// Key-value pairs storage that is used by trie backend essence.
 </span><span class="kw">pub trait </span>TrieBackendStorage&lt;H: Hasher&gt;: Send + Sync {
-	<span class="doccomment">/// Type of in-memory overlay.
-	</span><span class="kw">type </span>Overlay: HashDB&lt;H, DBValue&gt; + Default + Consolidate;
-
 	<span class="doccomment">/// Get the value stored at key.
 	</span><span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>H::Out, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;&gt;;
 }
 
 <span class="kw">impl</span>&lt;T: TrieBackendStorage&lt;H&gt;, H: Hasher&gt; TrieBackendStorage&lt;H&gt; <span class="kw">for </span><span class="kw-2">&amp;</span>T {
-	<span class="kw">type </span>Overlay = T::Overlay;
-
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>H::Out, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;&gt; {
 		(<span class="kw-2">*</span><span class="self">self</span>).get(key, prefix)
 	}
@@ -1709,8 +1697,6 @@
 <span class="comment">// This implementation is used by normal storage trie clients.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">impl</span>&lt;H: Hasher&gt; TrieBackendStorage&lt;H&gt; <span class="kw">for </span>Arc&lt;<span class="kw">dyn </span>Storage&lt;H&gt;&gt; {
-	<span class="kw">type </span>Overlay = sp_trie::PrefixedMemoryDB&lt;H&gt;;
-
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>H::Out, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;&gt; {
 		Storage::&lt;H&gt;::get(std::ops::Deref::deref(<span class="self">self</span>), key, prefix)
 	}
@@ -1721,8 +1707,6 @@
 	</span>H: Hasher,
 	KF: sp_trie::KeyFunction&lt;H&gt; + Send + Sync,
 {
-	<span class="kw">type </span>Overlay = <span class="self">Self</span>;
-
 	<span class="kw">fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>H::Out, prefix: Prefix) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;DBValue&gt;&gt; {
 		<span class="prelude-val">Ok</span>(hash_db::HashDB::get(<span class="self">self</span>, key, prefix))
 	}

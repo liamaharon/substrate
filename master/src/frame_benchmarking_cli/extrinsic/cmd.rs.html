@@ -248,7 +248,7 @@
 		C: BlockBuilderProvider&lt;BA, Block, C&gt;
 			+ ProvideRuntimeApi&lt;Block&gt;
 			+ sp_blockchain::HeaderBackend&lt;Block&gt;,
-		C::Api: ApiExt&lt;Block, StateBackend = BA::State&gt; + BlockBuilderApi&lt;Block&gt;,
+		C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 	{
 		<span class="comment">// Short circuit if --list was specified.
 		</span><span class="kw">if </span><span class="self">self</span>.params.list {

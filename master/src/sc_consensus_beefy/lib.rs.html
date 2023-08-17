@@ -535,8 +535,6 @@
 <a href="#535" id="535">535</a>
 <a href="#536" id="536">536</a>
 <a href="#537" id="537">537</a>
-<a href="#538" id="538">538</a>
-<a href="#539" id="539">539</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -678,9 +676,7 @@
 <span class="kw">where
 	</span>B: Block,
 	BE: Backend&lt;B&gt;,
-	I: BlockImport&lt;B, Error = ConsensusError, Transaction = sp_api::TransactionFor&lt;RuntimeApi, B&gt;&gt;
-		+ Send
-		+ Sync,
+	I: BlockImport&lt;B, Error = ConsensusError&gt; + Send + Sync,
 	RuntimeApi: ProvideRuntimeApi&lt;B&gt; + Send + Sync,
 	RuntimeApi::Api: BeefyApi&lt;B, AuthorityId&gt;,
 {

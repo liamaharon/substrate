@@ -1427,25 +1427,6 @@
 <a href="#1427" id="1427">1427</a>
 <a href="#1428" id="1428">1428</a>
 <a href="#1429" id="1429">1429</a>
-<a href="#1430" id="1430">1430</a>
-<a href="#1431" id="1431">1431</a>
-<a href="#1432" id="1432">1432</a>
-<a href="#1433" id="1433">1433</a>
-<a href="#1434" id="1434">1434</a>
-<a href="#1435" id="1435">1435</a>
-<a href="#1436" id="1436">1436</a>
-<a href="#1437" id="1437">1437</a>
-<a href="#1438" id="1438">1438</a>
-<a href="#1439" id="1439">1439</a>
-<a href="#1440" id="1440">1440</a>
-<a href="#1441" id="1441">1441</a>
-<a href="#1442" id="1442">1442</a>
-<a href="#1443" id="1443">1443</a>
-<a href="#1444" id="1444">1444</a>
-<a href="#1445" id="1445">1445</a>
-<a href="#1446" id="1446">1446</a>
-<a href="#1447" id="1447">1447</a>
-<a href="#1448" id="1448">1448</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1484,10 +1465,12 @@
 		well_known_keys::{is_default_child_storage_key, DEFAULT_CHILD_STORAGE_KEY_PREFIX},
 		ChildInfo, ChildType, PrefixedStorageKey, StorageData, StorageKey,
 	},
-	H256,
 };
-<span class="kw">pub use </span>sp_io::TestExternalities;
-<span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, StateVersion};
+<span class="kw">use </span>sp_runtime::{
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor},
+	StateVersion,
+};
+<span class="kw">use </span>sp_state_machine::TestExternalities;
 <span class="kw">use </span>spinners::{Spinner, Spinners};
 <span class="kw">use </span>std::{
 	cmp::max,
@@ -1506,7 +1489,7 @@
 
 <span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;remote-ext&quot;</span>;
 <span class="kw">const </span>DEFAULT_HTTP_ENDPOINT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://rpc.polkadot.io:443&quot;</span>;
-<span class="kw">const </span>SNAPSHOT_VERSION: SnapshotVersion = Compact(<span class="number">2</span>);
+<span class="kw">const </span>SNAPSHOT_VERSION: SnapshotVersion = Compact(<span class="number">3</span>);
 
 <span class="doccomment">/// The snapshot that we store on disk.
 </span><span class="attr">#[derive(Decode, Encode)]
@@ -1515,16 +1498,16 @@
 	state_version: StateVersion,
 	block_hash: B::Hash,
 	<span class="comment">// &lt;Vec&lt;Key, (Value, MemoryDbRefCount)&gt;&gt;
-	</span>raw_storage: Vec&lt;(H256, (Vec&lt;u8&gt;, i32))&gt;,
-	storage_root: H256,
+	</span>raw_storage: Vec&lt;(Vec&lt;u8&gt;, (Vec&lt;u8&gt;, i32))&gt;,
+	storage_root: B::Hash,
 }
 
 <span class="kw">impl</span>&lt;B: BlockT&gt; Snapshot&lt;B&gt; {
 	<span class="kw">pub fn </span>new(
 		state_version: StateVersion,
 		block_hash: B::Hash,
-		raw_storage: Vec&lt;(H256, (Vec&lt;u8&gt;, i32))&gt;,
-		storage_root: H256,
+		raw_storage: Vec&lt;(Vec&lt;u8&gt;, (Vec&lt;u8&gt;, i32))&gt;,
+		storage_root: B::Hash,
 	) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			snapshot_version: SNAPSHOT_VERSION,
@@ -1539,21 +1522,14 @@
 		<span class="kw">let </span>bytes = fs::read(path).map_err(|<span class="kw">_</span>| <span class="string">&quot;fs::read failed.&quot;</span>)<span class="question-mark">?</span>;
 		<span class="comment">// The first item in the SCALE encoded struct bytes is the snapshot version. We decode and
 		// check that first, before proceeding to decode the rest of the snapshot.
-		</span><span class="kw">let </span>maybe_version: <span class="prelude-ty">Result</span>&lt;SnapshotVersion, <span class="kw">_</span>&gt; = Decode::decode(<span class="kw-2">&amp;mut &amp;*</span>bytes);
-		<span class="kw">match </span>maybe_version {
-			<span class="prelude-val">Ok</span>(snapshot_version) =&gt; {
-				<span class="kw">if </span>snapshot_version != SNAPSHOT_VERSION {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(
-						<span class="string">&quot;Unsupported snapshot version detected. Please create a new snapshot.&quot;</span>,
-					)
-				}
-				<span class="kw">match </span>Decode::decode(<span class="kw-2">&amp;mut &amp;*</span>bytes) {
-					<span class="prelude-val">Ok</span>(snapshot) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(snapshot),
-					<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;Decode failed&quot;</span>),
-				}
-			},
-			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;Decode failed&quot;</span>),
+		</span><span class="kw">let </span>snapshot_version = SnapshotVersion::decode(<span class="kw-2">&amp;mut &amp;*</span>bytes)
+			.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to decode snapshot version&quot;</span>)<span class="question-mark">?</span>;
+
+		<span class="kw">if </span>snapshot_version != SNAPSHOT_VERSION {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Unsupported snapshot version detected. Please create a new snapshot.&quot;</span>)
 		}
+
+		Decode::decode(<span class="kw-2">&amp;mut &amp;*</span>bytes).map_err(|<span class="kw">_</span>| <span class="string">&quot;Decode failed&quot;</span>)
 	}
 }
 
@@ -1561,13 +1537,13 @@
 /// bits and pieces to it, and can be loaded remotely.
 </span><span class="kw">pub struct </span>RemoteExternalities&lt;B: BlockT&gt; {
 	<span class="doccomment">/// The inner externalities.
-	</span><span class="kw">pub </span>inner_ext: TestExternalities,
+	</span><span class="kw">pub </span>inner_ext: TestExternalities&lt;HashingFor&lt;B&gt;&gt;,
 	<span class="doccomment">/// The block hash it which we created this externality env.
 	</span><span class="kw">pub </span>block_hash: B::Hash,
 }
 
 <span class="kw">impl</span>&lt;B: BlockT&gt; Deref <span class="kw">for </span>RemoteExternalities&lt;B&gt; {
-	<span class="kw">type </span>Target = TestExternalities;
+	<span class="kw">type </span>Target = TestExternalities&lt;HashingFor&lt;B&gt;&gt;;
 	<span class="kw">fn </span>deref(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="self">Self</span>::Target {
 		<span class="kw-2">&amp;</span><span class="self">self</span>.inner_ext
 	}
@@ -1767,9 +1743,7 @@
 	</span>overwrite_state_version: <span class="prelude-ty">Option</span>&lt;StateVersion&gt;,
 }
 
-<span class="comment">// NOTE: ideally we would use `DefaultNoBound` here, but not worth bringing in frame-support for
-// that.
-</span><span class="kw">impl</span>&lt;B: BlockT&gt; Default <span class="kw">for </span>Builder&lt;B&gt; {
+<span class="kw">impl</span>&lt;B: BlockT&gt; Default <span class="kw">for </span>Builder&lt;B&gt; {
 	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			mode: Default::default(),
@@ -2024,7 +1998,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		prefix: StorageKey,
 		at: B::Hash,
-		pending_ext: <span class="kw-2">&amp;mut </span>TestExternalities,
+		pending_ext: <span class="kw-2">&amp;mut </span>TestExternalities&lt;HashingFor&lt;B&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;KeyValue&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 		<span class="kw">let </span>start = Instant::now();
 		<span class="kw">let </span><span class="kw-2">mut </span>sp = Spinner::with_timer(Spinners::Dots, <span class="string">&quot;Scraping keys...&quot;</span>.into());
@@ -2216,7 +2190,7 @@
 	</span><span class="kw">async fn </span>load_child_remote(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		top_kv: <span class="kw-2">&amp;</span>[KeyValue],
-		pending_ext: <span class="kw-2">&amp;mut </span>TestExternalities,
+		pending_ext: <span class="kw-2">&amp;mut </span>TestExternalities&lt;HashingFor&lt;B&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ChildKeyValues, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 		<span class="kw">let </span>child_roots = top_kv
 			.into_iter()
@@ -2274,7 +2248,7 @@
 	/// cache, we can also optimize further.
 	</span><span class="kw">async fn </span>load_top_remote(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		pending_ext: <span class="kw-2">&amp;mut </span>TestExternalities,
+		pending_ext: <span class="kw-2">&amp;mut </span>TestExternalities&lt;HashingFor&lt;B&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;TopKeyValues, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 		<span class="kw">let </span>config = <span class="self">self</span>.as_online();
 		<span class="kw">let </span>at = <span class="self">self
@@ -2374,7 +2348,9 @@
 	/// `load_child_remote`.
 	///
 	/// Must be called after `init_remote_client`.
-	</span><span class="kw">async fn </span>load_remote_and_maybe_save(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;TestExternalities, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+	</span><span class="kw">async fn </span>load_remote_and_maybe_save(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;TestExternalities&lt;HashingFor&lt;B&gt;&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 		<span class="kw">let </span>state_version =
 			StateApi::&lt;B::Hash&gt;::runtime_version(<span class="self">self</span>.as_online().rpc_client(), <span class="prelude-val">None</span>)
 				.<span class="kw">await
@@ -2414,13 +2390,11 @@
 			std::fs::write(path, encoded).map_err(|<span class="kw">_</span>| <span class="string">&quot;fs::write failed&quot;</span>)<span class="question-mark">?</span>;
 
 			<span class="comment">// pending_ext was consumed when creating the snapshot, need to reinitailize it
-			</span><span class="kw">let </span><span class="kw-2">mut </span>pending_ext = TestExternalities::new_with_code_and_state(
-				Default::default(),
-				Default::default(),
+			</span><span class="kw">return </span><span class="prelude-val">Ok</span>(TestExternalities::from_raw_snapshot(
+				raw_storage,
+				storage_root,
 				<span class="self">self</span>.overwrite_state_version.unwrap_or(state_version),
-			);
-			pending_ext.from_raw_snapshot(raw_storage, storage_root);
-			<span class="kw">return </span><span class="prelude-val">Ok</span>(pending_ext)
+			))
 		}
 
 		<span class="prelude-val">Ok</span>(pending_ext)
@@ -2443,12 +2417,11 @@
 		<span class="kw">let </span>Snapshot { snapshot_version: <span class="kw">_</span>, block_hash, state_version, raw_storage, storage_root } =
 			Snapshot::&lt;B&gt;::load(<span class="kw-2">&amp;</span>config.state_snapshot.path)<span class="question-mark">?</span>;
 
-		<span class="kw">let </span><span class="kw-2">mut </span>inner_ext = TestExternalities::new_with_code_and_state(
-			Default::default(),
-			Default::default(),
+		<span class="kw">let </span>inner_ext = TestExternalities::from_raw_snapshot(
+			raw_storage,
+			storage_root,
 			<span class="self">self</span>.overwrite_state_version.unwrap_or(state_version),
 		);
-		inner_ext.from_raw_snapshot(raw_storage, storage_root);
 		sp.stop_with_message(<span class="macro">format!</span>(<span class="string">&quot;✅ Loaded snapshot ({:.2}s)&quot;</span>, start.elapsed().as_secs_f32()));
 
 		<span class="prelude-val">Ok</span>(RemoteExternalities { inner_ext, block_hash })
@@ -2547,17 +2520,12 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test_prelude {
-	<span class="kw">use </span>tracing_subscriber::EnvFilter;
-
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>sp_runtime::testing::{Block <span class="kw">as </span>RawBlock, ExtrinsicWrapper, H256 <span class="kw">as </span>Hash};
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">type </span>Block = RawBlock&lt;ExtrinsicWrapper&lt;Hash&gt;&gt;;
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>init_logger() {
-		<span class="kw">let _ </span>= tracing_subscriber::fmt()
-			.with_env_filter(EnvFilter::from_default_env())
-			.with_level(<span class="bool-val">true</span>)
-			.try_init();
+		<span class="kw">let _ </span>= sp_tracing::try_init_simple();
 	}
 }
 
@@ -2817,9 +2785,6 @@
 			.filter(|p| p.path().file_name().unwrap_or_default() == CACHE)
 			.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
 
-		<span class="kw">let </span>snap: Snapshot&lt;Block&gt; = Builder::&lt;Block&gt;::new().load_snapshot(CACHE.into()).unwrap();
-		<span class="macro">assert!</span>(<span class="macro">matches!</span>(snap, Snapshot { raw_storage, .. } <span class="kw">if </span>raw_storage.len() &gt; <span class="number">0</span>));
-
 		<span class="macro">assert!</span>(to_delete.len() == <span class="number">1</span>);
 		<span class="kw">let </span>to_delete = to_delete.first().unwrap();
 		<span class="macro">assert!</span>(std::fs::metadata(to_delete.path()).unwrap().size() &gt; <span class="number">1</span>);
@@ -2848,9 +2813,6 @@
 			.map(|d| d.unwrap())
 			.filter(|p| p.path().file_name().unwrap_or_default() == CACHE)
 			.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;();
-
-		<span class="kw">let </span>snap: Snapshot&lt;Block&gt; = Builder::&lt;Block&gt;::new().load_snapshot(CACHE.into()).unwrap();
-		<span class="macro">assert!</span>(<span class="macro">matches!</span>(snap, Snapshot { raw_storage, .. } <span class="kw">if </span>raw_storage.len() &gt; <span class="number">0</span>));
 
 		<span class="macro">assert!</span>(to_delete.len() == <span class="number">1</span>);
 		<span class="kw">let </span>to_delete = to_delete.first().unwrap();

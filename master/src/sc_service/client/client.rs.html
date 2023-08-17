@@ -2133,24 +2133,6 @@
 <a href="#2133" id="2133">2133</a>
 <a href="#2134" id="2134">2134</a>
 <a href="#2135" id="2135">2135</a>
-<a href="#2136" id="2136">2136</a>
-<a href="#2137" id="2137">2137</a>
-<a href="#2138" id="2138">2138</a>
-<a href="#2139" id="2139">2139</a>
-<a href="#2140" id="2140">2140</a>
-<a href="#2141" id="2141">2141</a>
-<a href="#2142" id="2142">2142</a>
-<a href="#2143" id="2143">2143</a>
-<a href="#2144" id="2144">2144</a>
-<a href="#2145" id="2145">2145</a>
-<a href="#2146" id="2146">2146</a>
-<a href="#2147" id="2147">2147</a>
-<a href="#2148" id="2148">2148</a>
-<a href="#2149" id="2149">2149</a>
-<a href="#2150" id="2150">2150</a>
-<a href="#2151" id="2151">2151</a>
-<a href="#2152" id="2152">2152</a>
-<a href="#2153" id="2153">2153</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2301,9 +2283,9 @@
 	}
 }
 
-<span class="kw">enum </span>PrepareStorageChangesResult&lt;B: backend::Backend&lt;Block&gt;, Block: BlockT&gt; {
+<span class="kw">enum </span>PrepareStorageChangesResult&lt;Block: BlockT&gt; {
 	Discard(ImportResult),
-	Import(<span class="prelude-ty">Option</span>&lt;sc_consensus::StorageChanges&lt;Block, backend::TransactionFor&lt;B, Block&gt;&gt;&gt;),
+	Import(<span class="prelude-ty">Option</span>&lt;sc_consensus::StorageChanges&lt;Block&gt;&gt;),
 }
 
 <span class="doccomment">/// Create an instance of in-memory client.
@@ -2642,15 +2624,12 @@
 	</span><span class="kw">fn </span>apply_block(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		operation: <span class="kw-2">&amp;mut </span>ClientImportOperation&lt;Block, B&gt;,
-		import_block: BlockImportParams&lt;Block, backend::TransactionFor&lt;B, Block&gt;&gt;,
-		storage_changes: <span class="prelude-ty">Option</span>&lt;
-			sc_consensus::StorageChanges&lt;Block, backend::TransactionFor&lt;B, Block&gt;&gt;,
-		&gt;,
+		import_block: BlockImportParams&lt;Block&gt;,
+		storage_changes: <span class="prelude-ty">Option</span>&lt;sc_consensus::StorageChanges&lt;Block&gt;&gt;,
 	) -&gt; sp_blockchain::Result&lt;ImportResult&gt;
 	<span class="kw">where
 		</span><span class="self">Self</span>: ProvideRuntimeApi&lt;Block&gt;,
-		&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api:
-			CoreApi&lt;Block&gt; + ApiExt&lt;Block, StateBackend = B::State&gt;,
+		&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api: CoreApi&lt;Block&gt; + ApiExt&lt;Block&gt;,
 	{
 		<span class="kw">let </span>BlockImportParams {
 			origin,
@@ -2733,9 +2712,7 @@
 		justifications: <span class="prelude-ty">Option</span>&lt;Justifications&gt;,
 		body: <span class="prelude-ty">Option</span>&lt;Vec&lt;Block::Extrinsic&gt;&gt;,
 		indexed_body: <span class="prelude-ty">Option</span>&lt;Vec&lt;Vec&lt;u8&gt;&gt;&gt;,
-		storage_changes: <span class="prelude-ty">Option</span>&lt;
-			sc_consensus::StorageChanges&lt;Block, backend::TransactionFor&lt;B, Block&gt;&gt;,
-		&gt;,
+		storage_changes: <span class="prelude-ty">Option</span>&lt;sc_consensus::StorageChanges&lt;Block&gt;&gt;,
 		finalized: bool,
 		aux: Vec&lt;(Vec&lt;u8&gt;, <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;)&gt;,
 		fork_choice: ForkChoiceStrategy,
@@ -2743,8 +2720,7 @@
 	) -&gt; sp_blockchain::Result&lt;ImportResult&gt;
 	<span class="kw">where
 		</span><span class="self">Self</span>: ProvideRuntimeApi&lt;Block&gt;,
-		&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api:
-			CoreApi&lt;Block&gt; + ApiExt&lt;Block, StateBackend = B::State&gt;,
+		&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api: CoreApi&lt;Block&gt; + ApiExt&lt;Block&gt;,
 	{
 		<span class="kw">let </span>parent_hash = <span class="kw-2">*</span>import_headers.post().parent_hash();
 		<span class="kw">let </span>status = <span class="self">self</span>.backend.blockchain().status(hash)<span class="question-mark">?</span>;
@@ -2983,12 +2959,11 @@
 	/// provided, the block is re-executed to get the storage changes.
 	</span><span class="kw">fn </span>prepare_block_storage_changes(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		import_block: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;Block, backend::TransactionFor&lt;B, Block&gt;&gt;,
-	) -&gt; sp_blockchain::Result&lt;PrepareStorageChangesResult&lt;B, Block&gt;&gt;
+		import_block: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;Block&gt;,
+	) -&gt; sp_blockchain::Result&lt;PrepareStorageChangesResult&lt;Block&gt;&gt;
 	<span class="kw">where
 		</span><span class="self">Self</span>: ProvideRuntimeApi&lt;Block&gt;,
-		&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api:
-			CoreApi&lt;Block&gt; + ApiExt&lt;Block, StateBackend = B::State&gt;,
+		&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api: CoreApi&lt;Block&gt; + ApiExt&lt;Block&gt;,
 	{
 		<span class="kw">let </span>parent_hash = import_block.header.parent_hash();
 		<span class="kw">let </span>state_action = std::mem::replace(<span class="kw-2">&amp;mut </span>import_block.state_action, StateAction::Skip);
@@ -3571,8 +3546,7 @@
 	E: CallExecutor&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	Block: BlockT,
 	<span class="self">Self</span>: ChainHeaderBackend&lt;Block&gt; + ProvideRuntimeApi&lt;Block&gt;,
-	&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api:
-		ApiExt&lt;Block, StateBackend = backend::StateBackendFor&lt;B, Block&gt;&gt; + BlockBuilderApi&lt;Block&gt;,
+	&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 {
 	<span class="kw">fn </span>new_block_at&lt;R: Into&lt;RecordProof&gt;&gt;(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -3858,17 +3832,13 @@
 {
 	<span class="kw">type </span>StateBackend = B::State;
 
-	<span class="kw">fn </span>call_api_at(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: CallApiAtParams&lt;Block, B::State&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, sp_api::ApiError&gt; {
+	<span class="kw">fn </span>call_api_at(<span class="kw-2">&amp;</span><span class="self">self</span>, params: CallApiAtParams&lt;Block&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, sp_api::ApiError&gt; {
 		<span class="self">self</span>.executor
 			.contextual_call(
 				params.at,
 				params.function,
 				<span class="kw-2">&amp;</span>params.arguments,
 				params.overlayed_changes,
-				<span class="prelude-val">Some</span>(params.storage_transaction_cache),
 				params.recorder,
 				params.call_context,
 				params.extensions,
@@ -3907,13 +3877,10 @@
 	E: CallExecutor&lt;Block&gt; + Send + Sync,
 	Block: BlockT,
 	Client&lt;B, E, Block, RA&gt;: ProvideRuntimeApi&lt;Block&gt;,
-	&lt;Client&lt;B, E, Block, RA&gt; <span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api:
-		CoreApi&lt;Block&gt; + ApiExt&lt;Block, StateBackend = B::State&gt;,
+	&lt;Client&lt;B, E, Block, RA&gt; <span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api: CoreApi&lt;Block&gt; + ApiExt&lt;Block&gt;,
 	RA: Sync + Send,
-	backend::TransactionFor&lt;B, Block&gt;: Send + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = backend::TransactionFor&lt;B, Block&gt;;
 
 	<span class="doccomment">/// Import a checked and validated block. If a justification is provided in
 	/// `BlockImportParams` then `finalized` *must* be true.
@@ -3926,7 +3893,7 @@
 	/// algorithm, don&#39;t use this function.
 	</span><span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>import_block: BlockImportParams&lt;Block, backend::TransactionFor&lt;B, Block&gt;&gt;,
+		<span class="kw-2">mut </span>import_block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">let </span>span = <span class="macro">tracing::span!</span>(tracing::Level::DEBUG, <span class="string">&quot;import_block&quot;</span>);
 		<span class="kw">let </span>_enter = span.enter();
@@ -4020,17 +3987,14 @@
 	E: CallExecutor&lt;Block&gt; + Send + Sync,
 	Block: BlockT,
 	<span class="self">Self</span>: ProvideRuntimeApi&lt;Block&gt;,
-	&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api:
-		CoreApi&lt;Block&gt; + ApiExt&lt;Block, StateBackend = B::State&gt;,
+	&lt;<span class="self">Self </span><span class="kw">as </span>ProvideRuntimeApi&lt;Block&gt;&gt;::Api: CoreApi&lt;Block&gt; + ApiExt&lt;Block&gt;,
 	RA: Sync + Send,
-	backend::TransactionFor&lt;B, Block&gt;: Send + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = backend::TransactionFor&lt;B, Block&gt;;
 
 	<span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		import_block: BlockImportParams&lt;Block, <span class="self">Self</span>::Transaction&gt;,
+		import_block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
 		(<span class="kw-2">&amp;*</span><span class="self">self</span>).import_block(import_block).<span class="kw">await
 	</span>}

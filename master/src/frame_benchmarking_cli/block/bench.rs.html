@@ -258,7 +258,7 @@
 		+ UsageProvider&lt;Block&gt;
 		+ BlockBackend&lt;Block&gt;
 		+ HeaderBackend&lt;Block&gt;,
-	C::Api: ApiExt&lt;Block, StateBackend = BA::State&gt; + BlockBuilderApi&lt;Block&gt;,
+	C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 {
 	<span class="doccomment">/// Returns a new [`Self`] from the arguments.
 	</span><span class="kw">pub fn </span>new(client: Arc&lt;C&gt;, params: BenchmarkParams) -&gt; <span class="self">Self </span>{

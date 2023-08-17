@@ -470,9 +470,6 @@
 <a href="#470" id="470">470</a>
 <a href="#471" id="471">471</a>
 <a href="#472" id="472">472</a>
-<a href="#473" id="473">473</a>
-<a href="#474" id="474">474</a>
-<a href="#475" id="475">475</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -496,10 +493,13 @@
 	backend, call_executor::CallExecutor, execution_extensions::ExecutionExtensions, HeaderBackend,
 };
 <span class="kw">use </span>sc_executor::{RuntimeVersion, RuntimeVersionOf};
-<span class="kw">use </span>sp_api::{ProofRecorder, StorageTransactionCache};
+<span class="kw">use </span>sp_api::ProofRecorder;
 <span class="kw">use </span>sp_core::traits::{CallContext, CodeExecutor, RuntimeCode};
 <span class="kw">use </span>sp_externalities::Extensions;
-<span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
+<span class="kw">use </span>sp_runtime::{
+	generic::BlockId,
+	traits::{Block <span class="kw">as </span>BlockT, HashingFor},
+};
 <span class="kw">use </span>sp_state_machine::{backend::AsTrieBackend, Ext, OverlayedChanges, StateMachine, StorageProof};
 <span class="kw">use </span>std::{cell::RefCell, sync::Arc};
 
@@ -594,8 +594,7 @@
 	) -&gt; sp_blockchain::Result&lt;RuntimeVersion&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = OverlayedChanges::default();
 
-		<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::&lt;Block, B::State&gt;::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, state, <span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, state, <span class="prelude-val">None</span>);
 
 		<span class="self">self</span>.executor
 			.runtime_version(<span class="kw-2">&amp;mut </span>ext, code)
@@ -672,14 +671,11 @@
 		at_hash: Block::Hash,
 		method: <span class="kw-2">&amp;</span>str,
 		call_data: <span class="kw-2">&amp;</span>[u8],
-		changes: <span class="kw-2">&amp;</span>RefCell&lt;OverlayedChanges&gt;,
-		storage_transaction_cache: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>RefCell&lt;StorageTransactionCache&lt;Block, B::State&gt;&gt;&gt;,
+		changes: <span class="kw-2">&amp;</span>RefCell&lt;OverlayedChanges&lt;HashingFor&lt;Block&gt;&gt;&gt;,
 		recorder: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;ProofRecorder&lt;Block&gt;&gt;,
 		call_context: CallContext,
 		extensions: <span class="kw-2">&amp;</span>RefCell&lt;Extensions&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, sp_blockchain::Error&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>storage_transaction_cache = storage_transaction_cache.map(|c| c.borrow_mut());
-
 		<span class="kw">let </span>state = <span class="self">self</span>.backend.state_at(at_hash)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>changes = <span class="kw-2">&amp;mut *</span>changes.borrow_mut();
@@ -712,7 +708,6 @@
 					<span class="kw-2">&amp;</span>runtime_code,
 					call_context,
 				)
-				.with_storage_transaction_cache(storage_transaction_cache.as_deref_mut())
 				.set_parent_hash(at_hash);
 				state_machine.execute()
 			},
@@ -727,7 +722,6 @@
 					<span class="kw-2">&amp;</span>runtime_code,
 					call_context,
 				)
-				.with_storage_transaction_cache(storage_transaction_cache.as_deref_mut())
 				.set_parent_hash(at_hash);
 				state_machine.execute()
 			},

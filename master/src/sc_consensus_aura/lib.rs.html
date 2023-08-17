@@ -874,11 +874,6 @@
 <a href="#874" id="874">874</a>
 <a href="#875" id="875">875</a>
 <a href="#876" id="876">876</a>
-<a href="#877" id="877">877</a>
-<a href="#878" id="878">878</a>
-<a href="#879" id="879">879</a>
-<a href="#880" id="880">880</a>
-<a href="#881" id="881">881</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1059,9 +1054,9 @@
 	C: ProvideRuntimeApi&lt;B&gt; + BlockOf + AuxStore + HeaderBackend&lt;B&gt; + Send + Sync,
 	C::Api: AuraApi&lt;B, AuthorityId&lt;P&gt;&gt;,
 	SC: SelectChain&lt;B&gt;,
-	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	I: BlockImport&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	PF: Environment&lt;B, Error = Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	PF::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
+	PF::Proposer: Proposer&lt;B, Error = Error&gt;,
 	SO: SyncOracle + Send + Sync + Clone,
 	L: sc_consensus::JustificationSyncLink&lt;B&gt;,
 	CIDP: CreateInherentDataProviders&lt;B, ()&gt; + Send + <span class="lifetime">&#39;static</span>,
@@ -1160,11 +1155,11 @@
 	C: ProvideRuntimeApi&lt;B&gt; + BlockOf + AuxStore + HeaderBackend&lt;B&gt; + Send + Sync,
 	C::Api: AuraApi&lt;B, AuthorityId&lt;P&gt;&gt;,
 	PF: Environment&lt;B, Error = Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	PF::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
+	PF::Proposer: Proposer&lt;B, Error = Error&gt;,
 	P: Pair,
 	P::Public: AppPublic + Member,
 	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Member + Codec,
-	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	I: BlockImport&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	Error: std::error::Error + Send + From&lt;ConsensusError&gt; + <span class="lifetime">&#39;static</span>,
 	SO: SyncOracle + Send + Sync + Clone,
 	L: sc_consensus::JustificationSyncLink&lt;B&gt;,
@@ -1211,8 +1206,8 @@
 	C: ProvideRuntimeApi&lt;B&gt; + BlockOf + HeaderBackend&lt;B&gt; + Sync,
 	C::Api: AuraApi&lt;B, AuthorityId&lt;P&gt;&gt;,
 	E: Environment&lt;B, Error = Error&gt; + Send + Sync,
-	E::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
-	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	E::Proposer: Proposer&lt;B, Error = Error&gt;,
+	I: BlockImport&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	P: Pair,
 	P::Public: AppPublic + Member,
 	P::Signature: TryFrom&lt;Vec&lt;u8&gt;&gt; + Member + Codec,
@@ -1269,13 +1264,10 @@
 		header: B::Header,
 		header_hash: <span class="kw-2">&amp;</span>B::Hash,
 		body: Vec&lt;B::Extrinsic&gt;,
-		storage_changes: StorageChanges&lt;&lt;<span class="self">Self</span>::BlockImport <span class="kw">as </span>BlockImport&lt;B&gt;&gt;::Transaction, B&gt;,
+		storage_changes: StorageChanges&lt;B&gt;,
 		public: <span class="self">Self</span>::Claim,
 		_authorities: <span class="self">Self</span>::AuxData,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;
-		sc_consensus::BlockImportParams&lt;B, &lt;<span class="self">Self</span>::BlockImport <span class="kw">as </span>BlockImport&lt;B&gt;&gt;::Transaction&gt;,
-		ConsensusError,
-	&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;sc_consensus::BlockImportParams&lt;B&gt;, ConsensusError&gt; {
 		<span class="kw">let </span>signature_digest_item =
 			<span class="kw">crate</span>::standalone::seal::&lt;<span class="kw">_</span>, P&gt;(header_hash, <span class="kw-2">&amp;</span>public, <span class="kw-2">&amp;</span><span class="self">self</span>.keystore)<span class="question-mark">?</span>;
 
@@ -1477,9 +1469,7 @@
 
 	<span class="kw">impl </span>Proposer&lt;TestBlock&gt; <span class="kw">for </span>DummyProposer {
 		<span class="kw">type </span>Error = Error;
-		<span class="kw">type </span>Transaction =
-			sc_client_api::TransactionFor&lt;substrate_test_runtime_client::Backend, TestBlock&gt;;
-		<span class="kw">type </span>Proposal = future::Ready&lt;<span class="prelude-ty">Result</span>&lt;Proposal&lt;TestBlock, <span class="self">Self</span>::Transaction, ()&gt;, Error&gt;&gt;;
+		<span class="kw">type </span>Proposal = future::Ready&lt;<span class="prelude-ty">Result</span>&lt;Proposal&lt;TestBlock, ()&gt;, Error&gt;&gt;;
 		<span class="kw">type </span>ProofRecording = DisableProofRecording;
 		<span class="kw">type </span>Proof = ();
 

@@ -842,11 +842,6 @@
 <a href="#842" id="842">842</a>
 <a href="#843" id="843">843</a>
 <a href="#844" id="844">844</a>
-<a href="#845" id="845">845</a>
-<a href="#846" id="846">846</a>
-<a href="#847" id="847">847</a>
-<a href="#848" id="848">848</a>
-<a href="#849" id="849">849</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -877,7 +872,7 @@
 };
 <span class="kw">use </span>sc_telemetry::TelemetryHandle;
 <span class="kw">use </span>sc_utils::mpsc::TracingUnboundedSender;
-<span class="kw">use </span>sp_api::{Core, RuntimeApiInfo, TransactionFor};
+<span class="kw">use </span>sp_api::{Core, RuntimeApiInfo};
 <span class="kw">use </span>sp_blockchain::BlockStatus;
 <span class="kw">use </span>sp_consensus::{BlockOrigin, Error <span class="kw">as </span>ConsensusError, SelectChain};
 <span class="kw">use </span>sp_consensus_grandpa::{ConsensusLog, GrandpaApi, ScheduledChange, SetId, GRANDPA_ENGINE_ID};
@@ -1083,9 +1078,7 @@
 	BE: Backend&lt;Block&gt;,
 	Client: ClientForGrandpa&lt;Block, BE&gt;,
 	Client::Api: GrandpaApi&lt;Block&gt;,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Client:
-		BlockImport&lt;Block, Error = ConsensusError, Transaction = TransactionFor&lt;Client, Block&gt;&gt;,
-	TransactionFor&lt;Client, Block&gt;: <span class="lifetime">&#39;static</span>,
+	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Client: BlockImport&lt;Block, Error = ConsensusError&gt;,
 {
 	<span class="comment">// check for a new authority set change.
 	</span><span class="kw">fn </span>check_new_change(
@@ -1122,7 +1115,7 @@
 
 	<span class="kw">fn </span>make_authorities_changes(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		block: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;Block, TransactionFor&lt;Client, Block&gt;&gt;,
+		block: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;Block&gt;,
 		hash: Block::Hash,
 		initial_sync: bool,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;PendingSetChanges&lt;Block&gt;, ConsensusError&gt; {
@@ -1310,7 +1303,7 @@
 	<span class="doccomment">/// Import whole new state and reset authority set.
 	</span><span class="kw">async fn </span>import_state(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block, TransactionFor&lt;Client, Block&gt;&gt;,
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, ConsensusError&gt; {
 		<span class="kw">let </span>hash = block.post_hash();
 		<span class="kw">let </span>number = <span class="kw-2">*</span>block.header.number();
@@ -1365,17 +1358,14 @@
 	BE: Backend&lt;Block&gt;,
 	Client: ClientForGrandpa&lt;Block, BE&gt;,
 	Client::Api: GrandpaApi&lt;Block&gt;,
-	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Client:
-		BlockImport&lt;Block, Error = ConsensusError, Transaction = TransactionFor&lt;Client, Block&gt;&gt;,
-	TransactionFor&lt;Client, Block&gt;: <span class="lifetime">&#39;static</span>,
+	<span class="kw">for</span>&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Client: BlockImport&lt;Block, Error = ConsensusError&gt;,
 	SC: Send,
 {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = TransactionFor&lt;Client, Block&gt;;
 
 	<span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block, <span class="self">Self</span>::Transaction&gt;,
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">let </span>hash = block.post_hash();
 		<span class="kw">let </span>number = <span class="kw-2">*</span>block.header.number();

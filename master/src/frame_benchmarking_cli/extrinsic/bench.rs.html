@@ -280,7 +280,7 @@
 	C: BlockBuilderProvider&lt;BA, Block, C&gt;
 		+ ProvideRuntimeApi&lt;Block&gt;
 		+ sp_blockchain::HeaderBackend&lt;Block&gt;,
-	C::Api: ApiExt&lt;Block, StateBackend = BA::State&gt; + BlockBuilderApi&lt;Block&gt;,
+	C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 {
 	<span class="doccomment">/// Create a new [`Self`] from the arguments.
 	</span><span class="kw">pub fn </span>new(

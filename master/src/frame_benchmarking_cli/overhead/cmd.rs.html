@@ -286,7 +286,7 @@
 		C: BlockBuilderProvider&lt;BA, Block, C&gt;
 			+ ProvideRuntimeApi&lt;Block&gt;
 			+ sp_blockchain::HeaderBackend&lt;Block&gt;,
-		C::Api: ApiExt&lt;Block, StateBackend = BA::State&gt; + BlockBuilderApi&lt;Block&gt;,
+		C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 	{
 		<span class="kw">if </span>ext_builder.pallet() != <span class="string">&quot;system&quot; </span>|| ext_builder.extrinsic() != <span class="string">&quot;remark&quot; </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;The extrinsic builder is required to build `System::Remark` extrinsics but builds `{}` extrinsics instead&quot;</span>, ext_builder.name()).into());

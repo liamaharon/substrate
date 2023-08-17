@@ -1962,37 +1962,6 @@
 <a href="#1962" id="1962">1962</a>
 <a href="#1963" id="1963">1963</a>
 <a href="#1964" id="1964">1964</a>
-<a href="#1965" id="1965">1965</a>
-<a href="#1966" id="1966">1966</a>
-<a href="#1967" id="1967">1967</a>
-<a href="#1968" id="1968">1968</a>
-<a href="#1969" id="1969">1969</a>
-<a href="#1970" id="1970">1970</a>
-<a href="#1971" id="1971">1971</a>
-<a href="#1972" id="1972">1972</a>
-<a href="#1973" id="1973">1973</a>
-<a href="#1974" id="1974">1974</a>
-<a href="#1975" id="1975">1975</a>
-<a href="#1976" id="1976">1976</a>
-<a href="#1977" id="1977">1977</a>
-<a href="#1978" id="1978">1978</a>
-<a href="#1979" id="1979">1979</a>
-<a href="#1980" id="1980">1980</a>
-<a href="#1981" id="1981">1981</a>
-<a href="#1982" id="1982">1982</a>
-<a href="#1983" id="1983">1983</a>
-<a href="#1984" id="1984">1984</a>
-<a href="#1985" id="1985">1985</a>
-<a href="#1986" id="1986">1986</a>
-<a href="#1987" id="1987">1987</a>
-<a href="#1988" id="1988">1988</a>
-<a href="#1989" id="1989">1989</a>
-<a href="#1990" id="1990">1990</a>
-<a href="#1991" id="1991">1991</a>
-<a href="#1992" id="1992">1992</a>
-<a href="#1993" id="1993">1993</a>
-<a href="#1994" id="1994">1994</a>
-<a href="#1995" id="1995">1995</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2120,13 +2089,13 @@
 }
 
 <span class="kw">pub use crate</span>::{
-	backend::{Backend, IterArgs, KeysIter, PairsIter, StorageIterator},
+	backend::{Backend, BackendTransaction, IterArgs, KeysIter, PairsIter, StorageIterator},
 	error::{Error, ExecutionError},
 	ext::Ext,
 	overlayed_changes::{
 		ChildStorageCollection, IndexOperation, OffchainChangesCollection,
 		OffchainOverlayedChanges, OverlayedChanges, StorageChanges, StorageCollection, StorageKey,
-		StorageTransactionCache, StorageValue,
+		StorageValue,
 	},
 	stats::{StateMachineStats, UsageInfo, UsageUnit},
 	trie_backend::{TrieBackend, TrieBackendBuilder},
@@ -2138,7 +2107,7 @@
 	<span class="kw">pub use crate</span>::{
 		basic::BasicExternalities,
 		error::{Error, ExecutionError},
-		in_memory_backend::{new_in_mem, new_in_mem_hash_key},
+		in_memory_backend::new_in_mem,
 		read_only::{InspectState, ReadOnlyExternalities},
 		testing::TestExternalities,
 		trie_backend::create_proof_check_backend,
@@ -2163,6 +2132,7 @@
 		traits::{CallContext, CodeExecutor, RuntimeCode},
 	};
 	<span class="kw">use </span>sp_externalities::Extensions;
+	<span class="kw">use </span>sp_trie::PrefixedMemoryDB;
 	<span class="kw">use </span>std::collections::{HashMap, HashSet};
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">type </span>CallResult&lt;E&gt; = <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, E&gt;;
@@ -2171,7 +2141,7 @@
 	</span><span class="kw">pub type </span>DefaultHandler&lt;E&gt; = <span class="kw">fn</span>(CallResult&lt;E&gt;, CallResult&lt;E&gt;) -&gt; CallResult&lt;E&gt;;
 
 	<span class="doccomment">/// Trie backend with in-memory storage.
-	</span><span class="kw">pub type </span>InMemoryBackend&lt;H&gt; = TrieBackend&lt;MemoryDB&lt;H&gt;, H&gt;;
+	</span><span class="kw">pub type </span>InMemoryBackend&lt;H&gt; = TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;;
 
 	<span class="doccomment">/// Storage backend trust level.
 	</span><span class="attr">#[derive(Debug, Clone)]
@@ -2194,9 +2164,8 @@
 		exec: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Exec,
 		method: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
 		call_data: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8],
-		overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>OverlayedChanges,
+		overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>OverlayedChanges&lt;H&gt;,
 		extensions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>Extensions,
-		storage_transaction_cache: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>StorageTransactionCache&lt;B::Transaction, H&gt;&gt;,
 		runtime_code: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>RuntimeCode&lt;<span class="lifetime">&#39;a</span>&gt;,
 		stats: StateMachineStats,
 		<span class="doccomment">/// The hash of the block the state machine will be executed on.
@@ -2226,7 +2195,7 @@
 		<span class="doccomment">/// Creates new substrate state machine.
 		</span><span class="kw">pub fn </span>new(
 			backend: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>B,
-			overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>OverlayedChanges,
+			overlay: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>OverlayedChanges&lt;H&gt;,
 			exec: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Exec,
 			method: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
 			call_data: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8],
@@ -2241,26 +2210,12 @@
 				call_data,
 				extensions,
 				overlay,
-				storage_transaction_cache: <span class="prelude-val">None</span>,
 				runtime_code,
 				stats: StateMachineStats::default(),
 				parent_hash: <span class="prelude-val">None</span>,
 				context,
 			}
 		}
-
-		<span class="doccomment">/// Use given `cache` as storage transaction cache.
-		///
-		/// The cache will be used to cache storage transactions that can be build while executing a
-		/// function in the runtime. For example, when calculating the storage root a transaction is
-		/// build that will be cached.
-		</span><span class="kw">pub fn </span>with_storage_transaction_cache(
-			<span class="kw-2">mut </span><span class="self">self</span>,
-			cache: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>StorageTransactionCache&lt;B::Transaction, H&gt;&gt;,
-		) -&gt; <span class="self">Self </span>{
-			<span class="self">self</span>.storage_transaction_cache = cache;
-			<span class="self">self
-		</span>}
 
 		<span class="doccomment">/// Set the given `parent_hash` as the hash of the parent block.
 		///
@@ -2279,18 +2234,11 @@
 		///
 		/// Returns the SCALE encoded result of the executed function.
 		</span><span class="kw">pub fn </span>execute(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Box&lt;<span class="kw">dyn </span>Error&gt;&gt; {
-			<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-
-			<span class="kw">let </span>cache = <span class="kw">match </span><span class="self">self</span>.storage_transaction_cache.as_mut() {
-				<span class="prelude-val">Some</span>(cache) =&gt; cache,
-				<span class="prelude-val">None </span>=&gt; <span class="kw-2">&amp;mut </span>cache,
-			};
-
 			<span class="self">self</span>.overlay
 				.enter_runtime()
 				.expect(<span class="string">&quot;StateMachine is never called from the runtime; qed&quot;</span>);
 
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="self">self</span>.overlay, cache, <span class="self">self</span>.backend, <span class="prelude-val">Some</span>(<span class="self">self</span>.extensions));
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="self">self</span>.overlay, <span class="self">self</span>.backend, <span class="prelude-val">Some</span>(<span class="self">self</span>.extensions));
 
 			<span class="kw">let </span>ext_id = ext.id;
 
@@ -2326,7 +2274,7 @@
 	<span class="doccomment">/// Prove execution using the given state backend, overlayed changes, and call executor.
 	</span><span class="kw">pub fn </span>prove_execution&lt;B, H, Exec&gt;(
 		backend: <span class="kw-2">&amp;mut </span>B,
-		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges&lt;H&gt;,
 		exec: <span class="kw-2">&amp;</span>Exec,
 		method: <span class="kw-2">&amp;</span>str,
 		call_data: <span class="kw-2">&amp;</span>[u8],
@@ -2361,7 +2309,7 @@
 	/// blocks (e.g. a transaction at a time), ensure a different method is used.
 	</span><span class="kw">pub fn </span>prove_execution_on_trie_backend&lt;S, H, Exec&gt;(
 		trie_backend: <span class="kw-2">&amp;</span>TrieBackend&lt;S, H&gt;,
-		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges&lt;H&gt;,
 		exec: <span class="kw-2">&amp;</span>Exec,
 		method: <span class="kw-2">&amp;</span>str,
 		call_data: <span class="kw-2">&amp;</span>[u8],
@@ -2400,7 +2348,7 @@
 	</span><span class="kw">pub fn </span>execution_proof_check&lt;H, Exec&gt;(
 		root: H::Out,
 		proof: StorageProof,
-		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges&lt;H&gt;,
 		exec: <span class="kw-2">&amp;</span>Exec,
 		method: <span class="kw-2">&amp;</span>str,
 		call_data: <span class="kw-2">&amp;</span>[u8],
@@ -2425,7 +2373,7 @@
 	<span class="doccomment">/// Check execution proof on proving backend, generated by `prove_execution` call.
 	</span><span class="kw">pub fn </span>execution_proof_check_on_trie_backend&lt;H, Exec&gt;(
 		trie_backend: <span class="kw-2">&amp;</span>TrieBackend&lt;MemoryDB&lt;H&gt;, H&gt;,
-		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+		overlay: <span class="kw-2">&amp;mut </span>OverlayedChanges&lt;H&gt;,
 		exec: <span class="kw-2">&amp;</span>Exec,
 		method: <span class="kw-2">&amp;</span>str,
 		call_data: <span class="kw-2">&amp;</span>[u8],
@@ -3104,7 +3052,7 @@
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::{backend::AsTrieBackend, ext::Ext, <span class="kw-2">*</span>};
-	<span class="kw">use crate</span>::{execution::CallResult, in_memory_backend::new_in_mem_hash_key};
+	<span class="kw">use crate</span>::{execution::CallResult, in_memory_backend::new_in_mem};
 	<span class="kw">use </span>assert_matches::assert_matches;
 	<span class="kw">use </span>codec::Encode;
 	<span class="kw">use </span>sp_core::{
@@ -3282,8 +3230,7 @@
 
 		<span class="kw">let </span>overlay_limit = overlay.clone();
 		{
-			<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 			<span class="kw">let _ </span>= ext.clear_prefix(<span class="string">b&quot;ab&quot;</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
 		}
 		overlay.commit_transaction().unwrap();
@@ -3306,8 +3253,7 @@
 
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = overlay_limit;
 		{
-			<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 			<span class="macro">assert_matches!</span>(
 				ext.clear_prefix(<span class="string">b&quot;ab&quot;</span>, <span class="prelude-val">Some</span>(<span class="number">1</span>), <span class="prelude-val">None</span>).deconstruct(),
 				(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="number">1</span>, <span class="number">3</span>, <span class="number">1</span>)
@@ -3351,8 +3297,7 @@
 		overlay.set_child_storage(<span class="kw-2">&amp;</span>child_info, <span class="string">b&quot;4&quot;</span>.to_vec(), <span class="prelude-val">Some</span>(<span class="string">b&quot;1312&quot;</span>.to_vec()));
 
 		{
-			<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
 			<span class="kw">let </span>r = ext.kill_child_storage(<span class="kw-2">&amp;</span>child_info, <span class="prelude-val">Some</span>(<span class="number">2</span>), <span class="prelude-val">None</span>);
 			<span class="macro">assert_matches!</span>(r.deconstruct(), (<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="number">2</span>, <span class="number">6</span>, <span class="number">2</span>));
 		}
@@ -3387,8 +3332,7 @@
 		];
 		<span class="kw">let </span>backend = InMemoryBackend::&lt;BlakeTwo256&gt;::from((initial, StateVersion::default()));
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = OverlayedChanges::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
 		<span class="kw">let </span>r = ext.kill_child_storage(<span class="kw-2">&amp;</span>child_info, <span class="prelude-val">Some</span>(<span class="number">0</span>), <span class="prelude-val">None</span>).deconstruct();
 		<span class="macro">assert_matches!</span>(r, (<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>));
 		<span class="kw">let </span>r = ext
@@ -3417,8 +3361,7 @@
 		];
 		<span class="kw">let </span>backend = InMemoryBackend::&lt;BlakeTwo256&gt;::from((initial, StateVersion::default()));
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = OverlayedChanges::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
 		<span class="macro">assert_eq!</span>(ext.kill_child_storage(<span class="kw-2">&amp;</span>child_info, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>).deconstruct(), (<span class="prelude-val">None</span>, <span class="number">4</span>, <span class="number">4</span>, <span class="number">4</span>));
 	}
 
@@ -3426,11 +3369,10 @@
 	</span><span class="kw">fn </span>set_child_storage_works() {
 		<span class="kw">let </span>child_info = ChildInfo::new_default(<span class="string">b&quot;sub1&quot;</span>);
 		<span class="kw">let </span>child_info = <span class="kw-2">&amp;</span>child_info;
-		<span class="kw">let </span>state = new_in_mem_hash_key::&lt;BlakeTwo256&gt;();
+		<span class="kw">let </span>state = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>backend = state.as_trie_backend();
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = OverlayedChanges::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 
 		ext.set_child_storage(child_info, <span class="string">b&quot;abc&quot;</span>.to_vec(), <span class="string">b&quot;def&quot;</span>.to_vec());
 		<span class="macro">assert_eq!</span>(ext.child_storage(child_info, <span class="string">b&quot;abc&quot;</span>), <span class="prelude-val">Some</span>(<span class="string">b&quot;def&quot;</span>.to_vec()));
@@ -3442,19 +3384,18 @@
 	</span><span class="kw">fn </span>append_storage_works() {
 		<span class="kw">let </span>reference_data = <span class="macro">vec!</span>[<span class="string">b&quot;data1&quot;</span>.to_vec(), <span class="string">b&quot;2&quot;</span>.to_vec(), <span class="string">b&quot;D3&quot;</span>.to_vec(), <span class="string">b&quot;d4&quot;</span>.to_vec()];
 		<span class="kw">let </span>key = <span class="string">b&quot;key&quot;</span>.to_vec();
-		<span class="kw">let </span>state = new_in_mem_hash_key::&lt;BlakeTwo256&gt;();
+		<span class="kw">let </span>state = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>backend = state.as_trie_backend();
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = OverlayedChanges::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
 		{
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 
 			ext.storage_append(key.clone(), reference_data[<span class="number">0</span>].encode());
 			<span class="macro">assert_eq!</span>(ext.storage(key.as_slice()), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[reference_data[<span class="number">0</span>].clone()].encode()));
 		}
 		overlay.start_transaction();
 		{
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 
 			<span class="kw">for </span>i <span class="kw">in </span>reference_data.iter().skip(<span class="number">1</span>) {
 				ext.storage_append(key.clone(), i.encode());
@@ -3463,7 +3404,7 @@
 		}
 		overlay.rollback_transaction().unwrap();
 		{
-			<span class="kw">let </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 			<span class="macro">assert_eq!</span>(ext.storage(key.as_slice()), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[reference_data[<span class="number">0</span>].clone()].encode()));
 		}
 	}
@@ -3478,14 +3419,13 @@
 		}
 
 		<span class="kw">let </span>key = <span class="string">b&quot;events&quot;</span>.to_vec();
-		<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-		<span class="kw">let </span>state = new_in_mem_hash_key::&lt;BlakeTwo256&gt;();
+		<span class="kw">let </span>state = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>backend = state.as_trie_backend();
 		<span class="kw">let </span><span class="kw-2">mut </span>overlay = OverlayedChanges::default();
 
 		<span class="comment">// For example, block initialization with event.
 		</span>{
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 			ext.clear_storage(key.as_slice());
 			ext.storage_append(key.clone(), Item::InitializationItem.encode());
 		}
@@ -3493,7 +3433,7 @@
 
 		<span class="comment">// For example, first transaction resulted in panic during block building
 		</span>{
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 
 			<span class="macro">assert_eq!</span>(ext.storage(key.as_slice()), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[Item::InitializationItem].encode()));
 
@@ -3508,7 +3448,7 @@
 
 		<span class="comment">// Then we apply next transaction which is valid this time.
 		</span>{
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 
 			<span class="macro">assert_eq!</span>(ext.storage(key.as_slice()), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[Item::InitializationItem].encode()));
 
@@ -3523,7 +3463,7 @@
 
 		<span class="comment">// Then only initlaization item and second (committed) item should persist.
 		</span>{
-			<span class="kw">let </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 			<span class="macro">assert_eq!</span>(
 				ext.storage(key.as_slice()),
 				<span class="prelude-val">Some</span>(<span class="macro">vec!</span>[Item::InitializationItem, Item::CommitedItem].encode()),
@@ -3940,12 +3880,11 @@
 
 		<span class="kw">let </span><span class="kw-2">mut </span>transaction = {
 			<span class="kw">let </span>backend = test_trie(state_version, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>);
-			<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;</span>backend, <span class="prelude-val">None</span>);
 			ext.set_child_storage(<span class="kw-2">&amp;</span>child_info_1, <span class="string">b&quot;abc&quot;</span>.to_vec(), <span class="string">b&quot;def&quot;</span>.to_vec());
 			ext.set_child_storage(<span class="kw-2">&amp;</span>child_info_2, <span class="string">b&quot;abc&quot;</span>.to_vec(), <span class="string">b&quot;def&quot;</span>.to_vec());
 			ext.storage_root(state_version);
-			cache.transaction.unwrap()
+			overlay.drain_storage_changes(<span class="kw-2">&amp;</span>backend, state_version).unwrap().transaction
 		};
 		<span class="kw">let </span><span class="kw-2">mut </span>duplicate = <span class="bool-val">false</span>;
 		<span class="kw">for </span>(k, (value, rc)) <span class="kw">in </span>transaction.drain().iter() {
@@ -3977,8 +3916,7 @@
 		<span class="macro">assert_eq!</span>(overlay.storage(<span class="string">b&quot;bbb&quot;</span>), <span class="prelude-val">None</span>);
 
 		{
-			<span class="kw">let </span><span class="kw-2">mut </span>cache = StorageTransactionCache::default();
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, <span class="kw-2">&amp;mut </span>cache, backend, <span class="prelude-val">None</span>);
+			<span class="kw">let </span><span class="kw-2">mut </span>ext = Ext::new(<span class="kw-2">&amp;mut </span>overlay, backend, <span class="prelude-val">None</span>);
 			<span class="macro">assert_eq!</span>(ext.storage(<span class="string">b&quot;bbb&quot;</span>), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[]));
 			<span class="macro">assert_eq!</span>(ext.storage(<span class="string">b&quot;ccc&quot;</span>), <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[]));
 			ext.clear_storage(<span class="string">b&quot;ccc&quot;</span>);

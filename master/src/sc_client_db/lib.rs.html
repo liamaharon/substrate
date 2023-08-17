@@ -4408,7 +4408,6 @@
 <a href="#4408" id="4408">4408</a>
 <a href="#4409" id="4409">4409</a>
 <a href="#4410" id="4410">4410</a>
-<a href="#4411" id="4411">4411</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -4497,9 +4496,9 @@
 };
 <span class="kw">use </span>sp_state_machine::{
 	backend::{AsTrieBackend, Backend <span class="kw">as </span>StateBackend},
-	ChildStorageCollection, DBValue, IndexOperation, IterArgs, OffchainChangesCollection,
-	StateMachineStats, StorageCollection, StorageIterator, StorageKey, StorageValue,
-	UsageInfo <span class="kw">as </span>StateUsageInfo,
+	BackendTransaction, ChildStorageCollection, DBValue, IndexOperation, IterArgs,
+	OffchainChangesCollection, StateMachineStats, StorageCollection, StorageIterator, StorageKey,
+	StorageValue, UsageInfo <span class="kw">as </span>StateUsageInfo,
 };
 <span class="kw">use </span>sp_trie::{cache::SharedTrieCache, prefixed_key, MemoryDB, PrefixedMemoryDB};
 
@@ -4598,7 +4597,6 @@
 
 <span class="kw">impl</span>&lt;B: BlockT&gt; StateBackend&lt;HashingFor&lt;B&gt;&gt; <span class="kw">for </span>RefTrackingState&lt;B&gt; {
 	<span class="kw">type </span>Error = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Error;
-	<span class="kw">type </span>Transaction = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::Transaction;
 	<span class="kw">type </span>TrieBackendStorage = &lt;DbState&lt;B&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;B&gt;&gt;&gt;::TrieBackendStorage;
 	<span class="kw">type </span>RawIter = RawIter&lt;B&gt;;
 
@@ -4654,7 +4652,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delta: <span class="kw">impl </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt;)&gt;,
 		state_version: StateVersion,
-	) -&gt; (B::Hash, <span class="self">Self</span>::Transaction) {
+	) -&gt; (B::Hash, BackendTransaction&lt;HashingFor&lt;B&gt;&gt;) {
 		<span class="self">self</span>.state.storage_root(delta, state_version)
 	}
 
@@ -4663,7 +4661,7 @@
 		child_info: <span class="kw-2">&amp;</span>ChildInfo,
 		delta: <span class="kw">impl </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt;)&gt;,
 		state_version: StateVersion,
-	) -&gt; (B::Hash, bool, <span class="self">Self</span>::Transaction) {
+	) -&gt; (B::Hash, bool, BackendTransaction&lt;HashingFor&lt;B&gt;&gt;) {
 		<span class="self">self</span>.state.child_storage_root(child_info, delta, state_version)
 	}
 

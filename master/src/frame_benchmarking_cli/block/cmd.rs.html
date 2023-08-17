@@ -207,7 +207,7 @@
 			+ StorageProvider&lt;Block, BA&gt;
 			+ UsageProvider&lt;Block&gt;
 			+ HeaderBackend&lt;Block&gt;,
-		C::Api: ApiExt&lt;Block, StateBackend = BA::State&gt; + BlockBuilderApi&lt;Block&gt;,
+		C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 	{
 		<span class="comment">// Put everything in the benchmark type to have the generic types handy.
 		</span>Benchmark::new(client, <span class="self">self</span>.params.clone()).run()

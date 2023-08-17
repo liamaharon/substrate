@@ -316,7 +316,6 @@
 <a href="#316" id="316">316</a>
 <a href="#317" id="317">317</a>
 <a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -352,7 +351,7 @@
 <span class="kw">use </span>std::{marker::PhantomData, sync::Arc};
 
 <span class="kw">use </span>sc_consensus::{BlockImportParams, ForkChoiceStrategy, Verifier};
-<span class="kw">use </span>sp_api::{ProvideRuntimeApi, TransactionFor};
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::{HeaderBackend, HeaderMetadata};
 <span class="kw">use </span>sp_consensus_babe::{
 	digests::{NextEpochDescriptor, PreDigest, SecondaryPlainPreDigest},
@@ -416,8 +415,8 @@
 {
 	<span class="kw">async fn </span>verify(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>import_params: BlockImportParams&lt;B, ()&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B, ()&gt;, String&gt; {
+		<span class="kw-2">mut </span>import_params: BlockImportParams&lt;B&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B&gt;, String&gt; {
 		import_params.finalized = <span class="bool-val">false</span>;
 		import_params.fork_choice = <span class="prelude-val">Some</span>(ForkChoiceStrategy::LongestChain);
 
@@ -516,7 +515,6 @@
 	C::Api: BabeApi&lt;B&gt;,
 	P: Send + Sync,
 {
-	<span class="kw">type </span>Transaction = TransactionFor&lt;C, B&gt;;
 	<span class="kw">type </span>Proof = P;
 
 	<span class="kw">fn </span>create_digest(<span class="kw-2">&amp;</span><span class="self">self</span>, parent: <span class="kw-2">&amp;</span>B::Header, inherents: <span class="kw-2">&amp;</span>InherentData) -&gt; <span class="prelude-ty">Result</span>&lt;Digest, Error&gt; {
@@ -583,7 +581,7 @@
 	<span class="kw">fn </span>append_block_import(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		parent: <span class="kw-2">&amp;</span>B::Header,
-		params: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;B, <span class="self">Self</span>::Transaction&gt;,
+		params: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;B&gt;,
 		inherents: <span class="kw-2">&amp;</span>InherentData,
 		_proof: <span class="self">Self</span>::Proof,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {

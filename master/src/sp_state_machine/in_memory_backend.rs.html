@@ -224,26 +224,6 @@
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -270,36 +250,22 @@
 <span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>hash_db::Hasher;
 <span class="kw">use </span>sp_core::storage::{ChildInfo, StateVersion, Storage};
-<span class="kw">use </span>sp_trie::{empty_trie_root, GenericMemoryDB, HashKey, KeyFunction, LayoutV1, MemoryDB};
+<span class="kw">use </span>sp_trie::{empty_trie_root, LayoutV1, PrefixedMemoryDB};
 <span class="kw">use </span>std::collections::{BTreeMap, HashMap};
 
 <span class="doccomment">/// Create a new empty instance of in-memory backend.
-///
-/// It will use [`HashKey`] to store the keys internally.
-</span><span class="kw">pub fn </span>new_in_mem_hash_key&lt;H&gt;() -&gt; TrieBackend&lt;MemoryDB&lt;H&gt;, H&gt;
+</span><span class="kw">pub fn </span>new_in_mem&lt;H&gt;() -&gt; TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H: Hasher,
 	H::Out: Codec + Ord,
 {
-	new_in_mem::&lt;H, HashKey&lt;H&gt;&gt;()
-}
-
-<span class="doccomment">/// Create a new empty instance of in-memory backend.
-</span><span class="kw">pub fn </span>new_in_mem&lt;H, KF&gt;() -&gt; TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
-<span class="kw">where
-	</span>H: Hasher,
-	H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
-{
-	<span class="kw">let </span>db = GenericMemoryDB::default();
 	<span class="comment">// V1 is same as V0 for an empty trie.
-	</span>TrieBackendBuilder::new(db, empty_trie_root::&lt;LayoutV1&lt;H&gt;&gt;()).build()
+	</span>TrieBackendBuilder::new(Default::default(), empty_trie_root::&lt;LayoutV1&lt;H&gt;&gt;()).build()
 }
 
-<span class="kw">impl</span>&lt;H: Hasher, KF&gt; TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H: Hasher&gt; TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="doccomment">/// Copy the state, with applied updates
 	</span><span class="kw">pub fn </span>update&lt;T: IntoIterator&lt;Item = (<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, StorageCollection)&gt;&gt;(
@@ -331,15 +297,16 @@
 	}
 
 	<span class="doccomment">/// Merge trie nodes into this backend.
-	</span><span class="kw">pub fn </span>update_backend(<span class="kw-2">&amp;</span><span class="self">self</span>, root: H::Out, changes: GenericMemoryDB&lt;H, KF&gt;) -&gt; <span class="self">Self </span>{
+	</span><span class="kw">pub fn </span>update_backend(<span class="kw-2">&amp;</span><span class="self">self</span>, root: H::Out, changes: PrefixedMemoryDB&lt;H&gt;) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>clone = <span class="self">self</span>.backend_storage().clone();
 		clone.consolidate(changes);
 		TrieBackendBuilder::new(clone, root).build()
 	}
 
 	<span class="doccomment">/// Apply the given transaction to this backend and set the root to the given value.
-	</span><span class="kw">pub fn </span>apply_transaction(<span class="kw-2">&amp;mut </span><span class="self">self</span>, root: H::Out, transaction: GenericMemoryDB&lt;H, KF&gt;) {
+	</span><span class="kw">pub fn </span>apply_transaction(<span class="kw-2">&amp;mut </span><span class="self">self</span>, root: H::Out, transaction: PrefixedMemoryDB&lt;H&gt;) {
 		<span class="kw">let </span><span class="kw-2">mut </span>storage = sp_std::mem::take(<span class="self">self</span>).into_storage();
+
 		storage.consolidate(transaction);
 		<span class="kw-2">*</span><span class="self">self </span>= TrieBackendBuilder::new(storage, root).build();
 	}
@@ -350,33 +317,29 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;H: Hasher, KF&gt; Clone <span class="kw">for </span>TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H: Hasher&gt; Clone <span class="kw">for </span>TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
 		TrieBackendBuilder::new(<span class="self">self</span>.backend_storage().clone(), <span class="kw-2">*</span><span class="self">self</span>.root()).build()
 	}
 }
 
-<span class="kw">impl</span>&lt;H, KF&gt; Default <span class="kw">for </span>TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H&gt; Default <span class="kw">for </span>TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H: Hasher,
 	H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
 		new_in_mem()
 	}
 }
 
-<span class="kw">impl</span>&lt;H: Hasher, KF&gt;
-	From&lt;(HashMap&lt;<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, BTreeMap&lt;StorageKey, StorageValue&gt;&gt;, StateVersion)&gt;
-	<span class="kw">for </span>TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H: Hasher&gt; From&lt;(HashMap&lt;<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, BTreeMap&lt;StorageKey, StorageValue&gt;&gt;, StateVersion)&gt;
+	<span class="kw">for </span>TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="kw">fn </span>from(
 		(inner, state_version): (
@@ -395,10 +358,9 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;H: Hasher, KF&gt; From&lt;(Storage, StateVersion)&gt; <span class="kw">for </span>TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H: Hasher&gt; From&lt;(Storage, StateVersion)&gt; <span class="kw">for </span>TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="kw">fn </span>from((inners, state_version): (Storage, StateVersion)) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>inner: HashMap&lt;<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, BTreeMap&lt;StorageKey, StorageValue&gt;&gt; = inners
@@ -411,11 +373,10 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;H: Hasher, KF&gt; From&lt;(BTreeMap&lt;StorageKey, StorageValue&gt;, StateVersion)&gt;
-	<span class="kw">for </span>TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H: Hasher&gt; From&lt;(BTreeMap&lt;StorageKey, StorageValue&gt;, StateVersion)&gt;
+	<span class="kw">for </span>TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="kw">fn </span>from((inner, state_version): (BTreeMap&lt;StorageKey, StorageValue&gt;, StateVersion)) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span><span class="kw-2">mut </span>expanded = HashMap::new();
@@ -424,11 +385,10 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;H: Hasher, KF&gt; From&lt;(Vec&lt;(<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, StorageCollection)&gt;, StateVersion)&gt;
-	<span class="kw">for </span>TrieBackend&lt;GenericMemoryDB&lt;H, KF&gt;, H&gt;
+<span class="kw">impl</span>&lt;H: Hasher&gt; From&lt;(Vec&lt;(<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, StorageCollection)&gt;, StateVersion)&gt;
+	<span class="kw">for </span>TrieBackend&lt;PrefixedMemoryDB&lt;H&gt;, H&gt;
 <span class="kw">where
 	</span>H::Out: Codec + Ord,
-	KF: KeyFunction&lt;H&gt; + Send + Sync,
 {
 	<span class="kw">fn </span>from(
 		(inner, state_version): (Vec&lt;(<span class="prelude-ty">Option</span>&lt;ChildInfo&gt;, StorageCollection)&gt;, StateVersion),
@@ -458,7 +418,7 @@
 	</span><span class="attr">#[test]
 	</span><span class="kw">fn </span>in_memory_with_child_trie_only() {
 		<span class="kw">let </span>state_version = StateVersion::default();
-		<span class="kw">let </span>storage = new_in_mem_hash_key::&lt;BlakeTwo256&gt;();
+		<span class="kw">let </span>storage = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>child_info = ChildInfo::new_default(<span class="string">b&quot;1&quot;</span>);
 		<span class="kw">let </span>child_info = <span class="kw-2">&amp;</span>child_info;
 		<span class="kw">let </span>storage = storage.update(
@@ -474,7 +434,7 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>insert_multiple_times_child_data_works() {
 		<span class="kw">let </span>state_version = StateVersion::default();
-		<span class="kw">let </span><span class="kw-2">mut </span>storage = new_in_mem_hash_key::&lt;BlakeTwo256&gt;();
+		<span class="kw">let </span><span class="kw-2">mut </span>storage = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>child_info = ChildInfo::new_default(<span class="string">b&quot;1&quot;</span>);
 
 		storage.insert(

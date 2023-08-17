@@ -514,21 +514,6 @@
 <a href="#514" id="514">514</a>
 <a href="#515" id="515">515</a>
 <a href="#516" id="516">516</a>
-<a href="#517" id="517">517</a>
-<a href="#518" id="518">518</a>
-<a href="#519" id="519">519</a>
-<a href="#520" id="520">520</a>
-<a href="#521" id="521">521</a>
-<a href="#522" id="522">522</a>
-<a href="#523" id="523">523</a>
-<a href="#524" id="524">524</a>
-<a href="#525" id="525">525</a>
-<a href="#526" id="526">526</a>
-<a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a>
-<a href="#531" id="531">531</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -554,8 +539,8 @@
 };
 
 <span class="kw">use crate</span>::{
-	backend::Backend, ext::Ext, InMemoryBackend, OverlayedChanges, StorageKey,
-	StorageTransactionCache, StorageValue, TrieBackendBuilder,
+	backend::Backend, ext::Ext, InMemoryBackend, OverlayedChanges, StorageKey, StorageValue,
+	TrieBackendBuilder,
 };
 
 <span class="kw">use </span>hash_db::{HashDB, Hasher};
@@ -567,7 +552,7 @@
 	},
 };
 <span class="kw">use </span>sp_externalities::{Extension, ExtensionStore, Extensions};
-<span class="kw">use </span>sp_trie::StorageProof;
+<span class="kw">use </span>sp_trie::{PrefixedMemoryDB, StorageProof};
 
 <span class="doccomment">/// Simple HashMap-based Externalities impl.
 </span><span class="kw">pub struct </span>TestExternalities&lt;H&gt;
@@ -576,10 +561,8 @@
 	H::Out: codec::Codec + Ord,
 {
 	<span class="doccomment">/// The overlay changed storage.
-	</span>overlay: OverlayedChanges,
+	</span>overlay: OverlayedChanges&lt;H&gt;,
 	offchain_db: TestPersistentOffchainDB,
-	storage_transaction_cache:
-		StorageTransactionCache&lt;&lt;InMemoryBackend&lt;H&gt; <span class="kw">as </span>Backend&lt;H&gt;&gt;::Transaction, H&gt;,
 	<span class="doccomment">/// Storage backend.
 	</span><span class="kw">pub </span>backend: InMemoryBackend&lt;H&gt;,
 	<span class="doccomment">/// Extensions.
@@ -595,12 +578,7 @@
 {
 	<span class="doccomment">/// Get externalities implementation.
 	</span><span class="kw">pub fn </span>ext(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; Ext&lt;H, InMemoryBackend&lt;H&gt;&gt; {
-		Ext::new(
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>.overlay,
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>.storage_transaction_cache,
-			<span class="kw-2">&amp;</span><span class="self">self</span>.backend,
-			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut </span><span class="self">self</span>.extensions),
-		)
+		Ext::new(<span class="kw-2">&amp;mut </span><span class="self">self</span>.overlay, <span class="kw-2">&amp;</span><span class="self">self</span>.backend, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut </span><span class="self">self</span>.extensions))
 	}
 
 	<span class="doccomment">/// Create a new instance of `TestExternalities` with storage.
@@ -643,13 +621,12 @@
 			offchain_db,
 			extensions: Default::default(),
 			backend,
-			storage_transaction_cache: Default::default(),
 			state_version,
 		}
 	}
 
 	<span class="doccomment">/// Returns the overlayed changes.
-	</span><span class="kw">pub fn </span>overlayed_changes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>OverlayedChanges {
+	</span><span class="kw">pub fn </span>overlayed_changes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>OverlayedChanges&lt;H&gt; {
 		<span class="kw-2">&amp;</span><span class="self">self</span>.overlay
 	}
 
@@ -696,32 +673,50 @@
 	/// This can be used as a fast way to restore the storage state from a backup because the trie
 	/// does not need to be computed.
 	</span><span class="kw">pub fn </span>from_raw_snapshot(
-		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		raw_storage: Vec&lt;(H::Out, (Vec&lt;u8&gt;, i32))&gt;,
+		raw_storage: Vec&lt;(Vec&lt;u8&gt;, (Vec&lt;u8&gt;, i32))&gt;,
 		storage_root: H::Out,
-	) {
-		<span class="kw">for </span>(k, (v, ref_count)) <span class="kw">in </span>raw_storage {
+		state_version: StateVersion,
+	) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span><span class="kw-2">mut </span>backend = PrefixedMemoryDB::default();
+
+		<span class="kw">for </span>(key, (v, ref_count)) <span class="kw">in </span>raw_storage {
+			<span class="kw">let </span><span class="kw-2">mut </span>hash = H::Out::default();
+			<span class="kw">let </span>hash_len = hash.as_ref().len();
+
+			<span class="kw">if </span>key.len() &lt; hash_len {
+				<span class="macro">log::warn!</span>(<span class="string">&quot;Invalid key in `from_raw_snapshot`: {key:?}&quot;</span>);
+				<span class="kw">continue
+			</span>}
+
+			hash.as_mut().copy_from_slice(<span class="kw-2">&amp;</span>key[(key.len() - hash_len)..]);
+
 			<span class="comment">// Each time .emplace is called the internal MemoryDb ref count increments.
 			// Repeatedly call emplace to initialise the ref count to the correct value.
 			</span><span class="kw">for _ in </span><span class="number">0</span>..ref_count {
-				<span class="self">self</span>.backend.backend_storage_mut().emplace(k, hash_db::EMPTY_PREFIX, v.clone());
+				backend.emplace(hash, (<span class="kw-2">&amp;</span>key[..(key.len() - hash_len)], <span class="prelude-val">None</span>), v.clone());
 			}
 		}
-		<span class="self">self</span>.backend.set_root(storage_root);
+
+		<span class="self">Self </span>{
+			backend: TrieBackendBuilder::new(backend, storage_root).build(),
+			overlay: Default::default(),
+			offchain_db: Default::default(),
+			extensions: Default::default(),
+			state_version,
+		}
 	}
 
 	<span class="doccomment">/// Drains the underlying raw storage key/values and returns the root hash.
 	///
 	/// Useful for backing up the storage in a format that can be quickly re-loaded.
-	///
-	/// Note: This DB will be inoperable after this call.
-	</span><span class="kw">pub fn </span>into_raw_snapshot(<span class="kw-2">mut </span><span class="self">self</span>) -&gt; (Vec&lt;(H::Out, (Vec&lt;u8&gt;, i32))&gt;, H::Out) {
+	</span><span class="kw">pub fn </span>into_raw_snapshot(<span class="kw-2">mut </span><span class="self">self</span>) -&gt; (Vec&lt;(Vec&lt;u8&gt;, (Vec&lt;u8&gt;, i32))&gt;, H::Out) {
 		<span class="kw">let </span>raw_key_values = <span class="self">self
 			</span>.backend
 			.backend_storage_mut()
 			.drain()
 			.into_iter()
-			.collect::&lt;Vec&lt;(H::Out, (Vec&lt;u8&gt;, i32))&gt;&gt;();
+			.filter(|(<span class="kw">_</span>, (<span class="kw">_</span>, r))| <span class="kw-2">*</span>r &gt; <span class="number">0</span>)
+			.collect::&lt;Vec&lt;(Vec&lt;u8&gt;, (Vec&lt;u8&gt;, i32))&gt;&gt;();
 
 		(raw_key_values, <span class="kw-2">*</span><span class="self">self</span>.backend.root())
 	}
@@ -751,11 +746,7 @@
 	///
 	/// This will panic if there are still open transactions.
 	</span><span class="kw">pub fn </span>commit_all(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
-		<span class="kw">let </span>changes = <span class="self">self</span>.overlay.drain_storage_changes::&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt;(
-			<span class="kw-2">&amp;</span><span class="self">self</span>.backend,
-			<span class="kw-2">&amp;mut </span>Default::default(),
-			<span class="self">self</span>.state_version,
-		)<span class="question-mark">?</span>;
+		<span class="kw">let </span>changes = <span class="self">self</span>.overlay.drain_storage_changes(<span class="kw-2">&amp;</span><span class="self">self</span>.backend, <span class="self">self</span>.state_version)<span class="question-mark">?</span>;
 
 		<span class="self">self</span>.backend
 			.apply_transaction(changes.transaction_storage_root, changes.transaction);
@@ -779,12 +770,8 @@
 		<span class="kw">let </span>proving_backend = TrieBackendBuilder::wrap(<span class="kw-2">&amp;</span><span class="self">self</span>.backend)
 			.with_recorder(Default::default())
 			.build();
-		<span class="kw">let </span><span class="kw-2">mut </span>proving_ext = Ext::new(
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>.overlay,
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>.storage_transaction_cache,
-			<span class="kw-2">&amp;</span>proving_backend,
-			<span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut </span><span class="self">self</span>.extensions),
-		);
+		<span class="kw">let </span><span class="kw-2">mut </span>proving_ext =
+			Ext::new(<span class="kw-2">&amp;mut </span><span class="self">self</span>.overlay, <span class="kw-2">&amp;</span>proving_backend, <span class="prelude-val">Some</span>(<span class="kw-2">&amp;mut </span><span class="self">self</span>.extensions));
 
 		<span class="kw">let </span>outcome = sp_externalities::set_and_run_with_externalities(<span class="kw-2">&amp;mut </span>proving_ext, execute);
 		<span class="kw">let </span>proof = proving_backend.extract_proof().expect(<span class="string">&quot;Failed to extract storage proof&quot;</span>);
@@ -940,36 +927,25 @@
 		original_ext.insert_child(child_info.clone(), <span class="string">b&quot;cattytown&quot;</span>.to_vec(), <span class="string">b&quot;is_dark&quot;</span>.to_vec());
 		original_ext.insert_child(child_info.clone(), <span class="string">b&quot;doggytown&quot;</span>.to_vec(), <span class="string">b&quot;is_sunny&quot;</span>.to_vec());
 
-		<span class="comment">// Call emplace on one of the keys to increment the MemoryDb refcount, so we can check
-		// that it is intact in the recovered_ext.
-		</span><span class="kw">let </span>keys = original_ext.backend.backend_storage_mut().keys();
-		<span class="kw">let </span>expected_ref_count = <span class="number">5</span>;
-		<span class="kw">let </span>ref_count_key = keys.into_iter().next().unwrap().<span class="number">0</span>;
-		<span class="kw">for _ in </span><span class="number">0</span>..expected_ref_count - <span class="number">1 </span>{
-			original_ext.backend.backend_storage_mut().emplace(
-				ref_count_key,
-				hash_db::EMPTY_PREFIX,
-				<span class="comment">// We can use anything for the &#39;value&#39; because it does not affect behavior when
-				// emplacing an existing key.
-				</span>(<span class="kw-2">&amp;</span>[<span class="number">0u8</span>; <span class="number">32</span>]).to_vec(),
-			);
-		}
-		<span class="kw">let </span>refcount = original_ext
-			.backend
-			.backend_storage()
-			.raw(<span class="kw-2">&amp;</span>ref_count_key, hash_db::EMPTY_PREFIX)
-			.unwrap()
-			.<span class="number">1</span>;
-		<span class="macro">assert_eq!</span>(refcount, expected_ref_count);
+		<span class="comment">// Apply the backend to itself again to increase the ref count of all nodes.
+		</span>original_ext.backend.apply_transaction(
+			<span class="kw-2">*</span>original_ext.backend.root(),
+			original_ext.backend.clone().into_storage(),
+		);
+
+		<span class="comment">// Ensure all have the correct ref counrt
+		</span><span class="macro">assert!</span>(original_ext.backend.backend_storage().keys().values().all(|r| <span class="kw-2">*</span>r == <span class="number">2</span>));
 
 		<span class="comment">// Drain the raw storage and root.
 		</span><span class="kw">let </span>root = <span class="kw-2">*</span>original_ext.backend.root();
 		<span class="kw">let </span>(raw_storage, storage_root) = original_ext.into_raw_snapshot();
 
 		<span class="comment">// Load the raw storage and root into a new TestExternalities.
-		</span><span class="kw">let </span><span class="kw-2">mut </span>recovered_ext =
-			TestExternalities::&lt;BlakeTwo256&gt;::from((Default::default(), Default::default()));
-		recovered_ext.from_raw_snapshot(raw_storage, storage_root);
+		</span><span class="kw">let </span>recovered_ext = TestExternalities::&lt;BlakeTwo256&gt;::from_raw_snapshot(
+			raw_storage,
+			storage_root,
+			Default::default(),
+		);
 
 		<span class="comment">// Check the storage root is the same as the original
 		</span><span class="macro">assert_eq!</span>(root, <span class="kw-2">*</span>recovered_ext.backend.root());
@@ -989,14 +965,8 @@
 			<span class="prelude-val">Some</span>(<span class="string">b&quot;is_sunny&quot;</span>.to_vec())
 		);
 
-		<span class="comment">// Check the refcount of the key with &gt; 1 refcount is correct.
-		</span><span class="kw">let </span>refcount = recovered_ext
-			.backend
-			.backend_storage()
-			.raw(<span class="kw-2">&amp;</span>ref_count_key, hash_db::EMPTY_PREFIX)
-			.unwrap()
-			.<span class="number">1</span>;
-		<span class="macro">assert_eq!</span>(refcount, expected_ref_count);
+		<span class="comment">// Ensure all have the correct ref count after importing
+		</span><span class="macro">assert!</span>(recovered_ext.backend.backend_storage().keys().values().all(|r| <span class="kw-2">*</span>r == <span class="number">2</span>));
 	}
 
 	<span class="attr">#[test]

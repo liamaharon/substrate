@@ -1149,16 +1149,6 @@
 <a href="#1149" id="1149">1149</a>
 <a href="#1150" id="1150">1150</a>
 <a href="#1151" id="1151">1151</a>
-<a href="#1152" id="1152">1152</a>
-<a href="#1153" id="1153">1153</a>
-<a href="#1154" id="1154">1154</a>
-<a href="#1155" id="1155">1155</a>
-<a href="#1156" id="1156">1156</a>
-<a href="#1157" id="1157">1157</a>
-<a href="#1158" id="1158">1158</a>
-<a href="#1159" id="1159">1159</a>
-<a href="#1160" id="1160">1160</a>
-<a href="#1161" id="1161">1161</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1348,8 +1338,7 @@
 		+ Send
 		+ Sync
 		+ <span class="lifetime">&#39;static</span>,
-	C::Api:
-		ApiExt&lt;Block, StateBackend = backend::StateBackendFor&lt;B, Block&gt;&gt; + BlockBuilderApi&lt;Block&gt;,
+	C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 {
 	<span class="kw">fn </span>init_with_now(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -1390,8 +1379,7 @@
 		+ Send
 		+ Sync
 		+ <span class="lifetime">&#39;static</span>,
-	C::Api:
-		ApiExt&lt;Block, StateBackend = backend::StateBackendFor&lt;B, Block&gt;&gt; + BlockBuilderApi&lt;Block&gt;,
+	C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 	PR: ProofRecording,
 {
 	<span class="kw">type </span>CreateProposer = future::Ready&lt;<span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Proposer, <span class="self">Self</span>::Error&gt;&gt;;
@@ -1430,17 +1418,11 @@
 		+ Send
 		+ Sync
 		+ <span class="lifetime">&#39;static</span>,
-	C::Api:
-		ApiExt&lt;Block, StateBackend = backend::StateBackendFor&lt;B, Block&gt;&gt; + BlockBuilderApi&lt;Block&gt;,
+	C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 	PR: ProofRecording,
 {
-	<span class="kw">type </span>Transaction = backend::TransactionFor&lt;B, Block&gt;;
-	<span class="kw">type </span>Proposal = Pin&lt;
-		Box&lt;
-			<span class="kw">dyn </span>Future&lt;Output = <span class="prelude-ty">Result</span>&lt;Proposal&lt;Block, <span class="self">Self</span>::Transaction, PR::Proof&gt;, <span class="self">Self</span>::Error&gt;&gt;
-				+ Send,
-		&gt;,
-	&gt;;
+	<span class="kw">type </span>Proposal =
+		Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = <span class="prelude-ty">Result</span>&lt;Proposal&lt;Block, PR::Proof&gt;, <span class="self">Self</span>::Error&gt;&gt; + Send&gt;&gt;;
 	<span class="kw">type </span>Error = sp_blockchain::Error;
 	<span class="kw">type </span>ProofRecording = PR;
 	<span class="kw">type </span>Proof = PR::Proof;
@@ -1493,8 +1475,7 @@
 		+ Send
 		+ Sync
 		+ <span class="lifetime">&#39;static</span>,
-	C::Api:
-		ApiExt&lt;Block, StateBackend = backend::StateBackendFor&lt;B, Block&gt;&gt; + BlockBuilderApi&lt;Block&gt;,
+	C::Api: ApiExt&lt;Block&gt; + BlockBuilderApi&lt;Block&gt;,
 	PR: ProofRecording,
 {
 	<span class="kw">async fn </span>propose_with(
@@ -1503,8 +1484,7 @@
 		inherent_digests: Digest,
 		deadline: time::Instant,
 		block_size_limit: <span class="prelude-ty">Option</span>&lt;usize&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Proposal&lt;Block, backend::TransactionFor&lt;B, Block&gt;, PR::Proof&gt;, sp_blockchain::Error&gt;
-	{
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Proposal&lt;Block, PR::Proof&gt;, sp_blockchain::Error&gt; {
 		<span class="kw">let </span>propose_with_timer = time::Instant::now();
 		<span class="kw">let </span><span class="kw-2">mut </span>block_builder =
 			<span class="self">self</span>.client.new_block_at(<span class="self">self</span>.parent_hash, inherent_digests, PR::ENABLED)<span class="question-mark">?</span>;

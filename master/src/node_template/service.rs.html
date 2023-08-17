@@ -385,7 +385,7 @@
 		FullClient,
 		FullBackend,
 		FullSelectChain,
-		sc_consensus::DefaultImportQueue&lt;Block, FullClient&gt;,
+		sc_consensus::DefaultImportQueue&lt;Block&gt;,
 		sc_transaction_pool::FullPool&lt;Block, FullClient&gt;,
 		(
 			sc_consensus_grandpa::GrandpaBlockImport&lt;

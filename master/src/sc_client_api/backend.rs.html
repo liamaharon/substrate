@@ -619,12 +619,6 @@
 <a href="#619" id="619">619</a>
 <a href="#620" id="620">620</a>
 <a href="#621" id="621">621</a>
-<a href="#622" id="622">622</a>
-<a href="#623" id="623">623</a>
-<a href="#624" id="624">624</a>
-<a href="#625" id="625">625</a>
-<a href="#626" id="626">626</a>
-<a href="#627" id="627">627</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -663,16 +657,10 @@
 
 <span class="kw">use crate</span>::{blockchain::Backend <span class="kw">as </span>BlockchainBackend, UsageInfo};
 
-<span class="kw">pub use </span>sp_state_machine::{Backend <span class="kw">as </span>StateBackend, KeyValueStates};
+<span class="kw">pub use </span>sp_state_machine::{Backend <span class="kw">as </span>StateBackend, BackendTransaction, KeyValueStates};
 
 <span class="doccomment">/// Extracts the state backend type for the given backend.
 </span><span class="kw">pub type </span>StateBackendFor&lt;B, Block&gt; = &lt;B <span class="kw">as </span>Backend&lt;Block&gt;&gt;::State;
-
-<span class="doccomment">/// Extracts the transaction for the given state backend.
-</span><span class="kw">pub type </span>TransactionForSB&lt;B, Block&gt; = &lt;B <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction;
-
-<span class="doccomment">/// Extracts the transaction for the given backend.
-</span><span class="kw">pub type </span>TransactionFor&lt;B, Block&gt; = TransactionForSB&lt;StateBackendFor&lt;B, Block&gt;, Block&gt;;
 
 <span class="doccomment">/// Describes which block import notification stream should be notified.
 </span><span class="attr">#[derive(Debug, Clone, Copy)]
@@ -808,7 +796,7 @@
 	<span class="doccomment">/// Inject storage data into the database.
 	</span><span class="kw">fn </span>update_db_storage(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		update: TransactionForSB&lt;<span class="self">Self</span>::State, Block&gt;,
+		update: BackendTransaction&lt;HashingFor&lt;Block&gt;&gt;,
 	) -&gt; sp_blockchain::Result&lt;()&gt;;
 
 	<span class="doccomment">/// Set genesis state. If `commit` is `false` the state is saved in memory, but is not written

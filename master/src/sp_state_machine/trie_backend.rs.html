@@ -1576,6 +1576,7 @@
 </span><span class="kw">use </span>hash_db::HashDB;
 <span class="kw">use </span>hash_db::Hasher;
 <span class="kw">use </span>sp_core::storage::{ChildInfo, StateVersion};
+<span class="kw">use </span>sp_trie::PrefixedMemoryDB;
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>sp_trie::{
 	cache::{LocalTrieCache, TrieCache},
@@ -1923,7 +1924,6 @@
 	</span>H::Out: Ord + Codec,
 {
 	<span class="kw">type </span>Error = <span class="kw">crate</span>::DefaultError;
-	<span class="kw">type </span>Transaction = S::Overlay;
 	<span class="kw">type </span>TrieBackendStorage = S;
 	<span class="kw">type </span>RawIter = <span class="kw">crate</span>::trie_backend_essence::RawIter&lt;S, H, C&gt;;
 
@@ -2004,7 +2004,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		delta: <span class="kw">impl </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt;)&gt;,
 		state_version: StateVersion,
-	) -&gt; (H::Out, <span class="self">Self</span>::Transaction)
+	) -&gt; (H::Out, PrefixedMemoryDB&lt;H&gt;)
 	<span class="kw">where
 		</span>H::Out: Ord,
 	{
@@ -2016,7 +2016,7 @@
 		child_info: <span class="kw-2">&amp;</span>ChildInfo,
 		delta: <span class="kw">impl </span>Iterator&lt;Item = (<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8], <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt;)&gt;,
 		state_version: StateVersion,
-	) -&gt; (H::Out, bool, <span class="self">Self</span>::Transaction)
+	) -&gt; (H::Out, bool, PrefixedMemoryDB&lt;H&gt;)
 	<span class="kw">where
 		</span>H::Out: Ord,
 	{
@@ -2075,7 +2075,7 @@
 	<span class="kw">use </span>sp_trie::{
 		cache::{CacheSize, SharedTrieCache},
 		trie_types::{TrieDBBuilder, TrieDBMutBuilderV0, TrieDBMutBuilderV1},
-		KeySpacedDBMut, PrefixedKey, PrefixedMemoryDB, Trie, TrieCache, TrieMut,
+		KeySpacedDBMut, PrefixedMemoryDB, Trie, TrieCache, TrieMut,
 	};
 	<span class="kw">use </span>std::iter;
 	<span class="kw">use </span>trie_db::NodeCodec;
@@ -2733,7 +2733,7 @@
 			(<span class="prelude-val">Some</span>(child_info_1.clone()), (<span class="number">28</span>..<span class="number">65</span>).map(|i| (<span class="macro">vec!</span>[i], <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[i]))).collect()),
 			(<span class="prelude-val">Some</span>(child_info_2.clone()), (<span class="number">10</span>..<span class="number">15</span>).map(|i| (<span class="macro">vec!</span>[i], <span class="prelude-val">Some</span>(<span class="macro">vec!</span>[i]))).collect()),
 		];
-		<span class="kw">let </span>in_memory = new_in_mem::&lt;BlakeTwo256, PrefixedKey&lt;BlakeTwo256&gt;&gt;();
+		<span class="kw">let </span>in_memory = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>in_memory = in_memory.update(contents, state_version);
 		<span class="kw">let </span>child_storage_keys = <span class="macro">vec!</span>[child_info_1.to_owned(), child_info_2.to_owned()];
 		<span class="kw">let </span>in_memory_root = in_memory
@@ -2838,7 +2838,7 @@
 					.collect(),
 			),
 		];
-		<span class="kw">let </span>in_memory = new_in_mem::&lt;BlakeTwo256, PrefixedKey&lt;BlakeTwo256&gt;&gt;();
+		<span class="kw">let </span>in_memory = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>in_memory = in_memory.update(contents, state_version);
 		<span class="kw">let </span>child_storage_keys = <span class="macro">vec!</span>[child_info_1.to_owned()];
 		<span class="kw">let </span>in_memory_root = in_memory
@@ -3026,7 +3026,7 @@
 			(<span class="prelude-val">Some</span>(child_info_1.clone()), <span class="macro">vec!</span>[(key.clone(), <span class="prelude-val">Some</span>(child_trie_1_val.clone()))]),
 			(<span class="prelude-val">Some</span>(child_info_2.clone()), <span class="macro">vec!</span>[(key.clone(), <span class="prelude-val">Some</span>(child_trie_2_val.clone()))]),
 		];
-		<span class="kw">let </span>in_memory = new_in_mem::&lt;BlakeTwo256, PrefixedKey&lt;BlakeTwo256&gt;&gt;();
+		<span class="kw">let </span>in_memory = new_in_mem::&lt;BlakeTwo256&gt;();
 		<span class="kw">let </span>in_memory = in_memory.update(contents, state_version);
 		<span class="kw">let </span>child_storage_keys = <span class="macro">vec!</span>[child_info_1.to_owned(), child_info_2.to_owned()];
 		<span class="kw">let </span>in_memory_root = in_memory

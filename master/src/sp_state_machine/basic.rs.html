@@ -471,7 +471,7 @@
 	Blake2Hasher,
 };
 <span class="kw">use </span>sp_externalities::{Extension, Extensions, MultiRemovalResults};
-<span class="kw">use </span>sp_trie::{empty_child_trie_root, HashKey, LayoutV0, LayoutV1, TrieConfiguration};
+<span class="kw">use </span>sp_trie::{empty_child_trie_root, LayoutV0, LayoutV1, TrieConfiguration};
 <span class="kw">use </span>std::{
 	any::{Any, TypeId},
 	collections::BTreeMap,
@@ -481,7 +481,7 @@
 <span class="doccomment">/// Simple Map-based Externalities impl.
 </span><span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>BasicExternalities {
-	overlay: OverlayedChanges,
+	overlay: OverlayedChanges&lt;Blake2Hasher&gt;,
 	extensions: Extensions,
 }
 
@@ -724,7 +724,7 @@
 		<span class="kw">if let </span><span class="prelude-val">Some</span>((data, child_info)) = <span class="self">self</span>.overlay.child_changes(child_info.storage_key()) {
 			<span class="kw">let </span>delta =
 				data.into_iter().map(|(k, v)| (k.as_ref(), v.value().map(|v| v.as_slice())));
-			<span class="kw">crate</span>::in_memory_backend::new_in_mem::&lt;Blake2Hasher, HashKey&lt;<span class="kw">_</span>&gt;&gt;()
+			<span class="kw">crate</span>::in_memory_backend::new_in_mem::&lt;Blake2Hasher&gt;()
 				.child_storage_root(<span class="kw-2">&amp;</span>child_info, delta, state_version)
 				.<span class="number">0
 		</span>} <span class="kw">else </span>{

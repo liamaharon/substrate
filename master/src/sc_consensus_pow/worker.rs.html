@@ -281,15 +281,6 @@
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
 <a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -348,16 +339,11 @@
 }
 
 <span class="doccomment">/// A build of mining, containing the metadata and the block proposal.
-</span><span class="kw">pub struct </span>MiningBuild&lt;
-	Block: BlockT,
-	Algorithm: PowAlgorithm&lt;Block&gt;,
-	C: sp_api::ProvideRuntimeApi&lt;Block&gt;,
-	Proof,
-&gt; {
+</span><span class="kw">pub struct </span>MiningBuild&lt;Block: BlockT, Algorithm: PowAlgorithm&lt;Block&gt;, Proof&gt; {
 	<span class="doccomment">/// Mining metadata.
 	</span><span class="kw">pub </span>metadata: MiningMetadata&lt;Block::Hash, Algorithm::Difficulty&gt;,
 	<span class="doccomment">/// Mining proposal.
-	</span><span class="kw">pub </span>proposal: Proposal&lt;Block, sp_api::TransactionFor&lt;C, Block&gt;, Proof&gt;,
+	</span><span class="kw">pub </span>proposal: Proposal&lt;Block, Proof&gt;,
 }
 
 <span class="doccomment">/// Version of the mining worker.
@@ -368,25 +354,22 @@
 </span><span class="kw">pub struct </span>MiningHandle&lt;
 	Block: BlockT,
 	Algorithm: PowAlgorithm&lt;Block&gt;,
-	C: sp_api::ProvideRuntimeApi&lt;Block&gt;,
 	L: sc_consensus::JustificationSyncLink&lt;Block&gt;,
 	Proof,
 &gt; {
 	version: Arc&lt;AtomicUsize&gt;,
 	algorithm: Arc&lt;Algorithm&gt;,
 	justification_sync_link: Arc&lt;L&gt;,
-	build: Arc&lt;Mutex&lt;<span class="prelude-ty">Option</span>&lt;MiningBuild&lt;Block, Algorithm, C, Proof&gt;&gt;&gt;&gt;,
-	block_import: Arc&lt;Mutex&lt;BoxBlockImport&lt;Block, sp_api::TransactionFor&lt;C, Block&gt;&gt;&gt;&gt;,
+	build: Arc&lt;Mutex&lt;<span class="prelude-ty">Option</span>&lt;MiningBuild&lt;Block, Algorithm, Proof&gt;&gt;&gt;&gt;,
+	block_import: Arc&lt;Mutex&lt;BoxBlockImport&lt;Block&gt;&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;Block, Algorithm, C, L, Proof&gt; MiningHandle&lt;Block, Algorithm, C, L, Proof&gt;
+<span class="kw">impl</span>&lt;Block, Algorithm, L, Proof&gt; MiningHandle&lt;Block, Algorithm, L, Proof&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	C: sp_api::ProvideRuntimeApi&lt;Block&gt;,
 	Algorithm: PowAlgorithm&lt;Block&gt;,
 	Algorithm::Difficulty: <span class="lifetime">&#39;static </span>+ Send,
 	L: sc_consensus::JustificationSyncLink&lt;Block&gt;,
-	sp_api::TransactionFor&lt;C, Block&gt;: Send + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">fn </span>increment_version(<span class="kw-2">&amp;</span><span class="self">self</span>) {
 		<span class="self">self</span>.version.fetch_add(<span class="number">1</span>, Ordering::SeqCst);
@@ -394,7 +377,7 @@
 
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>new(
 		algorithm: Algorithm,
-		block_import: BoxBlockImport&lt;Block, sp_api::TransactionFor&lt;C, Block&gt;&gt;,
+		block_import: BoxBlockImport&lt;Block&gt;,
 		justification_sync_link: L,
 	) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
@@ -412,7 +395,7 @@
 		<span class="self">self</span>.increment_version();
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>on_build(<span class="kw-2">&amp;</span><span class="self">self</span>, value: MiningBuild&lt;Block, Algorithm, C, Proof&gt;) {
+	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>on_build(<span class="kw-2">&amp;</span><span class="self">self</span>, value: MiningBuild&lt;Block, Algorithm, Proof&gt;) {
 		<span class="kw">let </span><span class="kw-2">mut </span>build = <span class="self">self</span>.build.lock();
 		<span class="kw-2">*</span>build = <span class="prelude-val">Some</span>(value);
 		<span class="self">self</span>.increment_version();
@@ -516,11 +499,10 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;Block, Algorithm, C, L, Proof&gt; Clone <span class="kw">for </span>MiningHandle&lt;Block, Algorithm, C, L, Proof&gt;
+<span class="kw">impl</span>&lt;Block, Algorithm, L, Proof&gt; Clone <span class="kw">for </span>MiningHandle&lt;Block, Algorithm, L, Proof&gt;
 <span class="kw">where
 	</span>Block: BlockT,
 	Algorithm: PowAlgorithm&lt;Block&gt;,
-	C: sp_api::ProvideRuntimeApi&lt;Block&gt;,
 	L: sc_consensus::JustificationSyncLink&lt;Block&gt;,
 {
 	<span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{

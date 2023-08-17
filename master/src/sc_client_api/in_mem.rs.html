@@ -881,8 +881,6 @@
 <a href="#881" id="881">881</a>
 <a href="#882" id="882">882</a>
 <a href="#883" id="883">883</a>
-<a href="#884" id="884">884</a>
-<a href="#885" id="885">885</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -914,8 +912,8 @@
 	Justification, Justifications, StateVersion, Storage,
 };
 <span class="kw">use </span>sp_state_machine::{
-	Backend <span class="kw">as </span>StateBackend, ChildStorageCollection, InMemoryBackend, IndexOperation,
-	StorageCollection,
+	Backend <span class="kw">as </span>StateBackend, BackendTransaction, ChildStorageCollection, InMemoryBackend,
+	IndexOperation, StorageCollection,
 };
 <span class="kw">use </span>std::{
 	collections::{HashMap, HashSet},
@@ -1365,9 +1363,7 @@
 </span><span class="kw">pub struct </span>BlockImportOperation&lt;Block: BlockT&gt; {
 	pending_block: <span class="prelude-ty">Option</span>&lt;PendingBlock&lt;Block&gt;&gt;,
 	old_state: InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt;,
-	new_state: <span class="prelude-ty">Option</span>&lt;
-		&lt;InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction,
-	&gt;,
+	new_state: <span class="prelude-ty">Option</span>&lt;BackendTransaction&lt;HashingFor&lt;Block&gt;&gt;&gt;,
 	aux: Vec&lt;(Vec&lt;u8&gt;, <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;)&gt;,
 	finalized_blocks: Vec&lt;(Block::Hash, <span class="prelude-ty">Option</span>&lt;Justification&gt;)&gt;,
 	set_head: <span class="prelude-ty">Option</span>&lt;Block::Hash&gt;,
@@ -1425,7 +1421,7 @@
 
 	<span class="kw">fn </span>update_db_storage(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		update: &lt;InMemoryBackend&lt;HashingFor&lt;Block&gt;&gt; <span class="kw">as </span>StateBackend&lt;HashingFor&lt;Block&gt;&gt;&gt;::Transaction,
+		update: BackendTransaction&lt;HashingFor&lt;Block&gt;&gt;,
 	) -&gt; sp_blockchain::Result&lt;()&gt; {
 		<span class="self">self</span>.new_state = <span class="prelude-val">Some</span>(update);
 		<span class="prelude-val">Ok</span>(())

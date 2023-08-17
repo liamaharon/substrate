@@ -201,7 +201,6 @@
 <a href="#201" id="201">201</a>
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -381,7 +380,6 @@
 		<span class="kw">let </span>storage_changes = changes
 			.drain_storage_changes(
 				<span class="kw-2">&amp;</span>state_ext.backend,
-				<span class="kw-2">&amp;mut </span>Default::default(),
 				<span class="comment">// Note that in case a block contains a runtime upgrade, state version could
 				// potentially be incorrect here, this is very niche and would only result in
 				// unaligned roots, so this use case is ignored for now.

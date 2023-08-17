@@ -1206,28 +1206,6 @@
 <a href="#1206" id="1206">1206</a>
 <a href="#1207" id="1207">1207</a>
 <a href="#1208" id="1208">1208</a>
-<a href="#1209" id="1209">1209</a>
-<a href="#1210" id="1210">1210</a>
-<a href="#1211" id="1211">1211</a>
-<a href="#1212" id="1212">1212</a>
-<a href="#1213" id="1213">1213</a>
-<a href="#1214" id="1214">1214</a>
-<a href="#1215" id="1215">1215</a>
-<a href="#1216" id="1216">1216</a>
-<a href="#1217" id="1217">1217</a>
-<a href="#1218" id="1218">1218</a>
-<a href="#1219" id="1219">1219</a>
-<a href="#1220" id="1220">1220</a>
-<a href="#1221" id="1221">1221</a>
-<a href="#1222" id="1222">1222</a>
-<a href="#1223" id="1223">1223</a>
-<a href="#1224" id="1224">1224</a>
-<a href="#1225" id="1225">1225</a>
-<a href="#1226" id="1226">1226</a>
-<a href="#1227" id="1227">1227</a>
-<a href="#1228" id="1228">1228</a>
-<a href="#1229" id="1229">1229</a>
-<a href="#1230" id="1230">1230</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1258,7 +1236,6 @@
 
 <span class="kw">use </span>std::{
 	collections::HashMap,
-	marker::PhantomData,
 	pin::Pin,
 	sync::Arc,
 	task::{Context <span class="kw">as </span>FutureContext, Poll},
@@ -1271,7 +1248,7 @@
 <span class="kw">use </span>parking_lot::Mutex;
 <span class="kw">use </span>sc_block_builder::{BlockBuilder, BlockBuilderProvider};
 <span class="kw">use </span>sc_client_api::{
-	backend::{AuxStore, Backend, Finalizer, TransactionFor},
+	backend::{AuxStore, Backend, Finalizer},
 	BlockBackend, BlockImportNotification, BlockchainEvents, FinalityNotification,
 	FinalityNotifications, ImportNotifications,
 };
@@ -1347,8 +1324,8 @@
 </span><span class="kw">impl</span>&lt;B: BlockT&gt; Verifier&lt;B&gt; <span class="kw">for </span>PassThroughVerifier {
 	<span class="kw">async fn </span>verify(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;B, ()&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B, ()&gt;, String&gt; {
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;B&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B&gt;, String&gt; {
 		<span class="kw">if </span>block.fork_choice.is_none() {
 			block.fork_choice = <span class="prelude-val">Some</span>(ForkChoiceStrategy::LongestChain);
 		};
@@ -1440,7 +1417,6 @@
 <span class="attr">#[async_trait::async_trait]
 </span><span class="kw">impl </span>BlockImport&lt;Block&gt; <span class="kw">for </span>PeersClient {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = ();
 
 	<span class="kw">async fn </span>check_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -1451,9 +1427,9 @@
 
 	<span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		block: BlockImportParams&lt;Block, ()&gt;,
+		block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
-		<span class="self">self</span>.client.import_block(block.clear_storage_changes_and_mutate()).<span class="kw">await
+		<span class="self">self</span>.client.import_block(block).<span class="kw">await
 	</span>}
 }
 
@@ -1478,7 +1454,6 @@
 <span class="kw">impl</span>&lt;D, B&gt; Peer&lt;D, B&gt;
 <span class="kw">where
 	</span>B: BlockImport&lt;Block, Error = ConsensusError&gt; + Send + Sync,
-	B::Transaction: Send,
 {
 	<span class="doccomment">/// Get this peer ID.
 	</span><span class="kw">pub fn </span>id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; PeerId {
@@ -1786,24 +1761,12 @@
 }
 
 <span class="kw">pub trait </span>BlockImportAdapterFull:
-	BlockImport&lt;
-		Block,
-		Transaction = TransactionFor&lt;substrate_test_runtime_client::Backend, Block&gt;,
-		Error = ConsensusError,
-	&gt; + Send
-	+ Sync
-	+ Clone
+	BlockImport&lt;Block, Error = ConsensusError&gt; + Send + Sync + Clone
 {
 }
 
 <span class="kw">impl</span>&lt;T&gt; BlockImportAdapterFull <span class="kw">for </span>T <span class="kw">where
-	</span>T: BlockImport&lt;
-			Block,
-			Transaction = TransactionFor&lt;substrate_test_runtime_client::Backend, Block&gt;,
-			Error = ConsensusError,
-		&gt; + Send
-		+ Sync
-		+ Clone
+	</span>T: BlockImport&lt;Block, Error = ConsensusError&gt; + Send + Sync + Clone
 {
 }
 
@@ -1813,27 +1776,23 @@
 /// This is required as the `TestNetFactory` trait does not distinguish between
 /// full and light nodes.
 </span><span class="attr">#[derive(Clone)]
-</span><span class="kw">pub struct </span>BlockImportAdapter&lt;I, Transaction = ()&gt; {
+</span><span class="kw">pub struct </span>BlockImportAdapter&lt;I&gt; {
 	inner: I,
-	_phantom: PhantomData&lt;Transaction&gt;,
 }
 
-<span class="kw">impl</span>&lt;I, Transaction&gt; BlockImportAdapter&lt;I, Transaction&gt; {
+<span class="kw">impl</span>&lt;I&gt; BlockImportAdapter&lt;I&gt; {
 	<span class="doccomment">/// Create a new instance of `Self::Full`.
 	</span><span class="kw">pub fn </span>new(inner: I) -&gt; <span class="self">Self </span>{
-		<span class="self">Self </span>{ inner, _phantom: PhantomData }
+		<span class="self">Self </span>{ inner }
 	}
 }
 
 <span class="attr">#[async_trait::async_trait]
-</span><span class="kw">impl</span>&lt;I, Transaction&gt; BlockImport&lt;Block&gt; <span class="kw">for </span>BlockImportAdapter&lt;I, Transaction&gt;
+</span><span class="kw">impl</span>&lt;I&gt; BlockImport&lt;Block&gt; <span class="kw">for </span>BlockImportAdapter&lt;I&gt;
 <span class="kw">where
 	</span>I: BlockImport&lt;Block, Error = ConsensusError&gt; + Send + Sync,
-	I::Transaction: Send,
-	Transaction: Send + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = Transaction;
 
 	<span class="kw">async fn </span>check_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -1844,9 +1803,9 @@
 
 	<span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		block: BlockImportParams&lt;Block, <span class="self">Self</span>::Transaction&gt;,
+		block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
-		<span class="self">self</span>.inner.import_block(block.clear_storage_changes_and_mutate()).<span class="kw">await
+		<span class="self">self</span>.inner.import_block(block).<span class="kw">await
 	</span>}
 }
 
@@ -1860,8 +1819,8 @@
 </span><span class="kw">impl</span>&lt;B: BlockT&gt; Verifier&lt;B&gt; <span class="kw">for </span>VerifierAdapter&lt;B&gt; {
 	<span class="kw">async fn </span>verify(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		block: BlockImportParams&lt;B, ()&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B, ()&gt;, String&gt; {
+		block: BlockImportParams&lt;B&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B&gt;, String&gt; {
 		<span class="kw">let </span>hash = block.header.hash();
 		<span class="self">self</span>.verifier.lock().<span class="kw">await</span>.verify(block).<span class="kw">await</span>.map_err(|e| {
 			<span class="self">self</span>.failed_verifications.lock().insert(hash, e.clone());
@@ -1944,10 +1903,7 @@
 }
 
 <span class="attr">#[async_trait::async_trait]
-</span><span class="kw">pub trait </span>TestNetFactory: Default + Sized + Send
-<span class="kw">where
-	</span>&lt;<span class="self">Self</span>::BlockImport <span class="kw">as </span>BlockImport&lt;Block&gt;&gt;::Transaction: Send,
-{
+</span><span class="kw">pub trait </span>TestNetFactory: Default + Sized + Send {
 	<span class="kw">type </span>Verifier: <span class="lifetime">&#39;static </span>+ Verifier&lt;Block&gt;;
 	<span class="kw">type </span>BlockImport: BlockImport&lt;Block, Error = ConsensusError&gt; + Clone + Send + Sync + <span class="lifetime">&#39;static</span>;
 	<span class="kw">type </span>PeerData: Default + Send;

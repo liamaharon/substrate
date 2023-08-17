@@ -805,22 +805,6 @@
 <a href="#805" id="805">805</a>
 <a href="#806" id="806">806</a>
 <a href="#807" id="807">807</a>
-<a href="#808" id="808">808</a>
-<a href="#809" id="809">809</a>
-<a href="#810" id="810">810</a>
-<a href="#811" id="811">811</a>
-<a href="#812" id="812">812</a>
-<a href="#813" id="813">813</a>
-<a href="#814" id="814">814</a>
-<a href="#815" id="815">815</a>
-<a href="#816" id="816">816</a>
-<a href="#817" id="817">817</a>
-<a href="#818" id="818">818</a>
-<a href="#819" id="819">819</a>
-<a href="#820" id="820">820</a>
-<a href="#821" id="821">821</a>
-<a href="#822" id="822">822</a>
-<a href="#823" id="823">823</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -875,7 +859,7 @@
 	seal_block::{seal_block, SealBlockParams, MAX_PROPOSAL_DURATION},
 };
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
-<span class="kw">use </span>sp_api::{ProvideRuntimeApi, TransactionFor};
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
 
 <span class="kw">const </span>LOG_TARGET: <span class="kw-2">&amp;</span>str = <span class="string">&quot;manual-seal&quot;</span>;
 
@@ -889,8 +873,8 @@
 </span><span class="kw">impl</span>&lt;B: BlockT&gt; Verifier&lt;B&gt; <span class="kw">for </span>ManualSealVerifier {
 	<span class="kw">async fn </span>verify(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;B, ()&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B, ()&gt;, String&gt; {
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;B&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B&gt;, String&gt; {
 		block.finalized = <span class="bool-val">false</span>;
 		block.fork_choice = <span class="prelude-val">Some</span>(ForkChoiceStrategy::LongestChain);
 		<span class="prelude-val">Ok</span>(block)
@@ -898,14 +882,13 @@
 }
 
 <span class="doccomment">/// Instantiate the import queue for the manual seal consensus engine.
-</span><span class="kw">pub fn </span>import_queue&lt;Block, Transaction&gt;(
-	block_import: BoxBlockImport&lt;Block, Transaction&gt;,
+</span><span class="kw">pub fn </span>import_queue&lt;Block&gt;(
+	block_import: BoxBlockImport&lt;Block&gt;,
 	spawner: <span class="kw-2">&amp;</span><span class="kw">impl </span>sp_core::traits::SpawnEssentialNamed,
 	registry: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Registry&gt;,
-) -&gt; BasicQueue&lt;Block, Transaction&gt;
+) -&gt; BasicQueue&lt;Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	Transaction: Send + Sync + <span class="lifetime">&#39;static</span>,
 {
 	BasicQueue::new(ManualSealVerifier, block_import, <span class="prelude-val">None</span>, spawner, registry)
 }
@@ -932,8 +915,7 @@
 	</span><span class="kw">pub </span>select_chain: SC,
 
 	<span class="doccomment">/// Digest provider for inclusion in blocks.
-	</span><span class="kw">pub </span>consensus_data_provider:
-		<span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;B, Proof = P, Transaction = TransactionFor&lt;C, B&gt;&gt;&gt;&gt;,
+	</span><span class="kw">pub </span>consensus_data_provider: <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;B, Proof = P&gt;&gt;&gt;,
 
 	<span class="doccomment">/// Something that can create the inherent data providers.
 	</span><span class="kw">pub </span>create_inherent_data_providers: CIDP,
@@ -957,8 +939,7 @@
 	</span><span class="kw">pub </span>select_chain: SC,
 
 	<span class="doccomment">/// Digest provider for inclusion in blocks.
-	</span><span class="kw">pub </span>consensus_data_provider:
-		<span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;B, Proof = P, Transaction = TransactionFor&lt;C, B&gt;&gt;&gt;&gt;,
+	</span><span class="kw">pub </span>consensus_data_provider: <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>ConsensusDataProvider&lt;B, Proof = P&gt;&gt;&gt;,
 
 	<span class="doccomment">/// Something that can create the inherent data providers.
 	</span><span class="kw">pub </span>create_inherent_data_providers: CIDP,
@@ -990,17 +971,13 @@
 	}: ManualSealParams&lt;B, BI, E, C, TP, SC, CS, CIDP, P&gt;,
 ) <span class="kw">where
 	</span>B: BlockT + <span class="lifetime">&#39;static</span>,
-	BI: BlockImport&lt;B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;
-		+ Send
-		+ Sync
-		+ <span class="lifetime">&#39;static</span>,
+	BI: BlockImport&lt;B, Error = sp_consensus::Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	C: HeaderBackend&lt;B&gt; + Finalizer&lt;B, CB&gt; + ProvideRuntimeApi&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	CB: ClientBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	E: Environment&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	E::Proposer: Proposer&lt;B, Proof = P, Transaction = TransactionFor&lt;C, B&gt;&gt;,
+	E::Proposer: Proposer&lt;B, Proof = P&gt;,
 	CS: Stream&lt;Item = EngineCommand&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Hash&gt;&gt; + Unpin + <span class="lifetime">&#39;static</span>,
 	SC: SelectChain&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	TransactionFor&lt;C, B&gt;: <span class="lifetime">&#39;static</span>,
 	TP: TransactionPool&lt;Block = B&gt;,
 	CIDP: CreateInherentDataProviders&lt;B, ()&gt;,
 	P: Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -1053,16 +1030,12 @@
 	}: InstantSealParams&lt;B, BI, E, C, TP, SC, CIDP, P&gt;,
 ) <span class="kw">where
 	</span>B: BlockT + <span class="lifetime">&#39;static</span>,
-	BI: BlockImport&lt;B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;
-		+ Send
-		+ Sync
-		+ <span class="lifetime">&#39;static</span>,
+	BI: BlockImport&lt;B, Error = sp_consensus::Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	C: HeaderBackend&lt;B&gt; + Finalizer&lt;B, CB&gt; + ProvideRuntimeApi&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	CB: ClientBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	E: Environment&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	E::Proposer: Proposer&lt;B, Proof = P, Transaction = TransactionFor&lt;C, B&gt;&gt;,
+	E::Proposer: Proposer&lt;B, Proof = P&gt;,
 	SC: SelectChain&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	TransactionFor&lt;C, B&gt;: <span class="lifetime">&#39;static</span>,
 	TP: TransactionPool&lt;Block = B&gt;,
 	CIDP: CreateInherentDataProviders&lt;B, ()&gt;,
 	P: Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -1107,16 +1080,12 @@
 	}: InstantSealParams&lt;B, BI, E, C, TP, SC, CIDP, P&gt;,
 ) <span class="kw">where
 	</span>B: BlockT + <span class="lifetime">&#39;static</span>,
-	BI: BlockImport&lt;B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;
-		+ Send
-		+ Sync
-		+ <span class="lifetime">&#39;static</span>,
+	BI: BlockImport&lt;B, Error = sp_consensus::Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	C: HeaderBackend&lt;B&gt; + Finalizer&lt;B, CB&gt; + ProvideRuntimeApi&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	CB: ClientBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	E: Environment&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	E::Proposer: Proposer&lt;B, Proof = P, Transaction = TransactionFor&lt;C, B&gt;&gt;,
+	E::Proposer: Proposer&lt;B, Proof = P&gt;,
 	SC: SelectChain&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	TransactionFor&lt;C, B&gt;: <span class="lifetime">&#39;static</span>,
 	TP: TransactionPool&lt;Block = B&gt;,
 	CIDP: CreateInherentDataProviders&lt;B, ()&gt;,
 	P: Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -1209,7 +1178,6 @@
 		</span>B: BlockT,
 		C: ProvideRuntimeApi&lt;B&gt; + Send + Sync,
 	{
-		<span class="kw">type </span>Transaction = TransactionFor&lt;C, B&gt;;
 		<span class="kw">type </span>Proof = ();
 
 		<span class="kw">fn </span>create_digest(
@@ -1223,7 +1191,7 @@
 		<span class="kw">fn </span>append_block_import(
 			<span class="kw-2">&amp;</span><span class="self">self</span>,
 			_parent: <span class="kw-2">&amp;</span>B::Header,
-			params: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;B, <span class="self">Self</span>::Transaction&gt;,
+			params: <span class="kw-2">&amp;mut </span>BlockImportParams&lt;B&gt;,
 			_inherents: <span class="kw-2">&amp;</span>InherentData,
 			_proof: <span class="self">Self</span>::Proof,
 		) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {

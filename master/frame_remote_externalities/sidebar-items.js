@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Mode","Transport"],"struct":["Builder","OfflineConfig","OnlineConfig","RemoteExternalities","SnapshotConfig"],"type":["TestExternalities"]};
+window.SIDEBAR_ITEMS = {"enum":["Mode","Transport"],"struct":["Builder","OfflineConfig","OnlineConfig","RemoteExternalities","SnapshotConfig"]};

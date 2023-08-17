@@ -729,7 +729,6 @@
 <span class="kw">use </span>parity_scale_codec::Decode;
 <span class="kw">use </span>remote_externalities::{
 	Builder, Mode, OfflineConfig, OnlineConfig, RemoteExternalities, SnapshotConfig,
-	TestExternalities,
 };
 <span class="kw">use </span>sc_cli::{
 	execution_method_from_cli, CliConfiguration, RuntimeVersion, WasmExecutionMethod,
@@ -739,7 +738,6 @@
 <span class="kw">use </span>sc_executor::{
 	sp_wasm_interface::HostFunctions, HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
 };
-<span class="kw">use </span>sp_api::HashT;
 <span class="kw">use </span>sp_core::{
 	hexdisplay::HexDisplay,
 	offchain::{
@@ -754,10 +752,12 @@
 <span class="kw">use </span>sp_inherents::InherentData;
 <span class="kw">use </span>sp_keystore::{testing::MemoryKeystore, KeystoreExt};
 <span class="kw">use </span>sp_runtime::{
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, NumberFor},
+	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Hash <span class="kw">as </span>HashT, HashingFor, NumberFor},
 	DeserializeOwned, Digest,
 };
-<span class="kw">use </span>sp_state_machine::{CompactProof, OverlayedChanges, StateMachine, TrieBackendBuilder};
+<span class="kw">use </span>sp_state_machine::{
+	CompactProof, OverlayedChanges, StateMachine, TestExternalities, TrieBackendBuilder,
+};
 <span class="kw">use </span>sp_version::StateVersion;
 <span class="kw">use </span>std::{fmt::Debug, path::PathBuf, str::FromStr};
 
@@ -1215,7 +1215,7 @@
 <span class="doccomment">/// Ensure that the given `ext` is compiled with `try-runtime`
 </span><span class="kw">fn </span>ensure_try_runtime&lt;Block: BlockT, HostFns: HostFunctions&gt;(
 	executor: <span class="kw-2">&amp;</span>WasmExecutor&lt;HostFns&gt;,
-	ext: <span class="kw-2">&amp;mut </span>TestExternalities,
+	ext: <span class="kw-2">&amp;mut </span>TestExternalities&lt;HashingFor&lt;Block&gt;&gt;,
 ) -&gt; bool {
 	<span class="kw">use </span>sp_api::RuntimeApiInfo;
 	<span class="kw">let </span>final_code = ext
@@ -1233,12 +1233,12 @@
 <span class="doccomment">/// Execute the given `method` and `data` on top of `ext`, returning the results (encoded) and the
 /// state `changes`.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>state_machine_call&lt;Block: BlockT, HostFns: HostFunctions&gt;(
-	ext: <span class="kw-2">&amp;</span>TestExternalities,
+	ext: <span class="kw-2">&amp;</span>TestExternalities&lt;HashingFor&lt;Block&gt;&gt;,
 	executor: <span class="kw-2">&amp;</span>WasmExecutor&lt;HostFns&gt;,
 	method: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
 	data: <span class="kw-2">&amp;</span>[u8],
 	<span class="kw-2">mut </span>extensions: Extensions,
-) -&gt; sc_cli::Result&lt;(OverlayedChanges, Vec&lt;u8&gt;)&gt; {
+) -&gt; sc_cli::Result&lt;(OverlayedChanges&lt;HashingFor&lt;Block&gt;&gt;, Vec&lt;u8&gt;)&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>changes = Default::default();
 	<span class="kw">let </span>encoded_results = StateMachine::new(
 		<span class="kw-2">&amp;</span>ext.backend,
@@ -1262,13 +1262,13 @@
 ///
 /// Make sure [`LOG_TARGET`] is enabled in logging.
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>state_machine_call_with_proof&lt;Block: BlockT, HostFns: HostFunctions&gt;(
-	ext: <span class="kw-2">&amp;</span>TestExternalities,
+	ext: <span class="kw-2">&amp;</span>TestExternalities&lt;HashingFor&lt;Block&gt;&gt;,
 	executor: <span class="kw-2">&amp;</span>WasmExecutor&lt;HostFns&gt;,
 	method: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
 	data: <span class="kw-2">&amp;</span>[u8],
 	<span class="kw-2">mut </span>extensions: Extensions,
 	maybe_export_proof: <span class="prelude-ty">Option</span>&lt;PathBuf&gt;,
-) -&gt; sc_cli::Result&lt;(OverlayedChanges, Vec&lt;u8&gt;)&gt; {
+) -&gt; sc_cli::Result&lt;(OverlayedChanges&lt;HashingFor&lt;Block&gt;&gt;, Vec&lt;u8&gt;)&gt; {
 	<span class="kw">use </span>parity_scale_codec::Encode;
 
 	<span class="kw">let </span><span class="kw-2">mut </span>changes = Default::default();
@@ -1325,7 +1325,7 @@
 	<span class="kw">let </span>proof_size = proof.encoded_size();
 	<span class="kw">let </span>compact_proof = proof
 		.clone()
-		.into_compact_proof::&lt;sp_runtime::traits::BlakeTwo256&gt;(pre_root)
+		.into_compact_proof::&lt;HashingFor&lt;Block&gt;&gt;(pre_root)
 		.map_err(|e| {
 			<span class="macro">log::error!</span>(target: LOG_TARGET, <span class="string">&quot;failed to generate compact proof {}: {:?}&quot;</span>, method, e);
 			e

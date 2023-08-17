@@ -1937,19 +1937,6 @@
 <a href="#1937" id="1937">1937</a>
 <a href="#1938" id="1938">1938</a>
 <a href="#1939" id="1939">1939</a>
-<a href="#1940" id="1940">1940</a>
-<a href="#1941" id="1941">1941</a>
-<a href="#1942" id="1942">1942</a>
-<a href="#1943" id="1943">1943</a>
-<a href="#1944" id="1944">1944</a>
-<a href="#1945" id="1945">1945</a>
-<a href="#1946" id="1946">1946</a>
-<a href="#1947" id="1947">1947</a>
-<a href="#1948" id="1948">1948</a>
-<a href="#1949" id="1949">1949</a>
-<a href="#1950" id="1950">1950</a>
-<a href="#1951" id="1951">1951</a>
-<a href="#1952" id="1952">1952</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2444,11 +2431,8 @@
 	C::Api: BabeApi&lt;B&gt;,
 	SC: SelectChain&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	E: Environment&lt;B, Error = Error&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	E::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
-	I: BlockImport&lt;B, Error = ConsensusError, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;
-		+ Send
-		+ Sync
-		+ <span class="lifetime">&#39;static</span>,
+	E::Proposer: Proposer&lt;B, Error = Error&gt;,
+	I: BlockImport&lt;B, Error = ConsensusError&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	SO: SyncOracle + Send + Sync + Clone + <span class="lifetime">&#39;static</span>,
 	L: sc_consensus::JustificationSyncLink&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	CIDP: CreateInherentDataProviders&lt;B, ()&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -2679,8 +2663,8 @@
 	C: ProvideRuntimeApi&lt;B&gt; + HeaderBackend&lt;B&gt; + HeaderMetadata&lt;B, Error = ClientError&gt;,
 	C::Api: BabeApi&lt;B&gt;,
 	E: Environment&lt;B, Error = Error&gt; + Sync,
-	E::Proposer: Proposer&lt;B, Error = Error, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
-	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	E::Proposer: Proposer&lt;B, Error = Error&gt;,
+	I: BlockImport&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	SO: SyncOracle + Send + Clone + Sync,
 	L: sc_consensus::JustificationSyncLink&lt;B&gt;,
 	BS: BackoffAuthoringBlocksStrategy&lt;NumberFor&lt;B&gt;&gt; + Sync,
@@ -2774,13 +2758,10 @@
 		header: B::Header,
 		header_hash: <span class="kw-2">&amp;</span>B::Hash,
 		body: Vec&lt;B::Extrinsic&gt;,
-		storage_changes: StorageChanges&lt;&lt;<span class="self">Self</span>::BlockImport <span class="kw">as </span>BlockImport&lt;B&gt;&gt;::Transaction, B&gt;,
+		storage_changes: StorageChanges&lt;B&gt;,
 		(<span class="kw">_</span>, public): <span class="self">Self</span>::Claim,
 		epoch_descriptor: <span class="self">Self</span>::AuxData,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;
-		BlockImportParams&lt;B, &lt;<span class="self">Self</span>::BlockImport <span class="kw">as </span>BlockImport&lt;B&gt;&gt;::Transaction&gt;,
-		ConsensusError,
-	&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;B&gt;, ConsensusError&gt; {
 		<span class="kw">let </span>signature = <span class="self">self
 			</span>.keystore
 			.sr25519_sign(&lt;AuthorityId <span class="kw">as </span>AppCrypto&gt;::ID, public.as_ref(), header_hash.as_ref())
@@ -3089,8 +3070,8 @@
 {
 	<span class="kw">async fn </span>verify(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block, ()&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;Block, ()&gt;, String&gt; {
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockImportParams&lt;Block&gt;, String&gt; {
 		<span class="macro">trace!</span>(
 			target: LOG_TARGET,
 			<span class="string">&quot;Verifying origin: {:?} header: {:?} justification(s): {:?} body: {:?}&quot;</span>,
@@ -3288,7 +3269,7 @@
 <span class="kw">impl</span>&lt;Block, Client, Inner&gt; BabeBlockImport&lt;Block, Client, Inner&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	Inner: BlockImport&lt;Block, Transaction = sp_api::TransactionFor&lt;Client, Block&gt;&gt; + Send + Sync,
+	Inner: BlockImport&lt;Block&gt; + Send + Sync,
 	Inner::Error: Into&lt;ConsensusError&gt;,
 	Client: HeaderBackend&lt;Block&gt;
 		+ HeaderMetadata&lt;Block, Error = sp_blockchain::Error&gt;
@@ -3303,7 +3284,7 @@
 	// end up in an inconsistent state and have to resync.
 	</span><span class="kw">async fn </span>import_state(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block, sp_api::TransactionFor&lt;Client, Block&gt;&gt;,
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, ConsensusError&gt; {
 		<span class="kw">let </span>hash = block.post_hash();
 		<span class="kw">let </span>parent_hash = <span class="kw-2">*</span>block.header.parent_hash();
@@ -3352,7 +3333,7 @@
 </span><span class="kw">impl</span>&lt;Block, Client, Inner&gt; BlockImport&lt;Block&gt; <span class="kw">for </span>BabeBlockImport&lt;Block, Client, Inner&gt;
 <span class="kw">where
 	</span>Block: BlockT,
-	Inner: BlockImport&lt;Block, Transaction = sp_api::TransactionFor&lt;Client, Block&gt;&gt; + Send + Sync,
+	Inner: BlockImport&lt;Block&gt; + Send + Sync,
 	Inner::Error: Into&lt;ConsensusError&gt;,
 	Client: HeaderBackend&lt;Block&gt;
 		+ HeaderMetadata&lt;Block, Error = sp_blockchain::Error&gt;
@@ -3363,11 +3344,10 @@
 	Client::Api: BabeApi&lt;Block&gt; + ApiExt&lt;Block&gt;,
 {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = sp_api::TransactionFor&lt;Client, Block&gt;;
 
 	<span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block, <span class="self">Self</span>::Transaction&gt;,
+		<span class="kw-2">mut </span>block: BlockImportParams&lt;Block&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
 		<span class="kw">let </span>hash = block.post_hash();
 		<span class="kw">let </span>number = <span class="kw-2">*</span>block.header.number();
@@ -3779,15 +3759,9 @@
 		telemetry,
 		offchain_tx_pool_factory,
 	}: ImportQueueParams&lt;<span class="lifetime">&#39;_</span>, Block, BI, Client, CIDP, SelectChain, Spawn&gt;,
-) -&gt; ClientResult&lt;(DefaultImportQueue&lt;Block, Client&gt;, BabeWorkerHandle&lt;Block&gt;)&gt;
+) -&gt; ClientResult&lt;(DefaultImportQueue&lt;Block&gt;, BabeWorkerHandle&lt;Block&gt;)&gt;
 <span class="kw">where
-	</span>BI: BlockImport&lt;
-			Block,
-			Error = ConsensusError,
-			Transaction = sp_api::TransactionFor&lt;Client, Block&gt;,
-		&gt; + Send
-		+ Sync
-		+ <span class="lifetime">&#39;static</span>,
+	</span>BI: BlockImport&lt;Block, Error = ConsensusError&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	Client: ProvideRuntimeApi&lt;Block&gt;
 		+ HeaderBackend&lt;Block&gt;
 		+ HeaderMetadata&lt;Block, Error = sp_blockchain::Error&gt;
