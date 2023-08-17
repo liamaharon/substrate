@@ -2425,6 +2425,35 @@
 <a href="#2425" id="2425">2425</a>
 <a href="#2426" id="2426">2426</a>
 <a href="#2427" id="2427">2427</a>
+<a href="#2428" id="2428">2428</a>
+<a href="#2429" id="2429">2429</a>
+<a href="#2430" id="2430">2430</a>
+<a href="#2431" id="2431">2431</a>
+<a href="#2432" id="2432">2432</a>
+<a href="#2433" id="2433">2433</a>
+<a href="#2434" id="2434">2434</a>
+<a href="#2435" id="2435">2435</a>
+<a href="#2436" id="2436">2436</a>
+<a href="#2437" id="2437">2437</a>
+<a href="#2438" id="2438">2438</a>
+<a href="#2439" id="2439">2439</a>
+<a href="#2440" id="2440">2440</a>
+<a href="#2441" id="2441">2441</a>
+<a href="#2442" id="2442">2442</a>
+<a href="#2443" id="2443">2443</a>
+<a href="#2444" id="2444">2444</a>
+<a href="#2445" id="2445">2445</a>
+<a href="#2446" id="2446">2446</a>
+<a href="#2447" id="2447">2447</a>
+<a href="#2448" id="2448">2448</a>
+<a href="#2449" id="2449">2449</a>
+<a href="#2450" id="2450">2450</a>
+<a href="#2451" id="2451">2451</a>
+<a href="#2452" id="2452">2452</a>
+<a href="#2453" id="2453">2453</a>
+<a href="#2454" id="2454">2454</a>
+<a href="#2455" id="2455">2455</a>
+<a href="#2456" id="2456">2456</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -4726,10 +4755,26 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::codec::{Decode, Encode, Input};
+	<span class="attr">#[cfg(feature = <span class="string">&quot;bls-experimental&quot;</span>)]
+	</span><span class="kw">use </span>sp_core::{bls377, bls381};
 	<span class="kw">use </span>sp_core::{
 		crypto::{Pair, UncheckedFrom},
-		ecdsa,
+		ecdsa, ed25519, sr25519,
 	};
+
+	<span class="macro">macro_rules! </span>signature_verify_test {
+		(<span class="macro-nonterminal">$algorithm</span>:ident) =&gt; {
+			<span class="kw">let </span>msg = <span class="kw-2">&amp;</span><span class="string">b&quot;test-message&quot;</span>[..];
+			<span class="kw">let </span>wrong_msg = <span class="kw-2">&amp;</span><span class="string">b&quot;test-msg&quot;</span>[..];
+			<span class="kw">let </span>(pair, <span class="kw">_</span>) = <span class="macro-nonterminal">$algorithm::Pair::generate</span>();
+
+			<span class="kw">let </span>signature = pair.sign(<span class="kw-2">&amp;</span>msg);
+			<span class="macro">assert!</span>(<span class="macro-nonterminal">$algorithm::Pair::verify</span>(<span class="kw-2">&amp;</span>signature, msg, <span class="kw-2">&amp;</span>pair.public()));
+
+			<span class="macro">assert!</span>(signature.verify(msg, <span class="kw-2">&amp;</span>pair.public()));
+			<span class="macro">assert!</span>(!signature.verify(wrong_msg, <span class="kw-2">&amp;</span>pair.public()));
+		};
+	}
 
 	<span class="kw">mod </span>t {
 		<span class="kw">use </span>sp_application_crypto::{app_crypto, sr25519};
@@ -4841,15 +4886,28 @@
 	}
 
 	<span class="attr">#[test]
+	</span><span class="kw">fn </span>ed25519_verify_works() {
+		<span class="macro">signature_verify_test!</span>(ed25519);
+	}
+
+	<span class="attr">#[test]
+	</span><span class="kw">fn </span>sr25519_verify_works() {
+		<span class="macro">signature_verify_test!</span>(sr25519);
+	}
+
+	<span class="attr">#[test]
 	</span><span class="kw">fn </span>ecdsa_verify_works() {
-		<span class="kw">let </span>msg = <span class="kw-2">&amp;</span><span class="string">b&quot;test-message&quot;</span>[..];
-		<span class="kw">let </span>(pair, <span class="kw">_</span>) = ecdsa::Pair::generate();
+		<span class="macro">signature_verify_test!</span>(ecdsa);
+	}
 
-		<span class="kw">let </span>signature = pair.sign(<span class="kw-2">&amp;</span>msg);
-		<span class="macro">assert!</span>(ecdsa::Pair::verify(<span class="kw-2">&amp;</span>signature, msg, <span class="kw-2">&amp;</span>pair.public()));
+	<span class="attr">#[cfg(feature = <span class="string">&quot;bls-experimental&quot;</span>)]
+	</span><span class="kw">fn </span>bls377_verify_works() {
+		<span class="macro">signature_verify_test!</span>(bls377)
+	}
 
-		<span class="macro">assert!</span>(signature.verify(msg, <span class="kw-2">&amp;</span>pair.public()));
-		<span class="macro">assert!</span>(signature.verify(msg, <span class="kw-2">&amp;</span>pair.public()));
+	<span class="attr">#[cfg(feature = <span class="string">&quot;bls-experimental&quot;</span>)]
+	</span><span class="kw">fn </span>bls381_verify_works() {
+		<span class="macro">signature_verify_test!</span>(bls381)
 	}
 }
 </code></pre></div></section></main></body></html>
