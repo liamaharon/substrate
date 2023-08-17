@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Command","Runtime","State"],"mod":["block_building_info","commands"],"struct":["LiveState","SharedParams","TryRuntimeCmd"]};
+window.SIDEBAR_ITEMS = {"constant":["DEPRECATION_NOTICE"],"enum":["Command","Runtime","State"],"mod":["block_building_info","commands"],"struct":["LiveState","SharedParams","TryRuntimeCmd"]};
