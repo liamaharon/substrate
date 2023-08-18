@@ -302,6 +302,17 @@
 <a href="#302" id="302">302</a>
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -323,7 +334,6 @@
 //! See &lt;https://github.com/paritytech/substrate/pull/13369&gt;.
 
 </span><span class="kw">use crate</span>::{
-	address::AddressGenerator,
 	exec::AccountIdOf,
 	migration::{IsFinished, MigrationStep},
 	weights::WeightInfo,
@@ -344,7 +354,10 @@
 <span class="kw">use </span>sp_core::hexdisplay::HexDisplay;
 <span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
 </span><span class="kw">use </span>sp_runtime::TryRuntimeError;
-<span class="kw">use </span>sp_runtime::{traits::Zero, Perbill, Saturating};
+<span class="kw">use </span>sp_runtime::{
+	traits::{Hash, TrailingZeroInput, Zero},
+	Perbill, Saturating,
+};
 <span class="kw">use </span>sp_std::{ops::Deref, prelude::<span class="kw-2">*</span>};
 
 <span class="kw">mod </span>old {
@@ -439,6 +452,16 @@
 	ContractInfo&lt;T, OldCurrency&gt;,
 &gt;;
 
+<span class="doccomment">/// Formula: `hash(&quot;contract_depo_v1&quot; ++ contract_addr)`
+</span><span class="kw">fn </span>deposit_address&lt;T: Config&gt;(
+	contract_addr: <span class="kw-2">&amp;</span>&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId,
+) -&gt; &lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId {
+	<span class="kw">let </span>entropy = (<span class="string">b&quot;contract_depo_v1&quot;</span>, contract_addr)
+		.using_encoded(&lt;T <span class="kw">as </span>frame_system::Config&gt;::Hashing::hash);
+	Decode::decode(<span class="kw-2">&amp;mut </span>TrailingZeroInput::new(entropy.as_ref()))
+		.expect(<span class="string">&quot;infinite length input; no invalid inputs for type; qed&quot;</span>)
+}
+
 <span class="kw">impl</span>&lt;T: Config, OldCurrency: <span class="lifetime">&#39;static</span>&gt; MigrationStep <span class="kw">for </span>Migration&lt;T, OldCurrency&gt;
 <span class="kw">where
 	</span>OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;
@@ -466,8 +489,7 @@
 			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Account: 0x{} &quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>account.encode()));
 
 			<span class="comment">// Get the new deposit account address
-			</span><span class="kw">let </span>deposit_account: DepositAccount&lt;T&gt; =
-				DepositAccount(T::AddressGenerator::deposit_address(<span class="kw-2">&amp;</span>account));
+			</span><span class="kw">let </span>deposit_account: DepositAccount&lt;T&gt; = DepositAccount(deposit_address::&lt;T&gt;(<span class="kw-2">&amp;</span>account));
 
 			<span class="comment">// Calculate the existing deposit, that should be reserved on the contract account
 			</span><span class="kw">let </span>old_deposit = contract

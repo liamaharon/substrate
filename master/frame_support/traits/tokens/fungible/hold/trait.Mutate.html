@@ -104,7 +104,7 @@ since it could provide a means of circumventing freezes.</p>
     mode: <a class="enum" href="../../enum.Restriction.html" title="enum frame_support::traits::tokens::Restriction">Restriction</a>,
     force: <a class="enum" href="../../enum.Fortitude.html" title="enum frame_support::traits::tokens::Fortitude">Fortitude</a>
 ) -&gt; <a class="enum" href="../../../../dispatch/result/enum.Result.html" title="enum frame_support::dispatch::result::Result">Result</a>&lt;Self::<a class="associatedtype" href="../trait.Inspect.html#associatedtype.Balance" title="type frame_support::traits::tokens::fungible::Inspect::Balance">Balance</a>, <a class="enum" href="../../../../pallet_prelude/enum.DispatchError.html" title="enum frame_support::pallet_prelude::DispatchError">DispatchError</a>&gt;</h4></section></summary><div class="docblock"><p>Transfer held funds into a destination account.</p>
-<p>If <code>on_hold</code> is <code>true</code>, then the destination account must already exist and the assets
+<p>If <code>mode</code> is <code>OnHold</code>, then the destination account must already exist and the assets
 transferred will still be on hold in the destination account. If not, then the destination
 account need not already exist, but must be creatable.</p>
 <p>If <code>precision</code> is <code>BestEffort</code>, then an amount less than <code>amount</code> may be transferred without

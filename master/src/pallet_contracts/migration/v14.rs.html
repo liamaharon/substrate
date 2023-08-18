@@ -267,6 +267,9 @@
 <a href="#267" id="267">267</a>
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -284,7 +287,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="doccomment">//! Update the code owner balance, make the storage deposit reserved balance to be held instead.
+</span><span class="doccomment">//! Update the code owner balance, make the code upload deposit balance to be held instead of
+//! reserved. Since [`Currency`](frame_support::traits::Currency) has been
+//! [deprecated](https://github.com/paritytech/substrate/pull/12951), we need the deposits to be
+//! handled by the [`frame_support::traits::fungible`] traits.
 
 </span><span class="kw">use crate</span>::{
 	exec::AccountIdOf,
@@ -371,7 +377,7 @@
 	</span>T: Config,
 	OldCurrency: ReservableCurrency&lt;&lt;T <span class="kw">as </span>frame_system::Config&gt;::AccountId&gt;,
 {
-	<span class="doccomment">/// Total reserved balance as storage deposit for the owner.
+	<span class="doccomment">/// Total reserved balance as code upload deposit for the owner.
 	</span>reserved: old::BalanceOf&lt;T, OldCurrency&gt;,
 	<span class="doccomment">/// Total balance of the owner.
 	</span>total: old::BalanceOf&lt;T, OldCurrency&gt;,
@@ -409,7 +415,7 @@
 		};
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>((hash, code_info)) = iter.next() {
-			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Migrating storage deposit for 0x{:?}&quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>code_info.owner.encode()));
+			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Migrating code upload deposit for 0x{:?}&quot;</span>, HexDisplay::from(<span class="kw-2">&amp;</span>code_info.owner.encode()));
 
 			<span class="kw">let </span>remaining = OldCurrency::unreserve(<span class="kw-2">&amp;</span>code_info.owner, code_info.deposit);
 
@@ -454,7 +460,7 @@
 			<span class="self">self</span>.last_code_hash = <span class="prelude-val">Some</span>(hash);
 			(IsFinished::No, T::WeightInfo::v14_migration_step())
 		} <span class="kw">else </span>{
-			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;No more storage deposit to migrate&quot;</span>);
+			<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;No more code upload deposit to migrate&quot;</span>);
 			(IsFinished::Yes, T::WeightInfo::v14_migration_step())
 		}
 	}
@@ -466,8 +472,8 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>owner_balance_allocation =
 			BTreeMap::&lt;AccountIdOf&lt;T&gt;, BalanceAllocation&lt;T, OldCurrency&gt;&gt;::new();
 
-		<span class="comment">// Calculates the balance allocation by accumulating the storage deposits of all codes owned
-		// by an owner.
+		<span class="comment">// Calculates the balance allocation by accumulating the code upload deposits of all codes
+		// owned by an owner.
 		</span><span class="kw">for </span>(<span class="kw">_</span>, code_info) <span class="kw">in </span>info {
 			owner_balance_allocation
 				.entry(code_info.owner.clone())
@@ -498,7 +504,7 @@
 				T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::CodeUploadDepositReserve.into(), <span class="kw-2">&amp;</span>owner);
 			<span class="macro">log::debug!</span>(
 				target: LOG_TARGET,
-				<span class="string">&quot;Validating storage deposit for owner 0x{:?}, reserved: {:?}, held: {:?}&quot;</span>,
+				<span class="string">&quot;Validating code upload deposit for owner 0x{:?}, reserved: {:?}, held: {:?}&quot;</span>,
 				HexDisplay::from(<span class="kw-2">&amp;</span>owner.encode()),
 				old_balance_allocation.reserved,
 				held
@@ -529,7 +535,7 @@
 
 		<span class="macro">log::info!</span>(
 			target: LOG_TARGET,
-			<span class="string">&quot;Total held amount for storage deposit: {:?}&quot;</span>,
+			<span class="string">&quot;Total held amount for code upload deposit: {:?}&quot;</span>,
 			total_held
 		);
 

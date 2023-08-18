@@ -3888,38 +3888,6 @@
 <a href="#3888" id="3888">3888</a>
 <a href="#3889" id="3889">3889</a>
 <a href="#3890" id="3890">3890</a>
-<a href="#3891" id="3891">3891</a>
-<a href="#3892" id="3892">3892</a>
-<a href="#3893" id="3893">3893</a>
-<a href="#3894" id="3894">3894</a>
-<a href="#3895" id="3895">3895</a>
-<a href="#3896" id="3896">3896</a>
-<a href="#3897" id="3897">3897</a>
-<a href="#3898" id="3898">3898</a>
-<a href="#3899" id="3899">3899</a>
-<a href="#3900" id="3900">3900</a>
-<a href="#3901" id="3901">3901</a>
-<a href="#3902" id="3902">3902</a>
-<a href="#3903" id="3903">3903</a>
-<a href="#3904" id="3904">3904</a>
-<a href="#3905" id="3905">3905</a>
-<a href="#3906" id="3906">3906</a>
-<a href="#3907" id="3907">3907</a>
-<a href="#3908" id="3908">3908</a>
-<a href="#3909" id="3909">3909</a>
-<a href="#3910" id="3910">3910</a>
-<a href="#3911" id="3911">3911</a>
-<a href="#3912" id="3912">3912</a>
-<a href="#3913" id="3913">3913</a>
-<a href="#3914" id="3914">3914</a>
-<a href="#3915" id="3915">3915</a>
-<a href="#3916" id="3916">3916</a>
-<a href="#3917" id="3917">3917</a>
-<a href="#3918" id="3918">3918</a>
-<a href="#3919" id="3919">3919</a>
-<a href="#3920" id="3920">3920</a>
-<a href="#3921" id="3921">3921</a>
-<a href="#3922" id="3922">3922</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -3941,10 +3909,10 @@
 </span><span class="kw">use </span><span class="kw">crate</span>::unsafe_debug::ExecutionObserver;
 <span class="kw">use crate</span>::{
 	gas::GasMeter,
-	storage::{<span class="self">self</span>, meter::Diff, DepositAccount, WriteOutcome},
+	storage::{<span class="self">self</span>, meter::Diff, WriteOutcome},
 	BalanceOf, CodeHash, CodeInfo, CodeInfoOf, Config, ContractInfo, ContractInfoOf,
 	DebugBufferVec, Determinism, Error, Event, Nonce, Origin, Pallet <span class="kw">as </span>Contracts, Schedule,
-	System, WasmBlob, LOG_TARGET,
+	WasmBlob, LOG_TARGET,
 };
 <span class="kw">use </span>frame_support::{
 	crypto::ecdsa::ECDSAExt,
@@ -3955,7 +3923,7 @@
 	storage::{with_transaction, TransactionOutcome},
 	traits::{
 		fungible::{Inspect, Mutate},
-		tokens::{Fortitude::Polite, Preservation},
+		tokens::Preservation,
 		Contains, OriginTrait, Randomness, Time,
 	},
 	weights::Weight,
@@ -4469,7 +4437,7 @@
 	///
 	/// In this case a reload is neither allowed nor possible. Please note that recursive
 	/// calls cannot remove a contract as this is checked and denied.
-	</span>Terminated(DepositAccount&lt;T&gt;),
+	</span>Terminated,
 }
 
 <span class="kw">impl</span>&lt;T: Config&gt; CachedContract&lt;T&gt; {
@@ -4489,15 +4457,6 @@
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>}
-	}
-
-	<span class="doccomment">/// Returns `Some` iff the contract is not `Cached::Invalidated`.
-	</span><span class="kw">fn </span>deposit_account(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>DepositAccount&lt;T&gt;&gt; {
-		<span class="kw">match </span><span class="self">self </span>{
-			CachedContract::Cached(contract) =&gt; <span class="prelude-val">Some</span>(contract.deposit_account()),
-			CachedContract::Terminated(deposit_account) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>deposit_account),
-			CachedContract::Invalidated =&gt; <span class="prelude-val">None</span>,
-		}
 	}
 }
 
@@ -4577,9 +4536,7 @@
 	<span class="doccomment">/// Terminate and return the contract info.
 	</span><span class="kw">fn </span>terminate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, account_id: <span class="kw-2">&amp;</span>T::AccountId) -&gt; ContractInfo&lt;T&gt; {
 		<span class="self">self</span>.load(account_id);
-		<span class="kw">let </span>contract = <span class="macro">get_cached_or_panic_after_load!</span>(<span class="self">self</span>);
-		<span class="kw">let </span>deposit_account = contract.deposit_account().clone();
-		<span class="macro">get_cached_or_panic_after_load!</span>(mem::replace(<span class="self">self</span>, <span class="self">Self</span>::Terminated(deposit_account)))
+		<span class="macro">get_cached_or_panic_after_load!</span>(mem::replace(<span class="self">self</span>, <span class="self">Self</span>::Terminated))
 	}
 }
 
@@ -4877,7 +4834,7 @@
 			<span class="kw">match </span>(entry_point, delegated_code_hash) {
 				(ExportedFunction::Constructor, <span class="kw">_</span>) =&gt; {
 					<span class="comment">// It is not allowed to terminate a contract inside its constructor.
-					</span><span class="kw">if </span><span class="macro">matches!</span>(frame.contract_info, CachedContract::Terminated(<span class="kw">_</span>)) {
+					</span><span class="kw">if </span><span class="macro">matches!</span>(frame.contract_info, CachedContract::Terminated) {
 						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::TerminatedInConstructor.into())
 					}
 
@@ -4981,18 +4938,8 @@
 			// in its contract info. The load is necessary to pull it from storage in case
 			// it was invalidated.
 			</span>frame.contract_info.load(account_id);
-			<span class="kw">let </span>deposit_account = frame
-				.contract_info
-				.deposit_account()
-				.expect(
-					<span class="string">&quot;Is only `None` when the info is invalidated.
-				We just re-loaded from storage which either makes the state `Cached` or `Terminated`.
-				qed&quot;</span>,
-				)
-				.clone();
 			<span class="kw">let </span><span class="kw-2">mut </span>contract = frame.contract_info.into_contract();
-			prev.nested_storage
-				.absorb(frame.nested_storage, deposit_account, contract.as_mut());
+			prev.nested_storage.absorb(frame.nested_storage, account_id, contract.as_mut());
 
 			<span class="comment">// In case the contract wasn&#39;t terminated we need to persist changes made to it.
 			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(contract) = contract {
@@ -5027,14 +4974,10 @@
 			<span class="kw">if </span>!persist {
 				<span class="kw">return
 			</span>}
-			<span class="kw">let </span>deposit_account = <span class="self">self</span>.first_frame.contract_info.deposit_account().expect(
-				<span class="string">&quot;Is only `None` when the info is invalidated. The first frame can&#39;t be invalidated.
-				qed&quot;</span>,
-			).clone();
 			<span class="kw">let </span><span class="kw-2">mut </span>contract = <span class="self">self</span>.first_frame.contract_info.as_contract();
 			<span class="self">self</span>.storage_meter.absorb(
 				mem::take(<span class="kw-2">&amp;mut </span><span class="self">self</span>.first_frame.nested_storage),
-				deposit_account,
+				<span class="kw-2">&amp;</span><span class="self">self</span>.first_frame.account_id,
 				contract.as_deref_mut(),
 			);
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(contract) = contract {
@@ -5233,14 +5176,8 @@
 		}
 		<span class="kw">let </span>frame = <span class="self">self</span>.top_frame_mut();
 		<span class="kw">let </span>info = frame.terminate();
-		frame.nested_storage.terminate(<span class="kw-2">&amp;</span>info);
-		System::&lt;T&gt;::dec_consumers(<span class="kw-2">&amp;</span>frame.account_id);
-		<span class="self">Self</span>::transfer(
-			Preservation::Expendable,
-			<span class="kw-2">&amp;</span>frame.account_id,
-			beneficiary,
-			T::Currency::reducible_balance(<span class="kw-2">&amp;</span>frame.account_id, Preservation::Expendable, Polite),
-		)<span class="question-mark">?</span>;
+		frame.nested_storage.terminate(<span class="kw-2">&amp;</span>info, beneficiary.clone());
+
 		info.queue_trie_for_deletion();
 		ContractInfoOf::&lt;T&gt;::remove(<span class="kw-2">&amp;</span>frame.account_id);
 		E::decrement_refcount(info.code_hash);
@@ -5249,7 +5186,7 @@
 			E::decrement_refcount(<span class="kw-2">*</span>code_hash);
 			frame
 				.nested_storage
-				.charge_deposit(info.deposit_account().clone(), StorageDeposit::Refund(<span class="kw-2">*</span>deposit));
+				.charge_deposit(frame.account_id.clone(), StorageDeposit::Refund(<span class="kw-2">*</span>deposit));
 		}
 
 		Contracts::&lt;T&gt;::deposit_event(
@@ -5443,8 +5380,7 @@
 		<span class="kw">let </span>deposit = StorageDeposit::Charge(new_base_deposit)
 			.saturating_sub(<span class="kw-2">&amp;</span>StorageDeposit::Charge(old_base_deposit));
 
-		<span class="kw">let </span>deposit_account = info.deposit_account().clone();
-		frame.nested_storage.charge_deposit(deposit_account, deposit);
+		frame.nested_storage.charge_deposit(frame.account_id.clone(), deposit);
 
 		E::increment_refcount(hash)<span class="question-mark">?</span>;
 		E::decrement_refcount(prev_hash);
@@ -5495,7 +5431,7 @@
 		&lt;WasmBlob&lt;T&gt;&gt;::increment_refcount(code_hash)<span class="question-mark">?</span>;
 		frame
 			.nested_storage
-			.charge_deposit(info.deposit_account().clone(), StorageDeposit::Charge(deposit));
+			.charge_deposit(frame.account_id.clone(), StorageDeposit::Charge(deposit));
 		<span class="prelude-val">Ok</span>(())
 	}
 
@@ -5511,7 +5447,7 @@
 
 		frame
 			.nested_storage
-			.charge_deposit(info.deposit_account().clone(), StorageDeposit::Refund(deposit));
+			.charge_deposit(frame.account_id.clone(), StorageDeposit::Refund(deposit));
 		<span class="prelude-val">Ok</span>(())
 	}
 }

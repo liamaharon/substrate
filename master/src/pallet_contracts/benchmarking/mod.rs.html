@@ -2700,6 +2700,16 @@
 <a href="#2700" id="2700">2700</a>
 <a href="#2701" id="2701">2701</a>
 <a href="#2702" id="2702">2702</a>
+<a href="#2703" id="2703">2703</a>
+<a href="#2704" id="2704">2704</a>
+<a href="#2705" id="2705">2705</a>
+<a href="#2706" id="2706">2706</a>
+<a href="#2707" id="2707">2707</a>
+<a href="#2708" id="2708">2708</a>
+<a href="#2709" id="2709">2709</a>
+<a href="#2710" id="2710">2710</a>
+<a href="#2711" id="2711">2711</a>
+<a href="#2712" id="2712">2712</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2732,7 +2742,9 @@
 };
 <span class="kw">use crate</span>::{
 	exec::{AccountIdOf, Key},
-	migration::{codegen::LATEST_MIGRATION_VERSION, v09, v10, v11, v12, v13, v14, MigrationStep},
+	migration::{
+		codegen::LATEST_MIGRATION_VERSION, v09, v10, v11, v12, v13, v14, v15, MigrationStep,
+	},
 	wasm::CallFlags,
 	Pallet <span class="kw">as </span>Contracts, <span class="kw-2">*</span>,
 };
@@ -2998,6 +3010,19 @@
 		m.step();
 	}
 
+	<span class="comment">// This benchmarks the v15 migration step (remove deposit account).
+	</span><span class="attr">#[pov_mode = Measured]
+	</span>v15_migration_step {
+		<span class="kw">let </span>contract = &lt;Contract&lt;T&gt;&gt;::with_caller(
+			whitelisted_caller(), WasmModule::dummy(), <span class="macro">vec!</span>[],
+		)<span class="question-mark">?</span>;
+
+		v15::store_old_contract_info::&lt;T&gt;(contract.account_id.clone(), contract.info()<span class="question-mark">?</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>m = v15::Migration::&lt;T&gt;::default();
+	}: {
+		m.step();
+	}
+
 	<span class="comment">// This benchmarks the weight of executing Migration::migrate to execute a noop migration.
 	</span><span class="attr">#[pov_mode = Measured]
 	</span>migration_noop {
@@ -3099,10 +3124,9 @@
 		<span class="kw">let </span>addr = Contracts::&lt;T&gt;::contract_address(<span class="kw-2">&amp;</span>caller, <span class="kw-2">&amp;</span>hash, <span class="kw-2">&amp;</span>input, <span class="kw-2">&amp;</span>salt);
 	}: <span class="kw">_</span>(origin, value, Weight::MAX, <span class="prelude-val">None</span>, code, input, salt)
 	verify {
-		<span class="kw">let </span>deposit_account = Contract::&lt;T&gt;::address_info(<span class="kw-2">&amp;</span>addr)<span class="question-mark">?</span>.deposit_account().clone();
-		<span class="kw">let </span>deposit = T::Currency::balance(<span class="kw-2">&amp;</span>deposit_account);
+		<span class="kw">let </span>deposit = T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::StorageDepositReserve.into(), <span class="kw-2">&amp;</span>addr);
 		<span class="comment">// uploading the code reserves some balance in the callers account
-		</span><span class="kw">let </span>code_deposit = T::Currency::total_balance_on_hold(<span class="kw-2">&amp;</span>caller);
+		</span><span class="kw">let </span>code_deposit = T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::CodeUploadDepositReserve.into(), <span class="kw-2">&amp;</span>caller);
 		<span class="macro">assert_eq!</span>(
 			T::Currency::balance(<span class="kw-2">&amp;</span>caller),
 			caller_funding::&lt;T&gt;() - value - deposit - code_deposit - Pallet::&lt;T&gt;::min_balance(),
@@ -3129,8 +3153,7 @@
 		Contracts::&lt;T&gt;::store_code_raw(code, caller.clone())<span class="question-mark">?</span>;
 	}: <span class="kw">_</span>(origin, value, Weight::MAX, <span class="prelude-val">None</span>, hash, input, salt)
 	verify {
-		<span class="kw">let </span>deposit_account = Contract::&lt;T&gt;::address_info(<span class="kw-2">&amp;</span>addr)<span class="question-mark">?</span>.deposit_account().clone();
-		<span class="kw">let </span>deposit = T::Currency::balance(<span class="kw-2">&amp;</span>deposit_account);
+		<span class="kw">let </span>deposit = T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::StorageDepositReserve.into(), <span class="kw-2">&amp;</span>addr);
 		<span class="comment">// value was removed from the caller
 		</span><span class="macro">assert_eq!</span>(
 			T::Currency::balance(<span class="kw-2">&amp;</span>caller),
@@ -3153,15 +3176,13 @@
 		<span class="kw">let </span>instance = Contract::&lt;T&gt;::with_caller(
 			whitelisted_caller(), WasmModule::dummy(), <span class="macro">vec!</span>[],
 		)<span class="question-mark">?</span>;
-		<span class="kw">let </span>deposit_account = instance.info()<span class="question-mark">?</span>.deposit_account().clone();
 		<span class="kw">let </span>value = Pallet::&lt;T&gt;::min_balance();
 		<span class="kw">let </span>origin = RawOrigin::Signed(instance.caller.clone());
 		<span class="kw">let </span>callee = instance.addr.clone();
 		<span class="kw">let </span>before = T::Currency::balance(<span class="kw-2">&amp;</span>instance.account_id);
-		<span class="kw">let </span>before_deposit = T::Currency::balance(<span class="kw-2">&amp;</span>deposit_account);
 	}: <span class="kw">_</span>(origin, callee, value, Weight::MAX, <span class="prelude-val">None</span>, data)
 	verify {
-		<span class="kw">let </span>deposit = T::Currency::balance(<span class="kw-2">&amp;</span>deposit_account);
+		<span class="kw">let </span>deposit = T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::StorageDepositReserve.into(), <span class="kw-2">&amp;</span>instance.account_id);
 		<span class="comment">// value and value transferred via call should be removed from the caller
 		</span><span class="macro">assert_eq!</span>(
 			T::Currency::balance(<span class="kw-2">&amp;</span>instance.caller),
@@ -3632,15 +3653,14 @@
 		});
 		<span class="kw">let </span>instance = Contract::&lt;T&gt;::new(code, <span class="macro">vec!</span>[])<span class="question-mark">?</span>;
 		<span class="kw">let </span>origin = RawOrigin::Signed(instance.caller.clone());
-		<span class="kw">let </span>deposit_account = instance.info()<span class="question-mark">?</span>.deposit_account().clone();
 		<span class="macro">assert_eq!</span>(T::Currency::total_balance(<span class="kw-2">&amp;</span>beneficiary), <span class="number">0u32</span>.into());
 		<span class="macro">assert_eq!</span>(T::Currency::balance(<span class="kw-2">&amp;</span>instance.account_id), Pallet::&lt;T&gt;::min_balance() * <span class="number">2u32</span>.into());
-		<span class="macro">assert_ne!</span>(T::Currency::balance(<span class="kw-2">&amp;</span>deposit_account), <span class="number">0u32</span>.into());
+		<span class="macro">assert_ne!</span>(T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::StorageDepositReserve.into(), <span class="kw-2">&amp;</span>instance.account_id), <span class="number">0u32</span>.into());
 	}: call(origin, instance.addr.clone(), <span class="number">0u32</span>.into(), Weight::MAX, <span class="prelude-val">None</span>, <span class="macro">vec!</span>[])
 	verify {
 		<span class="kw">if </span>r &gt; <span class="number">0 </span>{
 			<span class="macro">assert_eq!</span>(T::Currency::total_balance(<span class="kw-2">&amp;</span>instance.account_id), <span class="number">0u32</span>.into());
-			<span class="macro">assert_eq!</span>(T::Currency::total_balance(<span class="kw-2">&amp;</span>deposit_account), <span class="number">0u32</span>.into());
+			<span class="macro">assert_eq!</span>(T::Currency::balance_on_hold(<span class="kw-2">&amp;</span>HoldReason::StorageDepositReserve.into(), <span class="kw-2">&amp;</span>instance.account_id), <span class="number">0u32</span>.into());
 			<span class="macro">assert_eq!</span>(T::Currency::total_balance(<span class="kw-2">&amp;</span>beneficiary), Pallet::&lt;T&gt;::min_balance() * <span class="number">2u32</span>.into());
 		}
 	}

@@ -132,6 +132,7 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -154,9 +155,8 @@
 
 </span><span class="kw">use crate</span>::{
 	migration::{IsFinished, MigrationStep},
-	storage::DepositAccount,
 	weights::WeightInfo,
-	BalanceOf, CodeHash, Config, Pallet, TrieId, Weight, LOG_TARGET,
+	AccountIdOf, BalanceOf, CodeHash, Config, Pallet, TrieId, Weight, LOG_TARGET,
 };
 <span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">use </span>frame_support::{codec, pallet_prelude::<span class="kw-2">*</span>, storage_alias, DefaultNoBound};
@@ -164,15 +164,13 @@
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
 
 <span class="kw">mod </span>old {
-	<span class="kw">use </span><span class="kw">crate</span>::storage::DepositAccount;
-
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 	<span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	#[scale_info(skip_type_params(T))]
 	</span><span class="kw">pub struct </span>ContractInfo&lt;T: Config&gt; {
 		<span class="kw">pub </span>trie_id: TrieId,
-		<span class="kw">pub </span>deposit_account: DepositAccount&lt;T&gt;,
+		<span class="kw">pub </span>deposit_account: AccountIdOf&lt;T&gt;,
 		<span class="kw">pub </span>code_hash: CodeHash&lt;T&gt;,
 		<span class="kw">pub </span>storage_bytes: u32,
 		<span class="kw">pub </span>storage_items: u32,
@@ -192,9 +190,13 @@
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">pub fn </span>store_old_contract_info&lt;T: Config&gt;(account: T::AccountId, info: <span class="kw">crate</span>::ContractInfo&lt;T&gt;) {
+	<span class="kw">use </span>sp_runtime::traits::{Hash, TrailingZeroInput};
+	<span class="kw">let </span>entropy = (<span class="string">b&quot;contract_depo_v1&quot;</span>, account.clone()).using_encoded(T::Hashing::hash);
+	<span class="kw">let </span>deposit_account = Decode::decode(<span class="kw-2">&amp;mut </span>TrailingZeroInput::new(entropy.as_ref()))
+		.expect(<span class="string">&quot;infinite length input; no invalid inputs for type; qed&quot;</span>);
 	<span class="kw">let </span>info = old::ContractInfo {
 		trie_id: info.trie_id.clone(),
-		deposit_account: info.deposit_account().clone(),
+		deposit_account,
 		code_hash: info.code_hash,
 		storage_bytes: Default::default(),
 		storage_items: Default::default(),
@@ -213,7 +215,7 @@
 #[scale_info(skip_type_params(T))]
 </span><span class="kw">pub struct </span>ContractInfo&lt;T: Config&gt; {
 	trie_id: TrieId,
-	deposit_account: DepositAccount&lt;T&gt;,
+	deposit_account: AccountIdOf&lt;T&gt;,
 	code_hash: CodeHash&lt;T&gt;,
 	storage_bytes: u32,
 	storage_items: u32,

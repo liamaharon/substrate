@@ -1659,6 +1659,22 @@
 <a href="#1659" id="1659">1659</a>
 <a href="#1660" id="1660">1660</a>
 <a href="#1661" id="1661">1661</a>
+<a href="#1662" id="1662">1662</a>
+<a href="#1663" id="1663">1663</a>
+<a href="#1664" id="1664">1664</a>
+<a href="#1665" id="1665">1665</a>
+<a href="#1666" id="1666">1666</a>
+<a href="#1667" id="1667">1667</a>
+<a href="#1668" id="1668">1668</a>
+<a href="#1669" id="1669">1669</a>
+<a href="#1670" id="1670">1670</a>
+<a href="#1671" id="1671">1671</a>
+<a href="#1672" id="1672">1672</a>
+<a href="#1673" id="1673">1673</a>
+<a href="#1674" id="1674">1674</a>
+<a href="#1675" id="1675">1675</a>
+<a href="#1676" id="1676">1676</a>
+<a href="#1677" id="1677">1677</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -1848,7 +1864,7 @@
 	<span class="kw">use </span>sp_runtime::Perbill;
 
 	<span class="doccomment">/// The current storage version.
-	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">14</span>);
+	</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">const </span>STORAGE_VERSION: StorageVersion = StorageVersion::new(<span class="number">15</span>);
 
 	<span class="attr">#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
@@ -2560,6 +2576,20 @@
 			<span class="doccomment">/// The code hash that was delegate called.
 			</span>code_hash: CodeHash&lt;T&gt;,
 		},
+
+		<span class="doccomment">/// Some funds have been transferred and held as storage deposit.
+		</span>StorageDepositTransferredAndHeld {
+			from: T::AccountId,
+			to: T::AccountId,
+			amount: BalanceOf&lt;T&gt;,
+		},
+
+		<span class="doccomment">/// Some storage deposit funds have been transferred and released.
+		</span>StorageDepositTransferredAndReleased {
+			from: T::AccountId,
+			to: T::AccountId,
+			amount: BalanceOf&lt;T&gt;,
+		},
 	}
 
 	<span class="attr">#[pallet::error]
@@ -2660,6 +2690,8 @@
 	</span><span class="kw">pub enum </span>HoldReason {
 		<span class="doccomment">/// The Pallet has reserved it for storing code on-chain.
 		</span>CodeUploadDepositReserve,
+		<span class="doccomment">/// The Pallet has reserved it for storage deposit.
+		</span>StorageDepositReserve,
 	}
 
 	<span class="doccomment">/// A mapping from a contract&#39;s code hash to its code.
