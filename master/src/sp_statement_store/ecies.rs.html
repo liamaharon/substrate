@@ -245,7 +245,7 @@
 <span class="doccomment">/// Encrypt `plaintext` with the given public x25519 public key. Decryption can be performed with
 /// the matching secret key.
 </span><span class="kw">pub fn </span>encrypt_x25519(pk: <span class="kw-2">&amp;</span>PublicKey, plaintext: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Error&gt; {
-	<span class="kw">let </span>ephemeral_sk = x25519_dalek::StaticSecret::new(OsRng);
+	<span class="kw">let </span>ephemeral_sk = x25519_dalek::StaticSecret::random_from_rng(OsRng);
 	<span class="kw">let </span>ephemeral_pk = x25519_dalek::PublicKey::from(<span class="kw-2">&amp;</span>ephemeral_sk);
 
 	<span class="kw">let </span><span class="kw-2">mut </span>shared_secret = ephemeral_sk.diffie_hellman(pk).to_bytes().to_vec();
@@ -309,7 +309,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>basic_x25519_encryption() {
-		<span class="kw">let </span>sk = SecretKey::new(OsRng);
+		<span class="kw">let </span>sk = SecretKey::random_from_rng(OsRng);
 		<span class="kw">let </span>pk = PublicKey::from(<span class="kw-2">&amp;</span>sk);
 
 		<span class="kw">let </span>plain_message = <span class="string">b&quot;An important secret message&quot;</span>;
@@ -333,7 +333,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>fails_on_bad_data() {
-		<span class="kw">let </span>sk = SecretKey::new(OsRng);
+		<span class="kw">let </span>sk = SecretKey::random_from_rng(OsRng);
 		<span class="kw">let </span>pk = PublicKey::from(<span class="kw-2">&amp;</span>sk);
 
 		<span class="kw">let </span>plain_message = <span class="string">b&quot;An important secret message&quot;</span>;

@@ -2763,11 +2763,11 @@
 		{
 			<span class="kw">use </span>ed25519_dalek::Verifier;
 
-			<span class="kw">let </span><span class="prelude-val">Ok</span>(public_key) = ed25519_dalek::PublicKey::from_bytes(<span class="kw-2">&amp;</span>pub_key.<span class="number">0</span>) <span class="kw">else </span>{
+			<span class="kw">let </span><span class="prelude-val">Ok</span>(public_key) = ed25519_dalek::VerifyingKey::from_bytes(<span class="kw-2">&amp;</span>pub_key.<span class="number">0</span>) <span class="kw">else </span>{
 				<span class="kw">return </span><span class="bool-val">false
 			</span>};
 
-			<span class="kw">let </span><span class="prelude-val">Ok</span>(sig) = ed25519_dalek::Signature::from_bytes(<span class="kw-2">&amp;</span>sig.<span class="number">0</span>) <span class="kw">else </span>{ <span class="kw">return </span><span class="bool-val">false </span>};
+			<span class="kw">let </span>sig = ed25519_dalek::Signature::from_bytes(<span class="kw-2">&amp;</span>sig.<span class="number">0</span>);
 
 			public_key.verify(msg, <span class="kw-2">&amp;</span>sig).is_ok()
 		} <span class="kw">else </span>{
