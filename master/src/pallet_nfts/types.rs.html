@@ -680,7 +680,7 @@
 </span><span class="attr">#[derive(Clone, Encode, Decode, Default, Eq, PartialEq, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub struct </span>MintWitness&lt;ItemId, Balance&gt; {
 	<span class="doccomment">/// Provide the id of the item in a required collection.
-	</span><span class="kw">pub </span>owned_item: ItemId,
+	</span><span class="kw">pub </span>owned_item: <span class="prelude-ty">Option</span>&lt;ItemId&gt;,
 	<span class="doccomment">/// The price specified in mint settings.
 	</span><span class="kw">pub </span>mint_price: <span class="prelude-ty">Option</span>&lt;Balance&gt;,
 }

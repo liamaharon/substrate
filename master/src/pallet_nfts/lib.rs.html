@@ -1898,6 +1898,7 @@
 <a href="#1898" id="1898">1898</a>
 <a href="#1899" id="1899">1899</a>
 <a href="#1900" id="1900">1900</a>
+<a href="#1901" id="1901">1901</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -2562,7 +2563,7 @@
 		///
 		/// The origin must be Signed and the sender must have sufficient funds free.
 		///
-		/// `ItemDeposit` funds of sender are reserved.
+		/// `CollectionDeposit` funds of sender are reserved.
 		///
 		/// Parameters:
 		/// - `admin`: The admin of this collection. The admin is the initial address of each
@@ -2744,6 +2745,7 @@
 						MintType::HolderOf(collection_id) =&gt; {
 							<span class="kw">let </span>MintWitness { owned_item, .. } =
 								witness_data.clone().ok_or(Error::&lt;T, I&gt;::WitnessRequired)<span class="question-mark">?</span>;
+							<span class="kw">let </span>owned_item = owned_item.ok_or(Error::&lt;T, I&gt;::BadWitness)<span class="question-mark">?</span>;
 
 							<span class="kw">let </span>owns_item = Account::&lt;T, I&gt;::contains_key((
 								<span class="kw-2">&amp;</span>caller,
