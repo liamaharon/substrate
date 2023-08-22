@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["aggregate_claims","aggregate_polys","group_by_commitment"],"struct":["MultipointClaim"],"trait":["Transcript"]};

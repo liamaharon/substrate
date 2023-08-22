@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["SMALL_COFACTOR_BOUND"],"fn":["mul_by_small_cofactor","small_cofactor_affine","small_cofactor_projective","zero_mod_small_cofactor"],"mod":["error","keys","traits","vrf"],"struct":["NonBatchable","PedersenVrf","Signature","ThinVrf","Transcript"],"trait":["Flavor","IntoTranscript"]};

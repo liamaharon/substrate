@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["fq","fr"],"struct":["EdwardsConfig","FqConfig","FrConfig"],"type":["EdwardsAffine","EdwardsProjective","Fq","Fr"]};

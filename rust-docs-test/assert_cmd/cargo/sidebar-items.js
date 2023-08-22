@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["cargo_bin"],"struct":["CargoError"],"trait":["CommandCargoExt"]};

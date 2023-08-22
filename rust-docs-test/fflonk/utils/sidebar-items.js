@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["curve_name","powers"],"mod":["ec","poly"]};

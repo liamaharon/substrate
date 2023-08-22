@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Arkworks friendly transcripts for proofs using Fiat-Shamir"><title>ark_transcript - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-f3501f0f5ae15dfb.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="ark_transcript" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.1 (eb26296b5 2023-08-03)" data-search-js="search-4926e5fc22a5646a.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-f0540c1d82cde29b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../ark_transcript/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../ark_transcript/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Crate ark_transcript</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 0.0.2</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#traits">Traits</a></li><li><a href="#functions">Functions</a></li><li><a href="#types">Type Definitions</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">ark_transcript</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../src/ark_transcript/lib.rs.html#8-518">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h4 id="arkworks-friendly-transcripts-for-proofs-using-fiat-shamir"><a href="#arkworks-friendly-transcripts-for-proofs-using-fiat-shamir">Arkworks friendly transcripts for proofs using Fiat-Shamir</a></h4>
+<p>A simple wrapper around shake128 which provides transcript aka
+tuple-hash style hashing for simple safe domain seperation, but
+compatible with an <code>io::Write</code> interface for simple idomatic
+integration into arkworks.</p>
+<p>We do basic domain seperation using postfix writes of the lengths
+of written data, as opposed to the prefix writes done by merlin, 
+TupleHash from <a href="https://csrc.nist.gov/publications/detail/sp/800-185/final">SP 800-185</a>,
+since postfix writes simplify polymorphic code.</p>
+<h4 id="why-not-merlin"><a href="#why-not-merlin">Why not merlin?</a></h4>
+<p>A trascript flavored hash like <a href="https://merlin.cool/">merlin</a>
+(<a href="https://docs.rs/merlin/latest/merlin/">docs</a>) simplifies protocol
+development by somewhat abstracting away domain seperation.</p>
+<p>Although merlin works fine in the dalek ecosystem, we discovered its
+prefix length convention fits poorly with ecosystems like arkworks or
+other zcash derivatives, which serialize and hash via the <code>io::Write</code>
+trait or similar.</p>
+<p>An <code>io::Write</code> instance should treat <code>h.write(xs);</code> exactly like
+<code>for x in xs { h.write(x); }</code> so <code>write</code> cannot directly wrape
+merlin’s <code>append_bytes</code>.  In principle, one could still provide
+merlin extension traits which serialize fully monomorphized arkworks
+types into buffers, and then appends those to the merlin transcript.
+Arkworks strives for polymorphism however, which while complex when
+doing cryptography, brings many advantages.</p>
+<p>Idiomatic rust should minimize allocations.  Also, zeroing secrets
+appears easier or more natrual on the stack.  Those buffers should
+thus live on the stack, not the heap.  Yet, rust still lacks dynamic
+stack allocations ala alloca in C!</p>
+<p>We know several hacky solutions of course, with diverse annoyances.
+Yet, there is no good reason why a trascript style hasher should not
+support <code>io::Write</code> natively, but doing this directly demands a
+postfix length convention.</p>
+<p>As a minor cost for us, any users whose hashing involves multiple
+code paths should ensure they invoke label between arkworks types
+and user data with possibly zero length.</p>
+<p>Aside from postfix lengths..</p>
+<p>There do exist people who feel STROBE maybe overkill, unfamiliar,
+or not widely available.  Almost all sha3 implementations provide
+shake128, making this transcript simple, portable, etc.</p>
+<p>We also “correct” merlin’s excessively opinionated requirement of
+<code>&amp;'static [u8]</code>s for labels, which complicates some key management
+practices.</p>
+<h4 id="accumulation"><a href="#accumulation">Accumulation</a></h4>
+<p>We support accumulating hashed data in a <code>Vec&lt;u8&gt;</code>, which users could
+then transport to a remote signer for actual signing or proving.
+Although possible in principle, we do not reparse this accumulated data,
+but regardless the accumulation should not break any domain seperation
+that occurs inside the remore signer.</p>
+<p>Ideally, accumulations should’ve applications specific labels both
+prefixed inside the accumulations and postfixed by the remote signer.
+A remote signer could check this prefix of course, but applying a
+postfix label should suffice given we use Shake128.</p>
+<p>We have a <code>debug-transcript</code> feature similar to merlin as well.</p>
+</div></details><h2 id="reexports" class="small-section-header"><a href="#reexports">Re-exports</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.digest"><code>pub use <a class="mod" href="../digest/index.html" title="mod digest">digest</a>;</code></div></li></ul><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="debug/index.html" title="mod ark_transcript::debug">debug</a></div></li></ul><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.IsLabel.html" title="struct ark_transcript::IsLabel">IsLabel</a></div><div class="desc docblock-short">Identify a byte slice as a label, which requires this not be
+user controlled data.</div></li><li><div class="item-name"><a class="struct" href="struct.Reader.html" title="struct ark_transcript::Reader">Reader</a></div><div class="desc docblock-short">Shake128 transcript style XoF reader, used for both 
+Fiat-Shamir challenges and witnesses.</div></li><li><div class="item-name"><a class="struct" href="struct.Transcript.html" title="struct ark_transcript::Transcript">Transcript</a></div><div class="desc docblock-short">Shake128 transcript style hasher.</div></li></ul><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.AsLabel.html" title="trait ark_transcript::AsLabel">AsLabel</a></div><div class="desc docblock-short">Trascript labels.</div></li><li><div class="item-name"><a class="trait" href="trait.IntoTranscript.html" title="trait ark_transcript::IntoTranscript">IntoTranscript</a></div><div class="desc docblock-short">All types interpretable as <code>Transcript</code>s, including primarily
+<code>impl BorrowMut&lt;Traanscript&gt;</code> types like <code>Transcript</code> and
+<code>&amp;mut Transcript</code>.</div></li></ul><h2 id="functions" class="small-section-header"><a href="#functions">Functions</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.xof_read_reduced.html" title="fn ark_transcript::xof_read_reduced">xof_read_reduced</a></div></li></ul><h2 id="types" class="small-section-header"><a href="#types">Type Definitions</a></h2><ul class="item-table"><li><div class="item-name"><a class="type" href="type.Shake128.html" title="type ark_transcript::Shake128">Shake128</a></div><div class="desc docblock-short">SHAKE128
+hasher state.</div></li></ul></section></div></main></body></html>

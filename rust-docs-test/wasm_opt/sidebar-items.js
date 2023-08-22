@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Feature","FeatureBaseline","FileType","OptimizationError","OptimizeLevel","Pass","ShrinkLevel"],"mod":["integration"],"struct":["Features","InliningOptions","OptimizationOptions","PassOptions","Passes","ReaderOptions","WriterOptions"]};

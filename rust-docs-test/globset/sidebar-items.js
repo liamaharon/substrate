@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ErrorKind"],"struct":["Candidate","Error","Glob","GlobBuilder","GlobMatcher","GlobSet","GlobSetBuilder"]};

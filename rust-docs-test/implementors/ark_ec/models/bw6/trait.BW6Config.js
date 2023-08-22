@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"ark_bw6_761":[["impl <a class=\"trait\" href=\"ark_ec/models/bw6/trait.BW6Config.html\" title=\"trait ark_ec::models::bw6::BW6Config\">BW6Config</a> for <a class=\"struct\" href=\"ark_bw6_761/struct.Config.html\" title=\"struct ark_bw6_761::Config\">Config</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

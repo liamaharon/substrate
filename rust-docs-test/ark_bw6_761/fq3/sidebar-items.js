@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Fq3Config"],"type":["Fq3"]};

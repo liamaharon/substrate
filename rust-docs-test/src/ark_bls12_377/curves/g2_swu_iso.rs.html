@@ -1,0 +1,915 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `/Users/liamaharon/.cargo/registry/src/index.crates.io-6f17d22bba15001f/ark-bls12-377-0.4.0/src/curves/g2_swu_iso.rs`."><title>g2_swu_iso.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-f3501f0f5ae15dfb.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="ark_bls12_377" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.1 (eb26296b5 2023-08-03)" data-search-js="search-4926e5fc22a5646a.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../static.files/source-script-11255107d0a65077.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-f0540c1d82cde29b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../ark_bls12_377/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<a href="#2" id="2">2</a>
+<a href="#3" id="3">3</a>
+<a href="#4" id="4">4</a>
+<a href="#5" id="5">5</a>
+<a href="#6" id="6">6</a>
+<a href="#7" id="7">7</a>
+<a href="#8" id="8">8</a>
+<a href="#9" id="9">9</a>
+<a href="#10" id="10">10</a>
+<a href="#11" id="11">11</a>
+<a href="#12" id="12">12</a>
+<a href="#13" id="13">13</a>
+<a href="#14" id="14">14</a>
+<a href="#15" id="15">15</a>
+<a href="#16" id="16">16</a>
+<a href="#17" id="17">17</a>
+<a href="#18" id="18">18</a>
+<a href="#19" id="19">19</a>
+<a href="#20" id="20">20</a>
+<a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
+<a href="#29" id="29">29</a>
+<a href="#30" id="30">30</a>
+<a href="#31" id="31">31</a>
+<a href="#32" id="32">32</a>
+<a href="#33" id="33">33</a>
+<a href="#34" id="34">34</a>
+<a href="#35" id="35">35</a>
+<a href="#36" id="36">36</a>
+<a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
+<a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
+<a href="#42" id="42">42</a>
+<a href="#43" id="43">43</a>
+<a href="#44" id="44">44</a>
+<a href="#45" id="45">45</a>
+<a href="#46" id="46">46</a>
+<a href="#47" id="47">47</a>
+<a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span>ark_ec::{
+    hashing::curve_maps::{swu::SWUConfig, wb::IsogenyMap},
+    models::{
+        short_weierstrass::{Affine, SWCurveConfig},
+        CurveConfig,
+    },
+};
+<span class="kw">use </span>ark_ff::MontFp;
+
+<span class="kw">use crate</span>::{g2, Fq2, Fr};
+
+<span class="kw">type </span>G2Affine = Affine&lt;SwuIsoConfig&gt;;
+
+<span class="attr">#[derive(Clone, Default, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>SwuIsoConfig;
+
+<span class="kw">impl </span>CurveConfig <span class="kw">for </span>SwuIsoConfig {
+    <span class="kw">type </span>BaseField = Fq2;
+    <span class="kw">type </span>ScalarField = Fr;
+
+    <span class="doccomment">/// COFACTOR =
+    /// 7923214915284317143930293550643874566881017850177945424769256759165301436616933228209277966774092486467289478618404761412630691835764674559376407658497
+    /// same as the original g2 curve
+    /// sage: iso_G2.domain().order() == iso_G2.codomain().order()
+    /// True
+    </span><span class="attr">#[rustfmt::skip]
+    </span><span class="kw">const </span>COFACTOR: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[u64] = <span class="kw-2">&amp;</span>[
+        <span class="number">0x0000000000000001</span>,
+        <span class="number">0x452217cc90000000</span>,
+        <span class="number">0xa0f3622fba094800</span>,
+        <span class="number">0xd693e8c36676bd09</span>,
+        <span class="number">0x8c505634fae2e189</span>,
+        <span class="number">0xfbb36b00e1dcc40c</span>,
+        <span class="number">0xddd88d99a6f6a829</span>,
+        <span class="number">0x26ba558ae9562a</span>,
+    ];
+
+    <span class="doccomment">/// COFACTOR_INV = COFACTOR^{-1} mod r
+    /// = 6764900296503390671038341982857278410319949526107311149686707033187604810669
+    </span><span class="kw">const </span>COFACTOR_INV: Fr =
+        <span class="macro">MontFp!</span>(<span class="string">&quot;6764900296503390671038341982857278410319949526107311149686707033187604810669&quot;</span>);
+}
+
+<span class="comment">// sage: E2p = iso_G2.domain()
+// sage: r = 8444461749428370424248824938781546531375899335154063827935233455917409239041
+// sage: E2p.order()/r
+// 7923214915284317143930293550643874566881017850177945424769256759165301436616933228209277966774092486467289478618404761412630691835764674559376407658497
+// sage: E2p
+// Elliptic Curve defined by y^2 = x^3 +
+// (69357795553467368835766998649443114298653120475771922004522583893765862042427351483161253261358624703462995261783*
+// X2+203567575243095400658685394654545117908398249146024925306257919445062693445414588103741379252427065422417496933054)*
+// x + (806998283981877041862626354975415285020485827233942100233224759047656510577433749137260740227904569833498998565*
+// X2+249039961697346248294162904170316935273494032138504221215795383014884687447192317932476994472315647695087734549420)
+// over Finite Field in X2 of size
+// 258664426012969094010652733694893533536393512754914660539884262666720468348340822774968888139573360124440321458177^2
+</span><span class="kw">impl </span>SWCurveConfig <span class="kw">for </span>SwuIsoConfig {
+    <span class="doccomment">/// COEFF_A =
+    </span><span class="attr">#[rustfmt::skip]
+    </span><span class="kw">const </span>COEFF_A: Fq2 = Fq2::new(
+                                    <span class="macro">MontFp!</span>(<span class="string">&quot;203567575243095400658685394654545117908398249146024925306257919445062693445414588103741379252427065422417496933054&quot;</span>),
+                                    <span class="macro">MontFp!</span>(<span class="string">&quot;69357795553467368835766998649443114298653120475771922004522583893765862042427351483161253261358624703462995261783&quot;</span>),
+    );
+
+    <span class="doccomment">/// COEFF_B =
+    </span><span class="attr">#[rustfmt::skip]
+    </span><span class="kw">const </span>COEFF_B: Fq2 = Fq2::new(
+        <span class="macro">MontFp!</span>(<span class="string">&quot;249039961697346248294162904170316935273494032138504221215795383014884687447192317932476994472315647695087734549420&quot;</span>),
+        <span class="macro">MontFp!</span>(<span class="string">&quot;806998283981877041862626354975415285020485827233942100233224759047656510577433749137260740227904569833498998565&quot;</span>),
+    );
+
+    <span class="kw">const </span>GENERATOR: G2Affine = G2Affine::new_unchecked(G2_GENERATOR_X, G2_GENERATOR_Y);
+}
+
+<span class="kw">const </span>G2_GENERATOR_X: Fq2 = Fq2::new(
+    <span class="macro">MontFp!</span>(<span class="string">&quot;44471777796618567688228760095584248343372454885978087674329841655595593880133139294404651664057692271364857231527&quot;</span>),
+    <span class="macro">MontFp!</span>(<span class="string">&quot;152209914092745808277594956866181055187624831129109767937025242463317365117655129123148193049673425418513926319001&quot;</span>),
+);
+<span class="kw">const </span>G2_GENERATOR_Y: Fq2 = Fq2::new(
+        <span class="macro">MontFp!</span>(<span class="string">&quot;115206687171448860889110309021279060303629519187879257051215751573842462972180856243991157572371972099444077110343&quot;</span>),
+<span class="macro">MontFp!</span>(<span class="string">&quot;191377956145194479040228903677940355038998863371661730030204479850936075480341608934735952709786495341106477933498&quot;</span>),
+);
+
+<span class="kw">impl </span>SWUConfig <span class="kw">for </span>SwuIsoConfig {
+    <span class="comment">// sage: F2.primitive_element()
+    // X2 + 12
+    </span><span class="kw">const </span>ZETA: Fq2 = Fq2::new(<span class="macro">MontFp!</span>(<span class="string">&quot;12&quot;</span>), <span class="macro">MontFp!</span>(<span class="string">&quot;1&quot;</span>)); <span class="comment">// arbitatry primitive root of unity (element)
+</span>}
+<span class="kw">pub const </span>ISOGENY_MAP_TO_G2  : IsogenyMap&lt;<span class="lifetime">&#39;_</span>, SwuIsoConfig, g2::Config&gt; = IsogenyMap {
+    x_map_numerator : <span class="kw-2">&amp;</span>[
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;165752316658948679552567650341600213993620343632797226373648182250196112194084163699689918190990441453209217107673&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;172182978063994664796636281648715261218877265445686511820228400278128135165425091257965367402286789184662480399420&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;49078863819486020728803126419770411403544927967564775122533948145670810135602221046611632159195633125363688522753&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;133330677606878026253733532636681674371349711466687180056118155523679405609126901243884039337337134962627419965345&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;88440326308038176392218244342168484162310820452393341528824316035047758188693394849605113877264996124652991932266&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;26460985441766134300772651139298255538590921173641559533448371120006177647448359485069994828122162245692248966113&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;240831597672798022181780196442988629902557797416422752447288392631352072879531084668083129009311685341499602842359&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;124795068789978952575783920730487695370136831800946532752608526840944057283524691812795315973894625798220920082767&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;231856156439094824000656216233999389240375109059054378946071472571709648546048606758615235778059505184730503731408&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;134026238756820071135251263743482298414233385640297868129438877114735051445009051866011097877494554014116371908672&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;161628978970526519329329822295337582413127505041035400390544637404697415598883543152357105789965717470570494458589&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;116602947282570158568911982642223012726308726836613908383578383334370050655181609483409110122767402070015216413338&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;231615170079008089001496386178968115998492752668752266579314749799030868007672086089822600816657899022828734321418&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;141639542381992520856560441410242716791591163086143661904501184306161835850893036003163803884002896297253767009574&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;96957224446676123824350918241672464825735454895610578698586352322390662445273628285471423071856275085141118045105&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;97587419381711441517698658129839468394457401157021696651597713140291602428957555768352336399994179660880524139808&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;18662780664429933771192510151421557554668611953190652639195940454142648933454488952361465779870877163142807899993&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;55517007457989983858891530398020104232682844055600438506715652841000901588962918721851719951820185832313468320365&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;188864327416940344326229259749844123042825201085435432627935318423081174922012610651352346391417830722940140585036&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;233542978062801907184831603532041452683131033894029390005010898310417350737942550513935694209129350870817277172583&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;33702103741469458207888758659069786556456463428431771947788685622778743201883736580054112022350187936628758294279&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;7531651998638745138624528632013700806848273210661661935097722938692087106885113623803921367479582718152259987647&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;129405180560592211762572081137246817341681076084973348177153469170177032429929182033872985192027066614650754524309&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;71494892585734577638768956295356005795556178117525317604450863442514001295461407965931789120761632296953990284809&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;121805396188033590038927712795579559087103093135515082191363074395734682090746320669474388875423586929711608364404&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;75932324143801627944771670190157701465835368459121478812142087933983158148741884038298732552979549182443318608554&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;205121513164720886728676669276499362266139599046368626660027529707299170205603076104821498121463983514654737906998&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;168051662766288660516992486993594951443897767271245608184500932350745292043277998040372769419920145370014740823389&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;224387508661509885922784938707800296916307265709615639996851552571542396031861010679067114387017955365668256976459&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;139097554917981907719834170888130444861465074977932740823078016609751284491153969166862091045221603146530147099779&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;142477190388553987083175296028785369398580520754966744245694134692905987471896623788336582063245356609279657681007&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;140302880976816076816721836344737338071783799730513599397010923016385668972882234545823525686327074617973208860421&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;205538184807792915395400814312734290381492118179294333381188081024280220461983210331268164749465891791515156713363&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;13030331252003455924520111292282390143014750833628314421882396445822808054003584720817672388894671968339344750750&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;139197805910452438551419010260519164074855817417063470117576949912038778696248952069759607969690314639425179841530&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;134745690770497208213126494241047670387239583870118646766457825646403640347226342104549240830903829682059982326727&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;46999088780962505530452862218145506822520603893157196954987630663398814970386085186714696215299498862118704356116&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;239220883081126775212690475926873251881459118214247205003758844846022330659109168499739536107988232402392010148915&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;137461512605659170682300574841422927080299499340556631216517745531687218204749421916211266297116812992348911035943&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;126932856673577834557989832150639712812952235385146245135235966945536973066700604316981524138335070494135486842267&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;57815299880375466472857931022912171296473275308202666945592250229771936329503691945881925004852905385160277065937&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;207900273391847649346738694548609379565855077833395139615718913929125517933139374225345876078131155102796477330196&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;182397511129719455005407008314265069548677727690813781407770284951663734172103638427690475141072553074575221965383&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;225121846650282460844501132545123914298308844633699320249517374760159461135641190512758348530493533776082794775238&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;42757221749971324771094873984161893488770713619971906650868412147150411626107692517374735631529074208182971223761&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;111424637101855455933266154646364284011426845669269128135151076357862608862363255550023430066507374024948118755170&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;257686488674545770403807165703608491821700153538449954828958424244540050698630649531963334687249831352703307010320&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;0&quot;</span>)),
+    ],
+
+    x_map_denominator : <span class="kw-2">&amp;</span>[
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;196537929755540830130458921156910352741196129560556501635658595085779576490417628044619830744899117989899096675116&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;106967816747202586221026040614608875779671819314280336591550617355334247302203894951925800601923998790402234025494&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;73314120416427646620569455169905724114883313094893949291513517502168861559767103394033744003864213510722887906274&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;38999017135204040984255776995893429123212353273299706702441986090800506456890730978953545316903022073202240280957&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;133779461364688439286044255858523747234865723284672664672066362220940987786797573428234566651244275384657571315397&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;154931903368935230733381648548242132592387960818255334523314635613616976204585469590179605887364646535250639335453&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;247957910140234524214324761874381439955705875777136703199106095643204254634304448830280410483013931961038942096519&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;214943806307523271117409515396321303330984956986022871981067208079182219051826091487389512723678609613943324945884&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;11697862001088266121450094179739500241088837734277696824118211258364151630931186792937914301859707394679202145393&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;95980723944521770226526824868742386994509079773043937452565624851192578861364669763702851513923262074687274763858&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;168096269708683796856556357930292925811554548435612382636199127159818409693729567946366892866365435246772528367031&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;99720174640078175171062115168656883367851695095484071724968247253018133737453004325770034298778522431209097310502&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;33059404918884325948584592996172619413923041143099424466021368531149134447772287601175965141235934645074697267050&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;10757428905957703588038877674336794621171834192483169256644941002565404396356505770991807551250572677872221995215&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;142027935684179419855710336591935481541662612521926997142809731189880364304749483394981554800161483370077741056896&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;1943403947563275150997369785095274118967148389261968103605246462390957897712088493386683316483490223770940902453&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;200535851812830711305923885193456283997079838967145939474743725430895019937175928830731575175640901984178880783011&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;73874168720549156282270730246833500558176745413797996774310087510749148634278604002052708223696920208907646881989&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;220384543328043309613139993483671702409123249316603413540407457441864555087013622511692877380446192851630287225413&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;39000405073743042346296304484168728185850505353133307908773204457381817815206498660334035187329579833299098854925&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;219195224293908756855578672234544437367397890301565855376597788842679778002659222115121213889017072727428356719234&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;247894577734607804564008327202067464850944943412136922154651844411293409127507835027401641672218158657943826643185&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;146699001487357489560227247646638441970227213145065178169054120124066032784405371946823057532199624317631250110158&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;196336324454181158449524835117699225596467237400207491815838252818724619960701247377784788803043096102210425517795&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;155939253194251956164424003889230633804182501306742152137449150503013281009623802843490858570697615902305132709111&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;172261303485740204844677209985093962119870302741179905216184157502752680126595180139007438892219460422745105017475&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;137972103666241533333852948884443545062916813938500094392929132716673981519930321922556812217620174550912349461419&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;47600282095791674213992406796226738606147801920837771594412659335039656256887529097801732359033209329929517773020&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;135098057022357227608956235549944366234286127511416070373827898662879730495316177891045223676768538262860577751087&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;218641591773893348322227471378547165043111820723080862748702228639502320411481947789769811366015509814793754417785&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;228687493726193558146661770435566220015197012398911029567178581932152080915557441338298274247922585720118620741642&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;48223421552324743764826987807666420223567068651197810526658625431719723647078135623842652870214605734395702563953&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;82401683815523491481199527201592079745651015539510634295850130611233688561451492330603949648060220533354045095181&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;159070381032762485827712709726121404273458384870681735035622289092845201234785949112608113110663482448286550123895&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;61539107135026562717413992304341045078777699607129438878970720148394005607774781361280841945254066290447512808860&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;258564647705165711537697112631909171171984598885182416737094411313452565619624851452883996847677936536536427515609&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;219867891253233227579149075701158020315633373195728794672342716359369374905471205886891783929214978430681990036959&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;40524381030862708561992431051313657250449208728762250622105264621614810013551839533882876237430311293361821844681&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;88800087516399959501800534486349824688877578947555023348699585957763763180753947498274724426567091309571649023166&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;122245180850560437899129167839042992977076962956306963014567407897293197200681367630073717776421484831646532593850&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;69204740140688189359361744597982172008615446130082862488352885921056331761951244674105352971861180999345144984246&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;38216467720351249271557670250657907497353617320059247139049052120842234439257669911851800147147313339669901995490&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;114765242606519624982400506165904237893471895287563151339459173837887003905317760268941880935997925302483810508170&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;226808321937551848279625259185874129283473963677740840941191767963773773116795416044456897499248110949601850478751&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;1&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;0&quot;</span>)),
+    ],
+
+    y_map_numerator : <span class="kw-2">&amp;</span>[
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;243169287995837894205750503657473181252400776697661357268613577074201794943537027717771587727860769419520957117060&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;154445371651863854130996979206021232172872232688365227537444264835087932826365764405635125797374865965304745730822&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;109149004424675517113489432756837393820953128532207867425106578478986226345054217066591849467433110788215195319750&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;30408441237651674477115309504276625429344634933425091999725383701660094027885762738289460271315609173544614563248&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;8414285408102090292522571401032945098403423241877066651551931468973120658567171350501434823318074450118610388181&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;226047422399128874433860903177676209375847937545805175562415311468986239012130226120019081492247088609694678876810&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;228308803559737454633222698485074629499383737811342884536963429506633258142551503400414163815852158951494613610809&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;220909287290837789818195731110558629271153823543746871132117978761339034747123501189473420274677281822601971748563&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;116623955280658732717402646061913268461869836841204913444259922610012147799771656282704605878638711580234302879520&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;251345693404812657374633929641944735274020119374936409701199723189056283828393555325905238148261248120379910778583&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;142632909729670553826438094523500302011158161959746397893981306350515911350319381478896794266740222044724793183031&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;135097007131619291616144192105571840182910366835929043414300810591005223344182310684819863256436016908585466099814&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;159262246805999098136860288248138175456624792734939305704793543040582454889431805248352849370505960249829264037333&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;256411146327954053251262434650444473133439725697572806395735688747939610541453396276159230618136278790246160635595&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;106675525854808944323662773997719159035717496275254424840883415090817949089664218352587480756720528552217297479523&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;142202207982399429498494980946602932891398916434890751210930378360132151108127041093945093575972538591541631204396&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;115853993705912938985758922127173369175321347209545356726288637524744651943071927137158115778405271676616612170666&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;188439202506521797668192307957766105517906171778775206324453830870041256388075168650527562921934698697140423464142&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;199891426461397900698689228549412057991574595606781836622700872746783962617889812808189413859146835266670353365164&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;123487321384490387195094801639396482206262484603737596281845841408384878196277195829349272799617445074531384638014&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;203453160391122297114764634999687500867096029894782931052056493086745424054313508850135956093450854351511962568248&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;3933321808920817665892338621688661599151270488240879901971434149901647580182088988848276352998263499828820719486&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;216229669548325266866202681779047392389311278655704899819569794547799955366773265486059541504823551138048188296915&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;41448968894064940344019909320065089603789758666259308674991068396259424208998703895462327945020441899649105710894&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;202678826482051686554967485240375873611017127444692775767942717540980994219310434688309713205309853725035377739266&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;48778316120483961415587198479185523835826749642473845435889717611018677968038563827240090688089889339896065735651&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;43364741387169348753014627410136368149262698966106150910900756728904165177527487078077667350512959263803465594111&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;61944739699039529393579599024212698483276675572994284564132452254474389809816373777333943401872462638231436446348&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;1902545032251691771730077590223241149624964994150687591044314892275508885163105731414463515832696686914784357054&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;67221897212365550931740188657735915316732820967428518278153545138481072202717711417949297443415145931349647354864&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;232464396645736057215489125286424902556417590819993013568149210848680788030572385843387291711255018198764185991688&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;41800154023275681622180037448850007404785328883356603798952195956734186941687720006035939799906615555216990599152&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;187038260664272653235271156369560372695631446985830424056061915935191103410794701043280599214000281588074544657045&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;38290302770763423573829549940707041833171456153861823771988991461936307395626028842226881832323571911777783325552&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;8193038016485856982946817225511231096542148907426451941320763511467909442967073658628847889502238964737537651732&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;9418692556935347898382092734571186686450013671235254851703843297990915553970523788207837029694342875454233715193&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;134073844001083825421215848942909782702386338984309026786345170296027964134133613977422644522116018820345983847098&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;153830492090479629579603390014414329445124716355506854714467139884353350218676155251380590350715220577136073627555&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;24894203921911934571199160858232802417038583022586807490232139245280305064770051397858560092019807972764914216208&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;120208242722200714489749801697072499732825359039071841003310452443348308205795253556381720202955786470886397257982&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;190392008574458975806418600277835706985376229847531539152452591238358119216217627352637258288556199770365835067627&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;236947842470057836630333692287445445381482585314120394670322793497639860754696181540315462907276465780536189751938&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;128014602802339573117431114877417430852771121268703430430938496966993823548956133449208721198231566864014207876438&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;76313913933214383311039506294052736258824720597935452573279680967713148986901401959316819572744945391130691484709&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;25945524144868616798377005434321968607597029473408456417628770501736226577600936996306306386148517051252174176056&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;93302878136439028547402102681387844515310157832968167882878653011659204369510932686206718073261314562836132094987&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;89345438915485267000169594163110872264018138861479961667441187849751112704236404111089533981719810422892295971197&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;225199447663521472758596124691205483139271667363437613911741821442536429098852529066869544898685674003162780468715&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;133226465537371725791207823007732608016851433266603356824246032571600774858733596680855277271698121233692296984412&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;214026235442364760645768878901893433888530027239186932434340221483611429797860448445573321733516533800376783586849&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;209865017468509971341642462085093919192185569139223034709204939485243056860760867821924437786503336074163109167043&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;219490420378012040044597900078465204875085141304274262719756064241884227366143829466191943246131284770521917871841&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;107794270350250727824303719264349327362253764840855494366195678657690526275364378542854833701549538802096418248084&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;214497132288922282410470995366492104127705853917251639956391350188219443322307620708083843529019036699996096662829&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;216436913923048926393371382639334167145590308917722616640273699755872914758105310937706004925121569777096571773501&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;14821532235517245029225575994881495294340097494060025842437989195232333244802578196149414170959605497405878582540&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;149340524242957423974772893433814190392014381473852786295383636551096665463613496468840974015807625484823068784839&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;92602205576740019970555092291786069878442230185393269119060098961688837594116147683652993589116622567477525635445&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;187289608720372854303118076618428364941868395899689208696722069999084187290922488892094161492110977423619035272649&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;138246251209835932037747211155451146889753321830881007441732932302281412878493276648902633332871835811473542877960&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;165653628641840315664303139225783620502451401675361521932235743336920154286645843675719999005591028855021909439672&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;221484407095875062109245088271905042727631591858266177514520864715688286361376419124935364810076972840743950061836&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;133980604703672698089766182661998480874540278232523164821108522954758888202993741126021280431373622479768313949356&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;38886256490758184304393553179653915986060051480245869194662478974097783410818598716423697164666847852998235320966&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;8411654157888762354868203383638678565276209861191964793314989111047210939710084789719415109438273538021505111510&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;187207294428708203829145346569036650547801585764458185253951079008883539428999915118458145884040644479498579194069&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;191144230647045707590184821948778479495825928592047153194222027257046414968351470170933284561757547536684715232224&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;0&quot;</span>)),
+    ],
+
+    y_map_denominator : <span class="kw-2">&amp;</span>[
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;177304823246185962354212404236288831041380791662214394697399928748373114098169675564032904690251242875327747673679&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;234106598974619695004693596968258258794247055108931498762994964636371479098512727352039267846913406623802246782945&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;255874157960252694683645508260848371559149621054025374393554376526882940742514793344046680765937904153005134511200&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;19068358873460915055376626440913257473060029137260026174266944920186136734103362122730468957229595374427187617425&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;83946178094995839681455048029661822915614318352963730526672352524233381944447759416757234629624830143848209247040&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;36167189440196390196320129647971031300455228428629866775570898825049060037811108115927676106354625467897211624573&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;214137118009637944275213937166601531498145257806838837034827533674793291112410824873653425491233537265355337125438&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;75310151275642225944994533227518963961512910025529659163648069668626195571780520556481029340507362571133885889206&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;107140053800026140817203074526089346919722280052456645787788712045148531978814339001150298053597504647766497707422&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;114397460921328140828185121166450637136573513025702964340164304518654108540682577087979875141067314446917571826582&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;42398151340378868438123040588425908782227436520374323184618125390984068793920538080412999034838310511981244418952&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;82194329196840936158921467961561828669469444994699107543787160001285217807552090667641931153824104285439311091477&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;32044478312863504453978511975839237915357713065285858656377527520925624222082496835678894223326750023304346513708&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;224732340440722096332247540469311391766792864305974461767563394934556509366444399113606207665094042937608880394380&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;53290030879673160724264978063216325707183784347799183367929912851157629196486013218134779085284663628473135140615&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;42967590874964323361920860309631969474991176192252393149421408476343364383848642144439727879920981862569415477634&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;250488593850017034090300371968459931740406675270099747930030660805939980644430804509506597720682995099971419762057&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;131736273443849165304852712527070616520885505701320868662058330388440710419459541866884603770735894010610491333882&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;251064692215092635541196206457923985861467397867989080397969990645886126152674833092283559946890888232618697517884&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;171430383391121065822039978510482289343958135960126315509375831831735263180943544895493884988847947752888720502133&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;255810123836950778051032251049468471118744836441263107437005316697409810175422976454215094737538073112171964000966&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;78363344687446114757879143124020926645520829625790622079288990711202726499291972408305265373741655103522048633806&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;94953611600133917480746113251669332369937157892937924494319507354263981756523698288726321437604686331762128114942&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;224037954053161681052577381077631881138732983068288196649494577229506443999757164090758954620762136536790092765707&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;18177910449767953614338723180992575758462819793657888834925741153507922227776503487306285172452430778418239589878&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;55976309667093193926953058482403983650044130588205371047077237394269232758375928755579870418413040530924659710422&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;108398849957050915959578499238335172000970311919637037913625633347326921657585237193100994767528244599176367431882&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;204809230842263072415312635210643987712012160534293694062738501600937603588267937911969298058204043106501986725326&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;40836628940164991036725499428168139451294386215534361893839871958837737306822281294361671587764896498700322394958&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;119396884503349014053839666170414789560955868303656326650021743484252346209353246139311353657707899076368015332219&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;57449149099548285338146473529383255206310079371370663992648410210841833627207062160011080280732475904935527767063&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;53213606042373287683153647684084583002441527525177758051678463570615020765660540938870067881706148841340293404257&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;136011650568921952309089811450436645471254909718073766303847394446918967077385999380499048535832357755732371368738&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;167478505497067957490757520193067128323382872103395718848436244112857102765738573826312783708349214669979612036158&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;124201488690791095020042847186337439989685011854729481246272047846908500431421470344897520044190299684207452017073&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;206045464105062318563700338460670926332476051084269665075012377410704353049241671458557389593362582538704238377616&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;141307886851791570111930048284226290849958071383456038631306928334570275405889250568493573543543795501685612269615&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;33695298953151791677564491610276872092952551110021466172491397823758283921068636555353240048692541883780027233962&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;248265339860070148327157063205450906034372346050742532250909040050681913704941472496789561564874787781299103889328&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;246735083688655178976599901436968434779493759990448799231310864308891009496294971885106650388027197609829556319894&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;242374981274128257174433646391488180576863913259197526647513270422870835725158808599624055920155693832356361192562&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;228823832066259533984346839854456963456061412139464585495219844904598927917971403987214543635705786807302526573779&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;252218794556637183364789705825049189219556217519670190016584589877973440046635828866291293002549365274213665103495&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;246226868929550107779875102413192686259972538740042993595504829761267272514998892312681511407413880843390092913913&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;194440756770673250653849096711805826346541581797630354589253365569405779009028682866443842541588052010949210024484&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;75265817091612360444217709043194311507703596250641164601263089234422086318666070167810083868284770450890779266774&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;30126025128311053094362231518416999154688680759401769180563223025361877725315179695978985780460875616652938854146&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;53390417057360854696711134553867053334956120915983753729596602193155006833056717338565729257476036879055975910097&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;101332532133743769759178027285109552486478973958553103055307446365529747250973790438239230671819476569086244438727&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;148745905560783494991892238622790396213255789465409808038709750840775025617296316699696997331989504328034553213894&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;64805743514968884017432304617184871899075979363892814607985017391426869625002757534871594116135107848421987411961&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;6046324386958113626500748531301314307229746408846776295678625368971798823548167403538529285882066298168231669149&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;42585898388361518080924198789209195881860509830112816215046001795045034138585747974649960102171072364466234418812&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;132695208880203057798268960407754614753345990251279710979596670783892175104478291787481794529190706739877760089560&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;212862020601301354783026588297306531610140885387724836359356800753780855161155144746080869191538655229274242914307&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;157598266513011182093451150345114371606842593014102635902061162138398777778450012845089379844999350325670077782200&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;4121090928751590306336774011079865996138664888804166805010515676212588791761189056383637824656513752764121888675&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;183219245849642047090141657656072708461001592401873575143115550847958265143529306190408825011434780265059908079650&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;79081485025787885179619178550309706744599846607596447880706626420512740963985633088538634502003788677250834958908&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;183808890703436998546164599111050972902808423546263572335175957576564587842514119276068990911067829699066843757937&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;212106075999882114389916784897163150756429321557076536924307653148222968665985018997130331497354557069316538670523&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;6765896997590927451499527318422027932088882822980873934837948553969718709492787823596776070132570199077127482065&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;234716866510887739589745422464313597883163631119309437461957606368046054279070563732715561665778636277317684644515&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;97451989647642778641795555357790293895920858058713680518946629728091416392679362160653023502048556793761866531581&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;172147863909779437473600759248856356840207842931344727009188760756830505857976640403412821403996887953725715762255&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;210880269899843225414111521931364427157014189139153931141845520612300425501022712679200902179085486362182614989038&quot;</span>)), 
+        Fq2::new(
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;1&quot;</span>), 
+                   <span class="macro">MontFp!</span>(<span class="string">&quot;0&quot;</span>)),
+    ],
+};
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>test {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_gen() {
+        <span class="kw">let </span>gen: G2Affine = SwuIsoConfig::GENERATOR;
+        <span class="macro">assert!</span>(gen.is_on_curve());
+        <span class="macro">assert!</span>(gen.is_in_correct_subgroup_assuming_on_curve());
+    }
+}
+</code></pre></div></section></main></body></html>

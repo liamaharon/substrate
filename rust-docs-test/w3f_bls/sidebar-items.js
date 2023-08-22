@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"macro":["broken_derives"],"mod":["chaum_pedersen_signature","double","double_pop","engine","schnorr_pop","serialize","single","verifiers"],"struct":["Message"],"trait":["ProofOfPossession","ProofOfPossessionGenerator","Signed"]};
