@@ -99,12 +99,12 @@ inject_analytic_script() {
     process_file() {
         local file="$1"
         echo "Adding Simple Analytics script to $file"
-        sed -i "s|</head>|$script_content</head>|" "$file"
+        gsed -i "s|</head>|$script_content</head>|" "$file"
     }
     export -f process_file
 
     # Locate all .html files under the documentation root and use xargs to process them in parallel
-    find "$path" -name '*.html' | xargs -I {} -P "$(nproc)" bash -c 'process_file "$@"' _ {}
+    find "$path" -name '*.html' | xargs -I {} -P "$(sysctl -n hw.physicalcpu)" bash -c 'process_file "$@"' _ {}
 }
 
 upsert_index_page() {
