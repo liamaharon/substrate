@@ -91,16 +91,20 @@ build_rustdocs() {
     && echo "<meta http-equiv=refresh content=0;url=${DOC_INDEX_PAGE}>" > "${2}/index.html"
 }
 
-add_script_to_head() {
+inject_analytic_script() {
     local path="$1"
     local script_content="<script async defer src=\"https://apisa.parity.io/latest.js\"></script><noscript><img src=\"https://apisa.parity.io/latest.js\" alt=\"\" referrerpolicy=\"no-referrer-when-downgrade\" /></noscript>"
 
-    # Locate all .html files under the documentation root
-    find "$path" -name '*.html' | while read -r file; do
+    # Define a function that injects our script into the head of an html file.
+    process_file() {
+        local file="$1"
         echo "Adding Simple Analytics script to $file"
-        # Inject the script tag right before </head>
-        gsed -i "s|</head>|$script_content</head>|" "$file"
-    done
+        sed -i "s|</head>|$script_content</head>|" "$file"
+    }
+    export -f process_file
+
+    # Locate all .html files under the documentation root and use xargs to process them in parallel
+    find "$path" -name '*.html' | xargs -I {} -P "$(nproc)" bash -c 'process_file "$@"' _ {}
 }
 
 upsert_index_page() {
@@ -151,7 +155,7 @@ deploy_main() {
   git fetch --all
   git checkout -f ${BUILD_RUSTDOC_REF} || { echo "Checkout \`${BUILD_RUSTDOC_REF}\` error." && exit 1; }
   build_rustdocs "${BUILD_RUSTDOC_REF}" "${DOC_PATH}"
-  add_script_to_head "${DOC_PATH}"
+  inject_analytic_script "${DOC_PATH}"
 
   # git checkout `gh-pages` branch
   git fetch "${GIT_REMOTE}" gh-pages
