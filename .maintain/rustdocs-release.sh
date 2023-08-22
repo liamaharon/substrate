@@ -92,13 +92,13 @@ build_rustdocs() {
 }
 
 add_script_to_head() {
-    local script_content="<script async defer src=\"https://apisa.parity.io/latest.js\"></script>
-<noscript><img src=\"https://apisa.parity.io/latest.js\" alt=\"\" referrerpolicy=\"no-referrer-when-downgrade\" /></noscript>"
+    local script_content="<script async defer src=\"https://apisa.parity.io/latest.js\"></script><noscript><img src=\"https://apisa.parity.io/latest.js\" alt=\"\" referrerpolicy=\"no-referrer-when-downgrade\" /></noscript>"
 
     # Using find to locate all .html files under the documentation root
     find . -name '*.html' | while read -r file; do
         # Using sed to inject the script tag right before </head>
-        sed -i "s|</head>|$script_content</head>|" "$file"
+        echo "Adding Simple Analytics script to $file"
+        gsed -i "s|</head>|$script_content</head>|" "$file"
     done
 }
 
