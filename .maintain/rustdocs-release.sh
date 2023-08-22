@@ -91,6 +91,17 @@ build_rustdocs() {
     && echo "<meta http-equiv=refresh content=0;url=${DOC_INDEX_PAGE}>" > "${2}/index.html"
 }
 
+add_script_to_head() {
+    local script_content="<script async defer src=\"https://apisa.parity.io/latest.js\"></script>
+<noscript><img src=\"https://apisa.parity.io/latest.js\" alt=\"\" referrerpolicy=\"no-referrer-when-downgrade\" /></noscript>"
+
+    # Using find to locate all .html files under the documentation root
+    find . -name '*.html' | while read -r file; do
+        # Using sed to inject the script tag right before </head>
+        sed -i "s|</head>|$script_content</head>|" "$file"
+    done
+}
+
 upsert_index_page() {
   # Check if `index-tpl-crud` exists
   which index-tpl-crud &> /dev/null || yarn global add @substrate/index-tpl-crud
@@ -139,6 +150,7 @@ deploy_main() {
   git fetch --all
   git checkout -f ${BUILD_RUSTDOC_REF} || { echo "Checkout \`${BUILD_RUSTDOC_REF}\` error." && exit 1; }
   build_rustdocs "${BUILD_RUSTDOC_REF}" "${DOC_PATH}"
+  add_script_to_head
 
   # git checkout `gh-pages` branch
   git fetch "${GIT_REMOTE}" gh-pages
