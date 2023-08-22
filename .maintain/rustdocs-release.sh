@@ -155,7 +155,7 @@ deploy_main() {
 
   # git checkout `gh-pages` branch
   git fetch "${GIT_REMOTE}" gh-pages
-  git checkout ${GIT_REMOTE}/gh-pages
+  git checkout gh-pages
   # Move the built back
   [[ -e "${TMP_PROJECT_PATH}/.gitignore" ]] && cp -f "${TMP_PROJECT_PATH}/.gitignore" .
   # Ensure the destination dir doesn't exist under current path.
