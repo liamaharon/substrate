@@ -39,7 +39,7 @@ DOC_INDEX_PAGE="sc_service/index.html"
 CARGO_NIGHTLY=false
 
 # Set the git remote name. Most of the time the default is `origin`.
-GIT_REMOTE="origin"
+GIT_REMOTE="liamaharon"
 LATEST=false
 
 # Setting the help text
