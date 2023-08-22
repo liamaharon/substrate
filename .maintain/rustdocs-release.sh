@@ -29,7 +29,7 @@
 
 # Script setting
 # The git repo http URL
-REMOTE_REPO="https://github.com/liamaharon/substrate.git"
+REMOTE_REPO="https://github.com/paritytech/substrate.git"
 TMP_PREFIX="/tmp"                             # tmp location that the built doc is copied to.
 DOC_INDEX_PAGE="sc_service/index.html"
 
@@ -142,7 +142,7 @@ deploy_main() {
 
   # git checkout `gh-pages` branch
   git fetch "${GIT_REMOTE}" gh-pages
-  git checkout gh-pages
+  git checkout ${GIT_REMOTE}/gh-pages
   # Move the built back
   [[ -e "${TMP_PROJECT_PATH}/.gitignore" ]] && cp -f "${TMP_PROJECT_PATH}/.gitignore" .
   # Ensure the destination dir doesn't exist under current path.
