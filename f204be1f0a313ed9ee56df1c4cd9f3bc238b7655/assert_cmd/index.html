@@ -1,0 +1,96 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Assert `Command` - Easy command initialization and assertions."><title>assert_cmd - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-f3501f0f5ae15dfb.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="assert_cmd" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.1 (eb26296b5 2023-08-03)" data-search-js="search-4926e5fc22a5646a.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-f0540c1d82cde29b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"><script async defer src="https://apisa.parity.io/latest.js"></script><noscript><img src="https://apisa.parity.io/latest.js" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../assert_cmd/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../assert_cmd/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Crate assert_cmd</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 2.0.11</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#reexports">Re-exports</a></li><li><a href="#modules">Modules</a></li><li><a href="#macros">Macros</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">assert_cmd</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../src/assert_cmd/lib.rs.html#1-149">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p><strong>Assert <a href="cmd/struct.Command.html" title="struct assert_cmd::cmd::Command"><code>Command</code></a></strong> - Easy command initialization and assertions.</p>
+<p><code>assert_cmd</code> aims to simplify the process for doing integration testing of CLIs, including:</p>
+<ul>
+<li>Finding your crate’s binary to test</li>
+<li>Assert on the result of your program’s run.</li>
+</ul>
+<h3 id="overview"><a href="#overview">Overview</a></h3>
+<p>Create a <a href="cmd/struct.Command.html" title="struct assert_cmd::cmd::Command"><code>Command</code></a>:</p>
+<ul>
+<li><code>Command::new(path)</code></li>
+<li><code>Command::from_std(...)</code></li>
+<li><code>Command::cargo_bin(name)</code></li>
+</ul>
+<p>Configure a <a href="cmd/struct.Command.html" title="struct assert_cmd::cmd::Command"><code>Command</code></a>:</p>
+<ul>
+<li><code>arg</code> / <code>args</code></li>
+<li><code>current_dir</code></li>
+<li><code>env</code> / <code>envs</code> / <code>env_remove</code> / <code>env_clear</code></li>
+<li><code>write_stdin</code> / <code>pipe_stdin</code></li>
+<li><code>timeout</code></li>
+</ul>
+<p>Validate a <a href="cmd/struct.Command.html" title="struct assert_cmd::cmd::Command"><code>Command</code></a>:</p>
+<ul>
+<li><code>ok</code> / <code>unwrap</code> / <code>unwrap_err</code></li>
+<li><code>assert</code>
+<ul>
+<li><code>success</code>, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+<li><code>failure</code>, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+<li><code>interrupted</code>, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+<li><code>code</code>, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+<li><code>stdout</code>, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+<li><code>stderr</code>, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+<li><code>get_output</code> for everything else, see <a href="assert/struct.Assert.html" title="struct assert_cmd::assert::Assert"><code>Assert</code></a></li>
+</ul>
+</li>
+</ul>
+<p>Note: <a href="cmd/struct.Command.html" title="struct assert_cmd::cmd::Command"><code>Command</code></a> is provided as a convenience. Extension traits for <a href="https://doc.rust-lang.org/1.71.1/std/process/struct.Command.html" title="struct std::process::Command"><code>std::process::Command</code></a>
+and <code>Output</code> are provided for interoperability:</p>
+<ul>
+<li><a href="cargo/trait.CommandCargoExt.html" title="trait assert_cmd::cargo::CommandCargoExt"><code>CommandCargoExt</code></a></li>
+<li><a href="output/trait.OutputOkExt.html" title="trait assert_cmd::output::OutputOkExt"><code>OutputOkExt</code></a></li>
+<li><a href="assert/trait.OutputAssertExt.html" title="trait assert_cmd::assert::OutputAssertExt"><code>OutputAssertExt</code></a></li>
+</ul>
+<h3 id="examples"><a href="#examples">Examples</a></h3>
+<p>Here’s a trivial example:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>assert_cmd::Command;
+
+<span class="kw">let </span><span class="kw-2">mut </span>cmd = Command::cargo_bin(<span class="string">&quot;bin_fixture&quot;</span>).unwrap();
+cmd.assert().success();</code></pre></div>
+<p>And a little of everything:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>assert_cmd::Command;
+
+<span class="kw">let </span><span class="kw-2">mut </span>cmd = Command::cargo_bin(<span class="string">&quot;bin_fixture&quot;</span>).unwrap();
+<span class="kw">let </span>assert = cmd
+    .arg(<span class="string">&quot;-A&quot;</span>)
+    .env(<span class="string">&quot;stdout&quot;</span>, <span class="string">&quot;hello&quot;</span>)
+    .env(<span class="string">&quot;exit&quot;</span>, <span class="string">&quot;42&quot;</span>)
+    .write_stdin(<span class="string">&quot;42&quot;</span>)
+    .assert();
+assert
+    .failure()
+    .code(<span class="number">42</span>)
+    .stdout(<span class="string">&quot;hello\n&quot;</span>);</code></pre></div>
+<h3 id="relevant-crates"><a href="#relevant-crates">Relevant crates</a></h3>
+<p>Other crates that might be useful in testing command line programs.</p>
+<ul>
+<li><a href="https://crates.io/crates/escargot">escargot</a> for more control over configuring the crate’s binary.</li>
+<li><a href="https://crates.io/crates/duct">duct</a> for orchestrating multiple processes.
+<ul>
+<li>or <a href="https://crates.io/crates/commandspec">commandspec</a> for easier writing of commands</li>
+</ul>
+</li>
+<li><a href="https://crates.io/crates/rexpect">rexpect</a> for testing interactive programs.</li>
+<li><a href="https://crates.io/crates/assert_fs">assert_fs</a> for filesystem fixtures and assertions.
+<ul>
+<li>or <a href="https://crates.io/crates/tempfile">tempfile</a> for scratchpad directories.</li>
+</ul>
+</li>
+<li><a href="https://crates.io/crates/dir-diff">dir-diff</a> for testing file side-effects.</li>
+</ul>
+<h3 id="migrating-from-assert_cli-v06"><a href="#migrating-from-assert_cli-v06">Migrating from <code>assert_cli</code> v0.6</a></h3>
+<p><code>assert_cmd</code> is the successor to <a href="https://crates.io/crates/assert_cli/0.6.3">the original <code>assert_cli</code></a>:</p>
+<ul>
+<li>More flexible, reusable assertions (also used by <a href="https://crates.io/crates/assert_fs">assert_fs</a>).</li>
+<li>Can integrate with other process-management crates, like <code>duct</code>.</li>
+<li>Addresses several architectural problems.</li>
+</ul>
+<p>Key points in migrating from <code>assert_cli</code>:</p>
+<ul>
+<li>The command-under-test is run eagerly, with assertions happening immediately.</li>
+<li><a href="assert/struct.Assert.html#method.success" title="method assert_cmd::assert::Assert::success"><code>success()</code></a> is not implicit and requires being explicitly called.</li>
+<li><code>stdout</code>/<code>stderr</code> aren’t automatically trimmed before being passed to the <code>Predicate</code>.</li>
+</ul>
+</div></details><h2 id="reexports" class="small-section-header"><a href="#reexports">Re-exports</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.Command"><code>pub use crate::cmd::<a class="struct" href="cmd/struct.Command.html" title="struct assert_cmd::cmd::Command">Command</a>;</code></div></li></ul><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="assert/index.html" title="mod assert_cmd::assert">assert</a></div><div class="desc docblock-short"><a href="https://doc.rust-lang.org/1.71.1/std/process/struct.Output.html" title="struct std::process::Output"><code>std::process::Output</code></a> assertions.</div></li><li><div class="item-name"><a class="mod" href="cargo/index.html" title="mod assert_cmd::cargo">cargo</a></div><div class="desc docblock-short">Simplify running <code>bin</code>s in a Cargo project.</div></li><li><div class="item-name"><a class="mod" href="cmd/index.html" title="mod assert_cmd::cmd">cmd</a></div><div class="desc docblock-short"><a href="https://doc.rust-lang.org/1.71.1/std/process/struct.Command.html" title="struct std::process::Command"><code>std::process::Command</code></a> customized for testing.</div></li><li><div class="item-name"><a class="mod" href="output/index.html" title="mod assert_cmd::output">output</a></div><div class="desc docblock-short">Simplify one-off runs of programs.</div></li><li><div class="item-name"><a class="mod" href="prelude/index.html" title="mod assert_cmd::prelude">prelude</a></div><div class="desc docblock-short">Extension traits that are useful to have available.</div></li></ul><h2 id="macros" class="small-section-header"><a href="#macros">Macros</a></h2><ul class="item-table"><li><div class="item-name"><a class="macro" href="macro.crate_name.html" title="macro assert_cmd::crate_name">crate_name</a></div><div class="desc docblock-short">Allows you to pull the name from your Cargo.toml at compile time.</div></li></ul></section></div></main></body></html>

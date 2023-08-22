@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["aggregate_claims","aggregate_claims_multiexp","aggregate_polys"],"struct":["Claim"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["VrfSignature","VrfSignatureVec"],"trait":["EcVrfSecret","EcVrfSigner","EcVrfVerifier","IntoTranscript"],"type":["EcVrfInOut","EcVrfInput","EcVrfPreOut","EcVrfProof"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Either"],"struct":["Concat","ExpectChar","Null","OneOf","OneOrMore","ParserContext","ParserOptions"],"trait":["Parser","Predicate"],"type":["Concat3","Concat4","Concat5","OneOf3","OneOf4","OneOf5","OneOf6","OneOf7","OneOf8","OneOf9","ZeroOrMore","ZeroOrOne"]};

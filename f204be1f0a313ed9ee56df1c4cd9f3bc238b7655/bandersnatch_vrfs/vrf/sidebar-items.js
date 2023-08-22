@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["ark_hash_to_curve","attach_inputs_array","attach_inputs_vec","collect_preoutputs_array","collect_preoutputs_vec","vrfs_merge"],"struct":["VrfInOut","VrfInput","VrfPreOut"],"trait":["IntoVrfInput"]};

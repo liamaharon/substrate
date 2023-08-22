@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["booleanity","fixed_cells","inner_prod","sw_cond_add"],"trait":["ProverGadget","VerifierGadget"]};

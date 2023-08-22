@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["CoffExportStyle","Mangling","StandardSection","StandardSegment","SymbolSection"],"mod":["elf","pe"],"struct":["Comdat","ComdatId","Error","Object","Relocation","Section","SectionId","StreamingBuffer","StringId","Symbol","SymbolId"],"trait":["WritableBuffer"],"type":["Result"]};

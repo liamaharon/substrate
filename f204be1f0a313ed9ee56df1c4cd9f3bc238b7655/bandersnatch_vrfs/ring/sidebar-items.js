@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["KZG"],"type":["PiopParams","ProverKey","RingProof","RingProver","RingVerifier","VerifierKey"]};

@@ -1,0 +1,5 @@
+(function() {var implementors = {
+"ark_secret_scalar":[["impl&lt;R: <a class=\"trait\" href=\"rand_core/trait.RngCore.html\" title=\"trait rand_core::RngCore\">RngCore</a> + <a class=\"trait\" href=\"rand_core/trait.CryptoRng.html\" title=\"trait rand_core::CryptoRng\">CryptoRng</a>&gt; <a class=\"trait\" href=\"digest/trait.XofReader.html\" title=\"trait digest::XofReader\">XofReader</a> for <a class=\"struct\" href=\"ark_secret_scalar/struct.Rng2Xof.html\" title=\"struct ark_secret_scalar::Rng2Xof\">Rng2Xof</a>&lt;R&gt;"]],
+"ark_transcript":[["impl <a class=\"trait\" href=\"digest/trait.XofReader.html\" title=\"trait digest::XofReader\">XofReader</a> for <a class=\"struct\" href=\"ark_transcript/struct.Reader.html\" title=\"struct ark_transcript::Reader\">Reader</a>"]],
+"digest":[]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

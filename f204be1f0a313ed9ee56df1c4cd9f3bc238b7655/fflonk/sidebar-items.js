@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["aggregation","fflonk","pcs","shplonk","utils"],"struct":["FflonkyKzg"],"trait":["EuclideanPolynomial"],"type":["Poly"]};

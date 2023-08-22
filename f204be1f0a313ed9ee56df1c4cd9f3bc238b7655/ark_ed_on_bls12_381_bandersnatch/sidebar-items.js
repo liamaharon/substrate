@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["fq","fr"],"struct":["BandersnatchConfig","FqConfig","FrConfig"],"type":["EdwardsAffine","EdwardsConfig","EdwardsProjective","Fq","Fr","SWAffine","SWConfig","SWProjective"]};

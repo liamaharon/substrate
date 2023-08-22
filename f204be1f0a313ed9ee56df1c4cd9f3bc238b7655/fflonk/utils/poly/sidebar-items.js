@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["interpolate","sum_with_coeffs","sum_with_powers"]};

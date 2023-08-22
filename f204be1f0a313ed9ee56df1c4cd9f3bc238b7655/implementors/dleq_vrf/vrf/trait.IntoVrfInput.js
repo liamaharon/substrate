@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"bandersnatch_vrfs":[["impl&lt;'a&gt; <a class=\"trait\" href=\"bandersnatch_vrfs/trait.IntoVrfInput.html\" title=\"trait bandersnatch_vrfs::IntoVrfInput\">IntoVrfInput</a>&lt;<a class=\"struct\" href=\"ark_ec/models/short_weierstrass/affine/struct.Affine.html\" title=\"struct ark_ec::models::short_weierstrass::affine::Affine\">Affine</a>&lt;<a class=\"struct\" href=\"ark_ed_on_bls12_381_bandersnatch/curves/struct.BandersnatchConfig.html\" title=\"struct ark_ed_on_bls12_381_bandersnatch::curves::BandersnatchConfig\">BandersnatchConfig</a>&gt;&gt; for <a class=\"struct\" href=\"bandersnatch_vrfs/struct.Message.html\" title=\"struct bandersnatch_vrfs::Message\">Message</a>&lt;'a&gt;"]],
+"dleq_vrf":[]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

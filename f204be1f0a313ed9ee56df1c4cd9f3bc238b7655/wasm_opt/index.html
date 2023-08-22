@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Rust bindings to the `wasm-opt` WebAssembly optimizer."><title>wasm_opt - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-f3501f0f5ae15dfb.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="wasm_opt" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.1 (eb26296b5 2023-08-03)" data-search-js="search-4926e5fc22a5646a.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-f0540c1d82cde29b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"><script async defer src="https://apisa.parity.io/latest.js"></script><noscript><img src="https://apisa.parity.io/latest.js" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../wasm_opt/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../wasm_opt/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Crate wasm_opt</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 0.114.0</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">wasm_opt</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../src/wasm_opt/lib.rs.html#1-163">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Rust bindings to the <code>wasm-opt</code> WebAssembly optimizer.</p>
+<p><code>wasm-opt</code> is a component of the <a href="https://github.com/WebAssembly/binaryen">Binaryen</a> toolkit
+that optimizes <a href="https://webassembly.org/">WebAssembly</a> modules. It is written
+in C++.</p>
+<p>This project provides a Rust crate that builds <code>wasm-opt</code> and:</p>
+<ol>
+<li>makes its command-line interface installable via <code>cargo install</code>,</li>
+<li>provides an API to access it programmatically.</li>
+</ol>
+<h3 id="installing-the-binary"><a href="#installing-the-binary">Installing the binary</a></h3><div class="example-wrap"><pre class="language-text"><code>cargo install wasm-opt --locked
+</code></pre></div>
+<p>It should behave exactly the same as <code>wasm-opt</code> installed from other sources.</p>
+<h3 id="using-the-library"><a href="#using-the-library">Using the library</a></h3>
+<p>The crate provides an <a href="struct.OptimizationOptions.html" title="struct wasm_opt::OptimizationOptions"><code>OptimizationOptions</code></a> type that
+follows the builder pattern, with options that closely
+mirror the command line options of <code>wasm-opt</code>. Once built,
+call <a href="struct.OptimizationOptions.html#method.run" title="method wasm_opt::OptimizationOptions::run"><code>OptimizationOptions::run</code></a> to load, optimize, and write
+the optimized module.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>wasm_opt::OptimizationOptions;
+
+<span class="kw">let </span>infile = <span class="string">&quot;hello_world.wasm&quot;</span>;
+<span class="kw">let </span>outfile = <span class="string">&quot;hello_world_optimized.wasm&quot;</span>;
+
+OptimizationOptions::new_optimize_for_size()
+    .run(infile, outfile)<span class="question-mark">?</span>;
+</code></pre></div>
+<p>There are constructors for all the typical optimization profiles:</p>
+<ul>
+<li><a href="struct.OptimizationOptions.html#method.new_optimize_for_size" title="associated function wasm_opt::OptimizationOptions::new_optimize_for_size"><code>OptimizationOptions::new_optimize_for_size</code></a> · <code>-Os</code> or <code>-O</code></li>
+<li><a href="struct.OptimizationOptions.html#method.new_optimize_for_size_aggressively" title="associated function wasm_opt::OptimizationOptions::new_optimize_for_size_aggressively"><code>OptimizationOptions::new_optimize_for_size_aggressively</code></a> · <code>-Oz</code></li>
+<li><a href="struct.OptimizationOptions.html#method.new_opt_level_0" title="associated function wasm_opt::OptimizationOptions::new_opt_level_0"><code>OptimizationOptions::new_opt_level_0</code></a> · <code>-O0</code>, or no <code>-O*</code> argument.</li>
+<li><a href="struct.OptimizationOptions.html#method.new_opt_level_1" title="associated function wasm_opt::OptimizationOptions::new_opt_level_1"><code>OptimizationOptions::new_opt_level_1</code></a> · <code>-O1</code></li>
+<li><a href="struct.OptimizationOptions.html#method.new_opt_level_2" title="associated function wasm_opt::OptimizationOptions::new_opt_level_2"><code>OptimizationOptions::new_opt_level_2</code></a> · <code>-O2</code></li>
+<li><a href="struct.OptimizationOptions.html#method.new_opt_level_3" title="associated function wasm_opt::OptimizationOptions::new_opt_level_3"><code>OptimizationOptions::new_opt_level_3</code></a> · <code>-O3</code></li>
+<li><a href="struct.OptimizationOptions.html#method.new_opt_level_4" title="associated function wasm_opt::OptimizationOptions::new_opt_level_4"><code>OptimizationOptions::new_opt_level_4</code></a> · <code>-O4</code></li>
+</ul>
+<p>By default, the <code>run</code> method will read either binary <code>wasm</code> or text <code>wat</code> files,
+inspecting the first few bytes for the binary header and choosing as appropriate,
+and it will write a binary <code>wasm</code> file.
+This behavior can be changed with <a href="struct.OptimizationOptions.html#method.reader_file_type" title="method wasm_opt::OptimizationOptions::reader_file_type"><code>OptimizationOptions::reader_file_type</code></a>
+and <a href="struct.OptimizationOptions.html#method.writer_file_type" title="method wasm_opt::OptimizationOptions::writer_file_type"><code>OptimizationOptions::writer_file_type</code></a>.</p>
+<h3 id="enabling-and-disabling-wasm-features"><a href="#enabling-and-disabling-wasm-features">Enabling and disabling WASM features</a></h3>
+<p>The WebAssembly specification has <a href="https://webassembly.org/roadmap/">optional features</a>,
+represeted by the <a href="enum.Feature.html" title="enum wasm_opt::Feature"><code>Feature</code></a> enum.
+The <code>Feature</code> variants link to the relevant specifications of each feature when known.
+<code>wasm-opt</code> can be configured with support for them individually using the
+<a href="struct.OptimizationOptions.html#method.enable_feature" title="method wasm_opt::OptimizationOptions::enable_feature"><code>OptimizationOptions::enable_feature</code></a> and <a href="struct.OptimizationOptions.html#method.disable_feature" title="method wasm_opt::OptimizationOptions::disable_feature"><code>OptimizationOptions::disable_feature</code></a>
+methods.</p>
+<p>By default Binaryen (and this crate) enables these common features by default:</p>
+<ul>
+<li><a href="enum.Feature.html#variant.SignExt" title="variant wasm_opt::Feature::SignExt"><code>Feature::SignExt</code></a></li>
+<li><a href="enum.Feature.html#variant.MutableGlobals" title="variant wasm_opt::Feature::MutableGlobals"><code>Feature::MutableGlobals</code></a>.</li>
+</ul>
+<p>The original WebAssembly specification with no additional features is known
+as the <em>MVP</em> specification. <strong>To enable only the MVP features call
+<a href="struct.OptimizationOptions.html#method.mvp_features_only" title="method wasm_opt::OptimizationOptions::mvp_features_only"><code>OptimizationOptions::mvp_features_only</code></a></strong>.</p>
+<p>After resetting to MVP features, additional calls to <code>enable_feature</code> will
+add features to the MVP feature set.</p>
+<h3 id="customizing-passes"><a href="#customizing-passes">Customizing passes</a></h3>
+<p>All Binaryen optimization passes are represented in the <a href="enum.Pass.html" title="enum wasm_opt::Pass"><code>Pass</code></a>
+enum, and can be added to <code>OptimizationOptions</code> via <a href="struct.OptimizationOptions.html#method.add_pass" title="method wasm_opt::OptimizationOptions::add_pass"><code>OptimizationOptions::add_pass</code></a>.
+These are added after the default set of passes, which are
+enabled by most <code>OptimizationOptions</code> constructors. The default passes
+can be disabled either with the <a href="struct.OptimizationOptions.html#method.new_opt_level_0" title="associated function wasm_opt::OptimizationOptions::new_opt_level_0"><code>OptimizationOptions::new_opt_level_0</code></a> constructor,
+or by calling <a href="struct.OptimizationOptions.html#method.add_default_passes" title="method wasm_opt::OptimizationOptions::add_default_passes"><code>OptimizationOptions::add_default_passes</code></a>
+with a <code>false</code> argument.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>wasm_opt::{OptimizationOptions, Pass};
+
+<span class="kw">let </span>infile = <span class="string">&quot;hello_world.wasm&quot;</span>;
+<span class="kw">let </span>outfile = <span class="string">&quot;hello_world_optimized.wasm&quot;</span>;
+
+<span class="comment">// Just run the inliner.
+</span>OptimizationOptions::new_opt_level_0()
+    .add_pass(Pass::InliningOptimizing)
+    .run(infile, outfile)<span class="question-mark">?</span>;
+</code></pre></div>
+<p>Note that while this crate exposes all Binaryen passes
+some may not make sense to actually use — Binaryen
+is a command-line oriented tool, and some passes are
+for debug purposes or print directly to the console.</p>
+<h3 id="integrating-with-existing-tooling"><a href="#integrating-with-existing-tooling">Integrating with existing tooling</a></h3>
+<p>For ease of integration with tools that already use <code>wasm-opt</code> via CLI, this
+crate provides the <a href="integration/index.html" title="mod wasm_opt::integration"><code>integration</code></a> module, which presents an API that is
+compatible with <code>std</code>s <code>Command</code>. This allows client code to use mostly the
+same code path for executing the <code>wasm-opt</code> CLI, and the crate-based API.</p>
+</div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="integration/index.html" title="mod wasm_opt::integration">integration</a></div><div class="desc docblock-short">Easy integration with tools that already use <code>wasm-opt</code> via CLI.</div></li></ul><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Features.html" title="struct wasm_opt::Features">Features</a></div><div class="desc docblock-short">Which wasm <a href="enum.Feature.html" title="enum wasm_opt::Feature"><code>Feature</code></a>s to enable and disable.</div></li><li><div class="item-name"><a class="struct" href="struct.InliningOptions.html" title="struct wasm_opt::InliningOptions">InliningOptions</a></div><div class="desc docblock-short">Options related to inlining.</div></li><li><div class="item-name"><a class="struct" href="struct.OptimizationOptions.html" title="struct wasm_opt::OptimizationOptions">OptimizationOptions</a></div><div class="desc docblock-short">Optimization options and optimization builder.</div></li><li><div class="item-name"><a class="struct" href="struct.PassOptions.html" title="struct wasm_opt::PassOptions">PassOptions</a></div><div class="desc docblock-short">Options that affect how optimization passes behave.</div></li><li><div class="item-name"><a class="struct" href="struct.Passes.html" title="struct wasm_opt::Passes">Passes</a></div><div class="desc docblock-short">The set of optimization passes to apply.</div></li><li><div class="item-name"><a class="struct" href="struct.ReaderOptions.html" title="struct wasm_opt::ReaderOptions">ReaderOptions</a></div><div class="desc docblock-short">Options for reading the unoptimized wasm module.</div></li><li><div class="item-name"><a class="struct" href="struct.WriterOptions.html" title="struct wasm_opt::WriterOptions">WriterOptions</a></div><div class="desc docblock-short">Options for writing the optimized wasm module.</div></li></ul><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Feature.html" title="enum wasm_opt::Feature">Feature</a></div><div class="desc docblock-short">Optional wasm features.</div></li><li><div class="item-name"><a class="enum" href="enum.FeatureBaseline.html" title="enum wasm_opt::FeatureBaseline">FeatureBaseline</a></div><div class="desc docblock-short">The set of features to apply before applying custom features.</div></li><li><div class="item-name"><a class="enum" href="enum.FileType.html" title="enum wasm_opt::FileType">FileType</a></div><div class="desc docblock-short">Module format used by <a href="struct.ReaderOptions.html" title="struct wasm_opt::ReaderOptions"><code>ReaderOptions</code></a> and <a href="struct.WriterOptions.html" title="struct wasm_opt::WriterOptions"><code>WriterOptions</code></a>.</div></li><li><div class="item-name"><a class="enum" href="enum.OptimizationError.html" title="enum wasm_opt::OptimizationError">OptimizationError</a></div><div class="desc docblock-short">An error resulting from the <a href="struct.OptimizationOptions.html#method.run" title="method wasm_opt::OptimizationOptions::run"><code>OptimizationOptions::run</code></a> method.</div></li><li><div class="item-name"><a class="enum" href="enum.OptimizeLevel.html" title="enum wasm_opt::OptimizeLevel">OptimizeLevel</a></div><div class="desc docblock-short">The amount of optimization to apply.</div></li><li><div class="item-name"><a class="enum" href="enum.Pass.html" title="enum wasm_opt::Pass">Pass</a></div><div class="desc docblock-short">A Binaryen optimization pass.</div></li><li><div class="item-name"><a class="enum" href="enum.ShrinkLevel.html" title="enum wasm_opt::ShrinkLevel">ShrinkLevel</a></div><div class="desc docblock-short">The amount of effort to put into reducing module size.</div></li></ul></section></div></main></body></html>
