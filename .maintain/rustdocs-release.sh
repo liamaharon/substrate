@@ -29,7 +29,7 @@
 
 # Script setting
 # The git repo http URL
-REMOTE_REPO="https://github.com/paritytech/substrate.git"
+REMOTE_REPO="https://github.com/liamaharon/substrate.git"
 TMP_PREFIX="/tmp"                             # tmp location that the built doc is copied to.
 DOC_INDEX_PAGE="sc_service/index.html"
 
