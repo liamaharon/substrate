@@ -150,7 +150,7 @@ deploy_main() {
   git fetch --all
   git checkout -f ${BUILD_RUSTDOC_REF} || { echo "Checkout \`${BUILD_RUSTDOC_REF}\` error." && exit 1; }
   build_rustdocs "${BUILD_RUSTDOC_REF}" "${DOC_PATH}"
-  add_script_to_head
+  add_script_to_head "${BUILD_RUSTDOC_REF}"
 
   # git checkout `gh-pages` branch
   git fetch "${GIT_REMOTE}" gh-pages
